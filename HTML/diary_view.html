@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Diary</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+body {
+    background: linear-gradient(135deg,#2c2c2c,#1a1a1a);
+    min-height:100vh;
+    padding:20px;
+}
+.container {
+    max-width:900px;
+    margin:0 auto;
+    background:#f5f4f0;
+    border-radius:15px;
+    padding:30px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.3);
+}
+h1 { text-align:center; color:#333; margin-bottom:25px; }
+.event-folder {
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+.event-folder h2 { margin-bottom:15px; color:#4a90e2; }
+.media-gallery {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.media-gallery img, .media-gallery video, .media-gallery audio {
+    max-width:150px;
+    border-radius:8px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+.media-gallery video, .media-gallery audio { max-width:200px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1 id="diary-title">Diary - Date</h1>
+    <div id="events-container"></div>
+</div>
+
+<script>
+const API_BASE_URL = "http://localhost:5000/api";
+const token = localStorage.getItem('token');
+
+const urlParams = new URLSearchParams(window.location.search);
+const date = urlParams.get('date');
+document.getElementById('diary-title').textContent = `Diary - Date ${date}`;
+
+const container = document.getElementById('events-container');
+
+async function loadEvents(){
+    container.innerHTML = '';
+    try {
+        const res = await fetch(`${API_BASE_URL}/diary/${date}`, {
+            headers:{ 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.message);
+
+        const dayEvents = data.data || [];
+        if(dayEvents.length===0){
+            container.innerHTML='<p style="color:#666; text-align:center;">No events for this date</p>';
+        } else {
+            dayEvents.forEach(ev=>{
+                const folder = document.createElement('div');
+                folder.className='event-folder';
+
+                const title = document.createElement('h2'); title.textContent = ev.title;
+                folder.appendChild(title);
+
+                if(ev.media && ev.media.length>0){
+                    const gallery = document.createElement('div'); gallery.className='media-gallery';
+                    ev.media.forEach(file=>{
+                        const type = file.type.split('/')[0];
+                        if(type==='image'){ const img=document.createElement('img'); img.src=`${API_BASE_URL}/${file.url}`; gallery.appendChild(img);}
+                        else if(type==='video'){ const vid=document.createElement('video'); vid.src=`${API_BASE_URL}/${file.url}`; vid.controls=true; gallery.appendChild(vid);}
+                        else if(type==='audio'){ const aud=document.createElement('audio'); aud.src=`${API_BASE_URL}/${file.url}`; aud.controls=true; gallery.appendChild(aud);}
+                    });
+                    folder.appendChild(gallery);
+                }
+
+                container.appendChild(folder);
+            });
+        }
+    } catch(err){
+        console.error(err);
+        container.innerHTML='<p style="color:red">Failed to load diary events</p>';
+    }
+}
+
+loadEvents();
+</script>
+</body>
+</html>

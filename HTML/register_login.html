@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login or Signup</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+    transition: background 0.3s ease;
+}
+
+.main-content {
+    width: 100%;
+    max-width: 420px;
+    background: #f5f4f0;
+    border-radius: 15px;
+    padding: 40px 30px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    0% { opacity:0; transform: translateY(-20px); }
+    100% { opacity:1; transform: translateY(0); }
+}
+
+.auth-toggle {
+    display:flex; 
+    background:#e0e0e0; 
+    border-radius:8px; 
+    padding:4px; 
+    margin-bottom:30px; 
+    width:100%;
+    transition: all 0.3s ease;
+}
+
+.toggle-btn {
+    flex:1; 
+    padding:12px; 
+    background:transparent; 
+    border:none; 
+    border-radius:6px; 
+    font-size:16px; 
+    font-weight:500; 
+    cursor:pointer; 
+    transition: all 0.3s ease; 
+    color:#666; 
+}
+.toggle-btn.active { 
+    background:white; 
+    color:#333; 
+    box-shadow:0 3px 6px rgba(0,0,0,0.15); 
+}
+
+.title { 
+    font-size:28px; 
+    color:#333; 
+    margin-bottom:20px; 
+    font-weight:400; 
+    text-align:center; 
+    transition: all 0.3s ease;
+}
+
+.social-buttons { width:100%; margin-bottom:20px; }
+.social-btn { 
+    width:100%; 
+    padding:16px 20px; 
+    border:1px solid #ddd; 
+    border-radius:8px; 
+    background:#fff; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    gap:12px; 
+    font-size:16px; 
+    color:#333; 
+    cursor:pointer; 
+    transition: all 0.3s ease, transform 0.2s ease; 
+    margin-bottom:15px; 
+    text-decoration:none; 
+}
+.social-btn:hover { 
+    background:#f8f8f8; 
+    transform: translateY(-2px);
+}
+.social-btn:active { 
+    transform: translateY(0); 
+}
+
+.google-btn .icon { width:20px; height:20px; background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/><path fill="%2334A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/><path fill="%23FBBC05" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/><path fill="%23EA4335" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/></svg>') center/contain no-repeat; }
+
+.facebook-btn .icon { width:20px; height:20px; background:#1877F2; border-radius:3px; position:relative; }
+.facebook-btn .icon::after { content:'f'; position:absolute; color:white; font-family:Arial,sans-serif; font-weight:bold; font-size:14px; top:50%; left:50%; transform:translate(-50%, -50%); }
+
+.divider { width:100%; text-align:center; margin:20px 0; position:relative; font-size:18px; color:#666; }
+.divider::before,.divider::after { content:''; position:absolute; top:50%; width:45%; height:1px; background:#ddd; }
+.divider::before { left:0; } .divider::after { right:0; }
+
+.auth-form { width:100%; }
+.form-group { margin-bottom:20px; position:relative; }
+.form-label { display:block; font-size:16px; color:#333; margin-bottom:8px; font-weight:500; transition: all 0.3s ease; }
+.form-input { width:100%; padding:16px 20px; border:1px solid #ddd; border-radius:8px; font-size:16px; background:#fff; color:#333; transition: all 0.3s ease; }
+.form-input:focus { border-color:#4a90e2; outline:none; box-shadow:0 0 5px rgba(74,144,226,0.3); }
+
+.password-group { position:relative; }
+.password-toggle { position:absolute; right:15px; top:50%; transform:translateY(-50%); background:none; border:none; color:#666; cursor:pointer; font-size:14px; transition: transform 0.2s ease; }
+.password-toggle:hover { transform: translateY(-50%) scale(1.1); }
+
+.continue-btn { width:100%; padding:18px; background:#4a90e2; color:white; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; transition: all 0.3s ease; margin-top:10px; }
+.continue-btn:hover { background:#357ABD; }
+
+.signup-only { display:none; }
+.login-only { display:block; }
+.signup-mode .signup-only { display:block; }
+.signup-mode .login-only { display:none; }
+
+.error-msg { color:red; font-size:14px; margin-top:5px; display:none; position:absolute; bottom:-18px; left:0; transition: all 0.3s ease; }
+.server-msg { color:red; font-size:16px; text-align:center; margin-bottom:10px; display:none; transition: all 0.3s ease; }
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .main-content { padding:30px 20px; width: 100%; max-width: 95%; }
+    .title { font-size:24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="main-content" id="main-content">
+    <div class="auth-toggle">
+        <button type="button" class="toggle-btn active" id="login-tab" onclick="switchMode('login')">Login</button>
+        <button type="button" class="toggle-btn" id="signup-tab" onclick="switchMode('signup')">Sign Up</button>
+    </div>
+
+    <h1 class="title" id="page-title">Welcome Back</h1>
+    <div class="server-msg" id="server-msg"></div>
+
+    <div class="social-buttons">
+        <a class="social-btn google-btn" href="#"><div class="icon"></div><span>Continue with Google</span></a>
+        <a class="social-btn facebook-btn" href="#"><div class="icon"></div><span>Continue with Facebook</span></a>
+    </div>
+
+    <div class="divider">or</div>
+
+    <form class="auth-form" id="auth-form">
+        <div class="form-group signup-only">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-input" id="username" placeholder="Enter your username">
+            <div class="error-msg" id="username-error"></div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-input" id="email" placeholder="Enter your email" required>
+            <div class="error-msg" id="email-error"></div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="password-group">
+                <input type="password" name="password" class="form-input" id="password" placeholder="Enter your password" required>
+                <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+            </div>
+            <div class="error-msg" id="password-error"></div>
+        </div>
+
+        <div class="form-group signup-only">
+            <label class="form-label">Confirm Password</label>
+            <div class="password-group">
+                <input type="password" name="confirmPassword" class="form-input" id="confirmPassword" placeholder="Confirm your password">
+                <button type="button" class="password-toggle" onclick="toggleConfirmPassword()">👁️</button>
+            </div>
+            <div class="error-msg" id="confirmPassword-error"></div>
+        </div>
+
+        <button type="submit" class="continue-btn" id="submit-btn">Login</button>
+    </form>
+</div>
+<script>
+let currentMode = 'login';
+
+function switchMode(mode) {
+    currentMode = mode;
+    const mainContent = document.getElementById('main-content');
+    const loginTab = document.getElementById('login-tab');
+    const signupTab = document.getElementById('signup-tab');
+    const pageTitle = document.getElementById('page-title');
+    const submitBtn = document.getElementById('submit-btn');
+
+    mainContent.classList.remove('signup-mode');
+    loginTab.classList.remove('active');
+    signupTab.classList.remove('active');
+
+    if (mode === 'signup') {
+        mainContent.classList.add('signup-mode');
+        signupTab.classList.add('active');
+        pageTitle.textContent = 'Create Account';
+        submitBtn.textContent = 'Sign Up';
+        document.getElementById('username').required = true;
+        document.getElementById('confirmPassword').required = true;
+    } else {
+        loginTab.classList.add('active');
+        pageTitle.textContent = 'Welcome Back';
+        submitBtn.textContent = 'Login';
+        document.getElementById('username').required = false;
+        document.getElementById('confirmPassword').required = false;
+    }
+
+    // Clear previous errors
+    ['username','email','password','confirmPassword'].forEach(field => showError(field+'-error',''));
+    const serverMsg = document.getElementById('server-msg');
+    serverMsg.style.display = 'none';
+}
+
+function handleBackendResponse(data) {
+    clearErrors();
+    serverMsg.style.display = 'none';
+
+    // Error case
+    if (!data.success) {
+        if (data.errors) {
+            Object.keys(data.errors).forEach(field => {
+                showError(`${field}-error`, data.errors[field]);
+            });
+        } else {
+            serverMsg.style.display = 'block';
+            serverMsg.style.color = 'red';
+            serverMsg.textContent = data.message || 'Something went wrong';
+        }
+        return false;
+    }
+
+    // Success case
+    if (currentMode === 'login') {
+        if (data.data.user.hasProfile) {
+            window.location.href = 'HTML/dashboard.html';
+        } else {
+            window.location.href = 'HTML/profile.html';
+        }
+    } else {
+        window.location.href = 'HTML/profile.html';
+    }
+}
+
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+}
+
+function toggleConfirmPassword() {
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    confirmPasswordInput.type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
+}
+
+function showError(id, message) {
+    const el = document.getElementById(id);
+    if(el){
+        el.style.display = message ? 'block' : 'none';
+        el.textContent = message;
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    if(userData){
+        document.getElementById('email').value = userData.email || '';
+        if(currentMode === 'signup'){
+            document.getElementById('username').value = userData.username || '';
+        }
+    }
+});
+
+document.getElementById('auth-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    ['username','email','password','confirmPassword'].forEach(field => showError(field+'-error',''));
+    const serverMsg = document.getElementById('server-msg');
+    serverMsg.style.display = 'none';
+
+    const payload = {
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value.trim()
+    };
+
+    if(currentMode === 'signup'){
+        payload.username = document.getElementById('username').value.trim();
+        payload.confirmPassword = document.getElementById('confirmPassword').value.trim();
+    }
+
+    const url = `http://localhost:3000/auth/${currentMode === 'login' ? 'login' : 'register'}`;
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        
+        if (res.ok && data.data && data.data.token) {
+            // Store token and user info
+            localStorage.setItem('token', data.data.token);
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+        }
+
+        handleBackendResponse(data);
+
+    } catch(err){
+        serverMsg.style.display = 'block';
+        serverMsg.style.color = 'red';
+        serverMsg.textContent = 'Server error, please try again.';
+        console.error(err);
+    }
+});
+
+// OAuth buttons
+document.querySelector('.google-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.href = 'http://localhost:3000/auth/google';
+});
+document.querySelector('.facebook-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.href = 'http://localhost:3000/auth/facebook';
+});
+</script>
+
+
+</body>
+</html>

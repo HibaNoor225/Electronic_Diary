@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Profile</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px;
+    transition: background 0.3s ease;
+}
+
+.main-content {
+    width: 100%;
+    max-width: 500px;
+    background: #f5f4f0;
+    border-radius: 15px;
+    padding: 40px 30px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    0% { opacity:0; transform: translateY(-20px); }
+    100% { opacity:1; transform: translateY(0); }
+}
+
+.header {
+    width: 100%;
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header-title {
+    font-size:24px;
+    font-weight:600;
+    color:#333;
+    text-align:center;
+    flex:1;
+}
+
+.save-button {
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:#4a90e2;
+    color:white;
+    font-weight:500;
+    cursor:pointer;
+    transition: all 0.3s ease;
+}
+.save-button:hover { background:#357ABD; }
+
+.profile-photo-section {
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.profile-photo {
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:#e0e0e0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:48px;
+    color:#999;
+    overflow:hidden;
+    margin:0 auto 10px auto;
+}
+
+.profile-photo img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.photo-upload-btn {
+    margin-top:5px;
+    padding:6px 12px;
+    background:#4a90e2;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    transition: all 0.3s ease;
+}
+.photo-upload-btn:hover { background:#357ABD; }
+
+.form-group { width:100%; margin-bottom:20px; }
+.form-label { display:block; margin-bottom:8px; font-weight:500; color:#333; }
+.form-input, .form-textarea, .form-select {
+    width:100%;
+    padding:14px 18px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+    background:#fff;
+    color:#333;
+    transition: all 0.3s ease;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    border-color:#4a90e2;
+    outline:none;
+    box-shadow:0 0 5px rgba(74,144,226,0.3);
+}
+.form-textarea { resize:none; height:100px; }
+
+.character-count { font-size:12px; color:#999; text-align:right; margin-top:5px; }
+
+.success-message { color:green; font-size:14px; margin-bottom:10px; display:none; }
+.error-message { color:red; font-size:14px; margin-bottom:10px; display:none; }
+
+@media (max-width:480px){
+    .main-content { padding:30px 20px; width:100%; max-width:95%; }
+    .header-title { font-size:20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="main-content">
+    <div class="header">
+        <div class="header-title">Edit Profile</div>
+        <button class="save-button" id="save-button" onclick="saveProfile()">Save</button>
+    </div>
+
+    <div class="profile-photo-section">
+        <div class="profile-photo" id="profile-photo">👤</div>
+        <button class="photo-upload-btn" onclick="document.getElementById('photo-input').click()">Change Photo</button>
+        <input type="file" id="photo-input" style="display:none" accept="image/*" onchange="handlePhotoUpload(event)">
+    </div>
+
+    <div class="success-message" id="success-message"></div>
+    <div class="error-message" id="form-error"></div>
+
+    <form id="profile-form">
+        <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="fullName" class="form-input" placeholder="Enter your full name">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Bio</label>
+            <textarea id="bio" class="form-textarea" maxlength="150" placeholder="Tell us about yourself..." oninput="updateCharacterCount()"></textarea>
+            <div class="character-count" id="char-count">0/150</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select id="gender" class="form-select">
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Age</label>
+            <input type="number" id="age" class="form-input" min="13" max="120" placeholder="25">
+        </div>
+    </form>
+</div>
+
+<script>
+function updateCharacterCount(){
+    const bio = document.getElementById('bio');
+    document.getElementById('char-count').textContent = `${bio.value.length}/150`;
+}
+
+function handlePhotoUpload(event){
+    const file = event.target.files[0];
+    if(file){
+        const reader = new FileReader();
+        reader.onload = function(e){
+            document.getElementById('profile-photo').innerHTML = `<img src="${e.target.result}" alt="Profile">`;
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+function saveProfile(){
+    const form = document.getElementById('profile-form');
+    const formData = new FormData(form);
+
+    // Add profile photo file manually if needed
+    const photoFile = document.getElementById('photo-input').files[0];
+    if(photoFile) formData.append('profilePhoto', photoFile);
+
+    const token = localStorage.getItem('token');
+    if(!token){ 
+        alert('You are not logged in!'); 
+        return; 
+    }
+
+    fetch('http://localhost:3000/auth/update-profile', {
+        method:'POST',
+        headers:{ 
+            'Authorization': `Bearer ${token}` 
+            // DO NOT set Content-Type for FormData
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            // Redirect immediately to dashboard
+            window.location.href = 'dashboard.html';
+        } else {
+            const error = document.getElementById('form-error');
+            error.textContent = data.message || 'Error saving profile';
+            error.style.display='block';
+        }
+    })
+    .catch(err=>{
+        console.error(err);
+        const error = document.getElementById('form-error');
+        error.textContent = 'Something went wrong!';
+        error.style.display='block';
+    });
+}
+
+</script>
+
+</body>
+</html>
