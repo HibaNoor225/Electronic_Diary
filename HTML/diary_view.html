@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Diary</title>
+
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
 body {
@@ -13,7 +14,7 @@ body {
     line-height: 1.8;
 }
 .container {
-    max-width:800px;
+    max-width:900px;
     margin:0 auto;
     background: #fdfbf7;
     border-radius:20px;
@@ -47,79 +48,250 @@ body {
     margin-bottom: 30px;
     box-shadow: 0 4px 15px rgba(139,69,19,0.3);
 }
-.back-btn:hover {
-    background: #a0522d;
-    transform: translateY(-2px);
-}
-.diary-header {
-    text-align: center;
-    margin-bottom: 40px;
-    border-bottom: 2px solid #d4c5a9;
-    padding-bottom: 20px;
-}
-.diary-date {
-    font-size: 2.5rem;
-    color: #5d4037;
-    font-weight: bold;
-    text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
-    margin-bottom: 10px;
-}
-.diary-subtitle {
-    font-size: 1.2rem;
-    color: #8d6e63;
-    font-style: italic;
-}
-.diary-content {
-    color: #2c2c2c;
-    font-size: 1.1rem;
-    text-align: justify;
-}
+.back-btn:hover { background: #a0522d; transform: translateY(-2px); }
+
+.diary-header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #d4c5a9; padding-bottom: 20px; }
+.diary-date { font-size: 2.5rem; color: #5d4037; font-weight: bold; text-shadow: 1px 1px 3px rgba(93,64,55,0.2); margin-bottom: 10px; }
+.diary-subtitle { font-size: 1.2rem; color: #8d6e63; font-style: italic; }
+
+.diary-content { color: #2c2c2c; font-size: 1.1rem; text-align: justify; }
+
 .event-story {
     margin-bottom: 35px;
     position: relative;
     padding-left: 40px;
+    background: #fff8f0;
+    border-radius: 15px;
+    padding: 20px 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease;
 }
+.event-story:hover { transform: translateY(-3px); }
 .event-story::before {
     content: '●';
     position: absolute;
     left: -5px;
-    top: 5px;
+    top: 10px;
     color: #e74c3c;
     font-size: 1.5rem;
 }
-.story-paragraph {
-    margin-bottom: 20px;
-    text-indent: 30px;
-    color: #333;
+.story-paragraph { margin-bottom: 20px; text-indent: 30px; color: #333; }
+.story-time { color: #8d6e63; font-size: 0.9rem; font-style: italic; margin-bottom: 15px; text-indent: 0; }
+.meta-info { margin-bottom: 10px; color: #8d6e63; font-style: italic; font-size: 0.95rem; }
+.category-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #d4c5a9; color: #5d4037; font-size: 0.85rem; margin-left: 6px; }
+
+/* Gallery Styles */
+.media-gallery {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f6f1;
+    border-radius: 12px;
+    border: 2px solid #e6d8c5;
 }
-.inline-media {
-    margin: 25px 0;
-    text-align: center;
+
+.gallery-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
 }
-.inline-media img, .inline-media video {
-    width: 300px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    border: 4px solid #fff;
-    transition: transform 0.3s ease;
+
+.gallery-title {
+    font-size: 1.1rem;
+    color: #5d4037;
+    font-weight: bold;
+    flex: 1;
 }
-.inline-media img:hover, .inline-media video:hover {
-    transform: scale(1.05);
+
+.media-tabs {
+    display: flex;
+    gap: 10px;
+    background: #fff;
+    padding: 8px 16px;
+    border-radius: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 350px;
+    justify-content: center;
 }
-.media-caption {
-    font-style: italic;
-    color: #666;
-    font-size: 0.9rem;
-    margin-top: 10px;
-    text-align: center;
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #8d6e63;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 90px;
+    justify-content: center;
 }
-.inline-media video, .inline-media audio {
-    max-width: 100%;
+
+.tab-btn.active {
+    background: #8b4513;
+    color: white;
+    box-shadow: 0 2px 8px rgba(139,69,19,0.3);
+}
+
+.tab-btn:hover:not(.active) {
+    background: #f0f0f0;
+}
+
+.tab-count {
+    background: rgba(255,255,255,0.2);
+    color: inherit;
+    padding: 2px 6px;
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    font-size: 0.8rem;
+    min-width: 18px;
+    text-align: center;
 }
+
+.tab-btn.active .tab-count {
+    background: rgba(255,255,255,0.3);
+}
+
+.media-grid {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.media-grid.active {
+    display: grid;
+}
+
+.media-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
+    cursor: pointer;
+    background: white;
+}
+
+.media-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.media-thumbnail {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+}
+
+.audio-thumbnail {
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+}
+
+.media-caption {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    color: #666;
+    background: white;
+    border-top: 1px solid #eee;
+    line-height: 1.3;
+}
+
+.no-media {
+    text-align: center;
+    color: #8d6e63;
+    font-style: italic;
+    padding: 30px;
+    background: rgba(212,197,169,0.1);
+    border-radius: 8px;
+    border: 2px dashed #d4c5a9;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-media {
+    width: 100%;
+    max-height: calc(95vh - 80px);
+    object-fit: contain;
+    display: block;
+    background: #000;
+}
+
+.modal-caption {
+    padding: 15px 20px;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+    border-top: 1px solid #333;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.modal-close:hover {
+    background: #fff;
+    transform: scale(1.1);
+}
+
 .no-events {
     text-align: center;
     color: #8d6e63;
@@ -130,27 +302,27 @@ body {
     border-radius: 15px;
     border: 2px dashed #d4c5a9;
 }
-.story-time {
-    color: #8d6e63;
-    font-size: 0.9rem;
-    font-style: italic;
-    margin-bottom: 15px;
-    text-indent: 0;
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
-.meta-info {
-    margin-bottom: 10px;
-    color: #8d6e63;
-    font-style: italic;
-    font-size: 0.95rem;
-}
-.category-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #d4c5a9;
-    color: #5d4037;
-    font-size: 0.85rem;
-    margin-left: 6px;
+
+@media (max-width: 768px) {
+    .media-tabs {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .tab-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
 }
 </style>
 </head>
@@ -164,10 +336,18 @@ body {
     <div class="diary-content" id="diary-content"></div>
 </div>
 
+<!-- Modal for media viewing -->
+<div class="modal" id="mediaModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div id="modalMediaContainer"></div>
+        <div class="modal-caption" id="modalCaption"></div>
+    </div>
+</div>
+
 <script>
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
-
 const urlParams = new URLSearchParams(window.location.search);
 let date = urlParams.get('date');
 
@@ -183,6 +363,203 @@ document.getElementById('diary-date').textContent = readableDate;
 
 const contentContainer = document.getElementById('diary-content');
 
+function createMediaGallery(media, eventTitle) {
+    if (!media || media.length === 0) return null;
+
+    const galleryContainer = document.createElement('div');
+    galleryContainer.className = 'media-gallery';
+
+    // Group media by type
+    const imageMedia = media.filter(m => m.type === 'image');
+    const videoMedia = media.filter(m => m.type === 'video');
+    const audioMedia = media.filter(m => m.type === 'audio');
+
+    // Gallery header
+    const galleryHeader = document.createElement('div');
+    galleryHeader.className = 'gallery-header';
+
+    const galleryTitle = document.createElement('div');
+    galleryTitle.className = 'gallery-title';
+    galleryTitle.innerHTML = '📁 Media Gallery';
+
+    // Media type tabs
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'media-tabs';
+
+    const tabs = [
+        { type: 'images', label: '🖼️ Images', data: imageMedia, icon: '🖼️', text: 'Images' },
+        { type: 'videos', label: '🎬 Videos', data: videoMedia, icon: '🎬', text: 'Videos' },
+        { type: 'audio', label: '🎵 Audio', data: audioMedia, icon: '🎵', text: 'Audio' }
+    ];
+
+    let activeTab = null;
+
+    tabs.forEach((tab, index) => {
+        if (tab.data.length > 0) {
+            const tabBtn = document.createElement('button');
+            tabBtn.className = 'tab-btn';
+            tabBtn.innerHTML = `
+                <span>${tab.icon}</span>
+                <span>${tab.text}</span>
+                <span class="tab-count">${tab.data.length}</span>
+            `;
+            tabBtn.onclick = () => switchTab(tab.type, galleryContainer);
+            tabsContainer.appendChild(tabBtn);
+
+            if (!activeTab) {
+                activeTab = tab.type;
+                tabBtn.classList.add('active');
+            }
+        }
+    });
+
+    galleryHeader.appendChild(galleryTitle);
+    galleryHeader.appendChild(tabsContainer);
+    galleryContainer.appendChild(galleryHeader);
+
+    // Create media grids
+    tabs.forEach(tab => {
+        if (tab.data.length > 0) {
+            const mediaGrid = document.createElement('div');
+            mediaGrid.className = 'media-grid';
+            mediaGrid.id = `${tab.type}-grid`;
+            
+            if (tab.type === activeTab) {
+                mediaGrid.classList.add('active');
+            }
+
+            tab.data.forEach(file => {
+                const mediaItem = document.createElement('div');
+                mediaItem.className = 'media-item';
+                mediaItem.onclick = () => openModal(file, eventTitle);
+
+                if (file.type === 'image') {
+                    const img = document.createElement('img');
+                    img.className = 'media-thumbnail';
+                    img.src = `http://localhost:3000/uploads/${file.url}`;
+                    img.alt = file.caption || eventTitle;
+                    mediaItem.appendChild(img);
+                } else if (file.type === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'media-thumbnail';
+                    video.src = `http://localhost:3000/uploads/${file.url}`;
+                    video.muted = true;
+                    mediaItem.appendChild(video);
+                } else if (file.type === 'audio') {
+                    const audioThumb = document.createElement('div');
+                    audioThumb.className = 'audio-thumbnail';
+                    audioThumb.innerHTML = '🎵';
+                    mediaItem.appendChild(audioThumb);
+                }
+
+                const caption = document.createElement('div');
+                caption.className = 'media-caption';
+                caption.textContent = file.caption || `${file.type} from ${eventTitle}`;
+                mediaItem.appendChild(caption);
+
+                mediaGrid.appendChild(mediaItem);
+            });
+
+            galleryContainer.appendChild(mediaGrid);
+        }
+    });
+
+    // Show "no media" message if no media exists
+    if (media.length === 0) {
+        const noMedia = document.createElement('div');
+        noMedia.className = 'no-media';
+        noMedia.textContent = 'No media files for this memory';
+        galleryContainer.appendChild(noMedia);
+    }
+
+    return galleryContainer;
+}
+
+function switchTab(tabType, galleryContainer) {
+    // Remove active class from all tabs and grids
+    galleryContainer.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    galleryContainer.querySelectorAll('.media-grid').forEach(grid => grid.classList.remove('active'));
+
+    // Add active class to clicked tab and corresponding grid
+    event.target.closest('.tab-btn').classList.add('active');
+    const targetGrid = galleryContainer.querySelector(`#${tabType}-grid`);
+    if (targetGrid) targetGrid.classList.add('active');
+}
+
+function openModal(file, eventTitle) {
+    const modal = document.getElementById('mediaModal');
+    const modalMediaContainer = document.getElementById('modalMediaContainer');
+    const modalCaption = document.getElementById('modalCaption');
+
+    modalMediaContainer.innerHTML = '';
+
+    if (file.type === 'image') {
+        const img = document.createElement('img');
+        img.className = 'modal-media';
+        img.src = `http://localhost:3000/uploads/${file.url}`;
+        img.alt = file.caption || eventTitle;
+        modalMediaContainer.appendChild(img);
+    } else if (file.type === 'video') {
+        const video = document.createElement('video');
+        video.className = 'modal-media';
+        video.src = `http://localhost:3000/uploads/${file.url}`;
+        video.controls = true;
+        video.autoplay = false;
+        video.style.width = '100%';
+        video.style.height = 'auto';
+        video.style.maxHeight = 'calc(95vh - 80px)';
+        modalMediaContainer.appendChild(video);
+    } else if (file.type === 'audio') {
+        const audioContainer = document.createElement('div');
+        audioContainer.style.display = 'flex';
+        audioContainer.style.alignItems = 'center';
+        audioContainer.style.justifyContent = 'center';
+        audioContainer.style.minHeight = '200px';
+        audioContainer.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        
+        const audio = document.createElement('audio');
+        audio.src = `http://localhost:3000/uploads/${file.url}`;
+        audio.controls = true;
+        audio.autoplay = false;
+        audio.style.width = '80%';
+        audio.style.maxWidth = '500px';
+        
+        audioContainer.appendChild(audio);
+        modalMediaContainer.appendChild(audioContainer);
+    }
+
+    modalCaption.textContent = file.caption || `Media from: ${eventTitle}`;
+    modal.classList.add('active');
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('mediaModal');
+    modal.classList.remove('active');
+    
+    // Stop any playing media
+    const modalMedia = modal.querySelectorAll('video, audio');
+    modalMedia.forEach(media => {
+        media.pause();
+        media.currentTime = 0;
+    });
+    
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+document.getElementById('mediaModal').onclick = function(e) {
+    if (e.target === this) closeModal();
+};
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+
 async function loadDiaryStory() {
     contentContainer.innerHTML = '';
     try {
@@ -191,6 +568,12 @@ async function loadDiaryStory() {
         });
         if (res.status === 404) {
             contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
+            return;
+        }
+        if(res.status === 401){
+            alert("Session expired. Please log in again.");
+            localStorage.removeItem('token');
+            window.location.href = 'register_login.html';
             return;
         }
 
@@ -212,7 +595,6 @@ async function loadDiaryStory() {
             timeElement.textContent = `Chapter ${index + 1}`;
             storySection.appendChild(timeElement);
 
-            // Mood & Category
             if(event.mood || event.category){
                 const metaContainer = document.createElement('div');
                 metaContainer.className = 'meta-info';
@@ -234,27 +616,12 @@ async function loadDiaryStory() {
             storyParagraph.innerHTML = `<strong>${event.title}</strong> - ${event.description || 'A moment worth remembering.'}`;
             storySection.appendChild(storyParagraph);
 
+            // Add professional media gallery
             if(event.media && event.media.length > 0){
-                event.media.forEach((file)=>{
-                    const mediaContainer = document.createElement('div');
-                    mediaContainer.className = 'inline-media';
-                    const ext = file.split('.').pop().toLowerCase();
-                    let mediaElement;
-                    if(['jpg','jpeg','png','gif','webp'].includes(ext)) mediaElement = document.createElement('img');
-                    else if(['mp4','webm','ogg'].includes(ext)) { mediaElement = document.createElement('video'); mediaElement.controls=true; }
-                    else if(['mp3','wav','ogg'].includes(ext)) { mediaElement = document.createElement('audio'); mediaElement.controls=true; }
-                    else return;
-
-                    mediaElement.src = `http://localhost:3000/uploads/${file}`;
-                    mediaContainer.appendChild(mediaElement);
-
-                    const caption = document.createElement('div');
-                    caption.className = 'media-caption';
-                    caption.textContent = `A captured moment from this memory`;
-                    mediaContainer.appendChild(caption);
-
-                    storySection.appendChild(mediaContainer);
-                });
+                const gallery = createMediaGallery(event.media, event.title);
+                if (gallery) {
+                    storySection.appendChild(gallery);
+                }
             }
 
             contentContainer.appendChild(storySection);

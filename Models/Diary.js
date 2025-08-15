@@ -23,7 +23,12 @@ const moodEmojis = {
 const eventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
-  media: [{ type: String }],  // Array of file paths (images, videos, audio)
+ media: [{
+  url: { type: String, required: true },   // file path
+  caption: { type: String, default: '' },  // short description
+  type: { type: String, enum: ['image', 'video', 'audio'], default: 'image' }
+}],
+  // Array of file paths (images, videos, audio)
   category: { 
     type: String, 
     enum: ['Work', 'Personal', 'Travel', 'Family', 'Hobby','Other'], 

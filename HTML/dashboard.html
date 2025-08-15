@@ -170,6 +170,7 @@ body.dark #year-selector {
 }
 
 
+
 </style>
 </head>
 
@@ -347,6 +348,17 @@ async function loadEventsForDate(date){
                 'Content-Type':'application/json'
             }
         });
+   
+
+// ← Add this check here
+if(res.status === 401){
+    alert("Session expired. Please log in again.");
+    localStorage.removeItem('token');
+    window.location.href = 'register_login.html';
+    return;
+}
+
+        
         const data = await res.json();
         if(!res.ok) throw new Error(data.message || 'Failed to load events');
         const events = data.data?.events || [];

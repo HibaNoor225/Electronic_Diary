@@ -140,6 +140,13 @@ async function loadEvent() {
     if (!date || !eventId) { alert("Invalid URL"); window.location.href='dashboard.html'; return; }
     try {
         const res = await fetch(`${API_BASE_URL}/diary/${date}`, { headers:{'Authorization':`Bearer ${token}`}});
+        // ← Add this check here
+if(res.status === 401){
+    alert("Session expired. Please log in again.");
+    localStorage.removeItem('token');
+    window.location.href = 'register_login.html';
+    return;
+}
         const data = await res.json();
         console.log(data);
         if (!res.ok) throw new Error(data.message || 'Failed to load event');
@@ -173,41 +180,109 @@ moodSelect.addEventListener('change', (e) => {
 });
 
         renderMediaPreviews();
-    } catch(err){ console.error(err); alert('Error loading event'); }
+    } catch(err){ 
+         console.error("Error in loadEvent:", err); 
+        alert('Error loading event'); }
 }
 
 function renderMediaPreviews(){
-    mediaPreview.innerHTML='';
-    const totalMedia = existingMedia.length+newMediaFiles.length;
-    mediaSection.style.display = totalMedia===0?'none':'block';
+    mediaPreview.innerHTML = '';
+    const totalMedia = existingMedia.length + newMediaFiles.length;
+    mediaSection.style.display = totalMedia === 0 ? 'none' : 'block';
 
-    existingMedia.forEach(mediaPath=>{
-        const type = mediaPath.split('.').pop().toLowerCase();
-        const item = document.createElement('div'); item.className='media-item';
+    // Existing media
+    existingMedia.forEach((mediaObj, idx) => {
+        const type = mediaObj.type; // 'image', 'video', 'audio'
+        const item = document.createElement('div');
+        item.className = 'media-item';
+
         let mediaEl;
-        if(['jpg','jpeg','png','gif','webp'].includes(type)){
-            mediaEl = document.createElement('img'); mediaEl.src=`http://localhost:3000/uploads/${mediaPath}`;
-        } else if(['mp4','webm','ogg','mov'].includes(type)){
-            mediaEl = document.createElement('video'); mediaEl.src=`http://localhost:3000/uploads/${mediaPath}`; mediaEl.controls=true;
-        } else if(['mp3','wav','ogg','m4a'].includes(type)){
-            mediaEl = document.createElement('audio'); mediaEl.src=`http://localhost:3000/uploads/${mediaPath}`; mediaEl.controls=true;
+        if (type === 'image') {
+            mediaEl = document.createElement('img');
+            mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
+        } else if (type === 'video') {
+            mediaEl = document.createElement('video');
+            mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
+            mediaEl.controls = true;
+        } else if (type === 'audio') {
+            mediaEl = document.createElement('audio');
+            mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
+            mediaEl.controls = true;
         }
-        const removeBtn = document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.innerHTML='×';
-        removeBtn.onclick=(e)=>{ e.preventDefault(); if(confirm('Remove this memory?')){ removedMedia.push(mediaPath); existingMedia=existingMedia.filter(m=>m!==mediaPath); renderMediaPreviews(); }};
-        if(mediaEl){ item.appendChild(mediaEl); item.appendChild(removeBtn); mediaPreview.appendChild(item); }
+
+        const captionInput = document.createElement('input');
+        captionInput.type = 'text';
+        captionInput.placeholder = 'Add caption...';
+        captionInput.className = 'media-caption';
+        captionInput.dataset.index = idx;
+        captionInput.value = mediaObj.caption || '';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = (e) => {
+            e.preventDefault();
+            if(confirm('Remove this memory?')){
+                removedMedia.push(mediaObj.url); 
+                existingMedia = existingMedia.filter(m => m.url !== mediaObj.url);
+                renderMediaPreviews();
+            }
+        };
+
+        if(mediaEl){
+            item.appendChild(mediaEl);
+            item.appendChild(captionInput);
+            item.appendChild(removeBtn);
+            mediaPreview.appendChild(item);
+        }
     });
 
-    newMediaFiles.forEach((file,index)=>{
-        const type = file.type.split('/')[0]; const item = document.createElement('div'); item.className='media-item';
-        const fileURL = URL.createObjectURL(file); let mediaEl;
-        if(type==='image'){ mediaEl=document.createElement('img'); mediaEl.src=fileURL; }
-        else if(type==='video'){ mediaEl=document.createElement('video'); mediaEl.src=fileURL; mediaEl.controls=true; }
-        else if(type==='audio'){ mediaEl=document.createElement('audio'); mediaEl.src=fileURL; mediaEl.controls=true; }
-        const removeBtn = document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.innerHTML='×';
-        removeBtn.onclick=(e)=>{ e.preventDefault(); URL.revokeObjectURL(fileURL); newMediaFiles.splice(index,1); renderMediaPreviews(); };
-        if(mediaEl){ item.appendChild(mediaEl); item.appendChild(removeBtn); mediaPreview.appendChild(item); }
+    // New media (same as before)
+    newMediaFiles.forEach((file, index) => {
+        const type = file.type.split('/')[0]; 
+        const item = document.createElement('div'); 
+        item.className = 'media-item';
+
+        const fileURL = URL.createObjectURL(file); 
+        let mediaEl;
+        if(type==='image'){ 
+            mediaEl = document.createElement('img'); 
+            mediaEl.src = fileURL; 
+        } else if(type==='video'){ 
+            mediaEl = document.createElement('video'); 
+            mediaEl.src = fileURL; 
+            mediaEl.controls = true; 
+        } else if(type==='audio'){ 
+            mediaEl = document.createElement('audio'); 
+            mediaEl.src = fileURL; 
+            mediaEl.controls = true; 
+        }
+
+        const captionInput = document.createElement('input');
+        captionInput.type = 'text';
+        captionInput.placeholder = 'Add caption...';
+        captionInput.className = 'media-caption';
+        captionInput.dataset.index = index + existingMedia.length;
+
+        const removeBtn = document.createElement('button'); 
+        removeBtn.className = 'remove-btn'; 
+        removeBtn.innerHTML='×';
+        removeBtn.onclick = (e) => { 
+            e.preventDefault(); 
+            URL.revokeObjectURL(fileURL); 
+            newMediaFiles.splice(index,1); 
+            renderMediaPreviews(); 
+        };
+
+        if(mediaEl){ 
+            item.appendChild(mediaEl); 
+            item.appendChild(captionInput);   
+            item.appendChild(removeBtn); 
+            mediaPreview.appendChild(item); 
+        }
     });
 }
+
 
 mediaInput.addEventListener('change', e=>{
     const files=Array.from(e.target.files);
@@ -226,6 +301,8 @@ formData.append('mood', moodSelect.value);
     formData.append('description',descInput.value.trim());
     if(removedMedia.length>0) formData.append('removedMedia',JSON.stringify(removedMedia));
     newMediaFiles.forEach(file=>formData.append('media',file));
+    const captionsInputs = form.querySelectorAll('.media-caption');
+captionsInputs.forEach(input => formData.append('captions', input.value.trim()));
 
     try{
         const res=await fetch(`${API_BASE_URL}/diary/${date}/${eventId}`,{
@@ -244,5 +321,6 @@ formData.append('mood', moodSelect.value);
 window.addEventListener('beforeunload', ()=>{ newMediaFiles.forEach(file=>URL.revokeObjectURL(file.url)); });
 loadEvent();
 </script>
+
 </body>
 </html>

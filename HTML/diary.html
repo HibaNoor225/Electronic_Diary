@@ -564,33 +564,52 @@ function createEventForm() {
     }
     
     mediaInput.addEventListener('change', (e) => {
-        mediaPreview.innerHTML = '';
-        const files = Array.from(e.target.files);
-        if (files.length > 0) {
-            mediaPreview.style.display = 'grid';
-            files.forEach(file => {
-                const type = file.type.split('/')[0];
-                const url = URL.createObjectURL(file);
-                let mediaEl;
-                if (type === 'image') {
-                    mediaEl = document.createElement('img');
-                    mediaEl.src = url;
-                    mediaEl.alt = 'Memory preview';
-                } else if (type === 'video') {
-                    mediaEl = document.createElement('video');
-                    mediaEl.src = url;
-                    mediaEl.controls = true;
-                } else if (type === 'audio') {
-                    mediaEl = document.createElement('audio');
-                    mediaEl.src = url;
-                    mediaEl.controls = true;
-                }
-                if (mediaEl) mediaPreview.appendChild(mediaEl);
-            });
-        } else {
-            mediaPreview.style.display = 'none';
-        }
-    });
+    mediaPreview.innerHTML = '';
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+        mediaPreview.style.display = 'grid';
+        files.forEach((file, idx) => {
+            const type = file.type.split('/')[0];
+            const url = URL.createObjectURL(file);
+
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.gap = '5px';
+
+            let mediaEl;
+            if (type === 'image') {
+                mediaEl = document.createElement('img');
+                mediaEl.src = url;
+            } else if (type === 'video') {
+                mediaEl = document.createElement('video');
+                mediaEl.src = url;
+                mediaEl.controls = true;
+            } else if (type === 'audio') {
+                mediaEl = document.createElement('audio');
+                mediaEl.src = url;
+                mediaEl.controls = true;
+            }
+            mediaEl.style.maxHeight = '100px';
+            mediaEl.style.borderRadius = '5px';
+
+            // **CAPTION INPUT**
+            const captionInput = document.createElement('input');
+            captionInput.type = 'text';
+            captionInput.placeholder = 'Add caption...';
+            captionInput.className = 'media-caption';
+            captionInput.dataset.index = idx;
+
+            wrapper.appendChild(mediaEl);
+            wrapper.appendChild(captionInput);
+            mediaPreview.appendChild(wrapper);
+        });
+    } else {
+        mediaPreview.style.display = 'none';
+    }
+});
+
+
 
     moodSelector.addEventListener('change', (e) => {
         const mood = e.target.value;
@@ -652,13 +671,20 @@ saveAllBtn.onclick = async () => {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', desc);
-        formData.append('category', category);
-        formData.append('mood', mood);
-        formData.append('date', date);
-        for (const file of mediaFiles) formData.append('media', file);
+       const formData = new FormData();
+formData.append('title', title);
+formData.append('description', desc);
+formData.append('category', category);
+formData.append('mood', mood);
+formData.append('date', date);
+
+// Add media files
+for (const file of mediaFiles) formData.append('media', file);
+
+// **NEW: Add captions**
+const captionsInputs = form.querySelectorAll('.media-caption');
+captionsInputs.forEach(input => formData.append('captions', input.value.trim()));
+
 
         try {
             const res = await fetch(`${API_BASE_URL}/diary`, {
@@ -666,6 +692,13 @@ saveAllBtn.onclick = async () => {
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
+            // ← Add this check here
+if(res.status === 401){
+    alert("Session expired. Please log in again.");
+    localStorage.removeItem('token');
+    window.location.href = 'register_login.html';
+    return;
+}
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
         } catch (err) {
