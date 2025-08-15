@@ -10,6 +10,7 @@ const passport=require('./config/passport');
 const diaryRoutes = require('./Routes/diaryRoutes');
 
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/HTML', express.static(path.join(__dirname, 'HTML')));
 app.use(passport.initialize());
@@ -46,14 +47,6 @@ app.use('/api/diary', diaryRoutes);
 
 
 
-//For invalid requests
-app.use((req, res) => {
-  res.status(404).json({
-    result: "failure",
-    message: "Route not found",
-    data: null
-  });
-});
 
 
 // Error handler 
@@ -65,6 +58,16 @@ app.use((err, req, res, next) => {
     data: null
   });
 });
+
+//For invalid requests
+app.use((req, res) => {
+  res.status(404).json({
+    result: "failure",
+    message: "Route not found",
+    data: null
+  });
+});
+
 
 
 module.exports=app

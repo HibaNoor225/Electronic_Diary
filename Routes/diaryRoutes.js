@@ -8,7 +8,7 @@ const authMiddleware = require('../middleware/authMiddleware'); // protect route
 router.post('/', authMiddleware, uploadDiary.array('media'), diaryController.addEvent);
 
 // Get all events for a date
-router.get('/:date', authMiddleware, diaryController.getDiaryByDate);
+router.get('/:date', authMiddleware, diaryController.getEventsByDate);
 
 // Edit an event
 router.put('/:date/:eventId', authMiddleware, uploadDiary.array('media', 10), diaryController.editEvent);

@@ -3,6 +3,25 @@ const { sendSuccess, sendError } = require('../utils/responseFormatter');
 const generateToken = require('../utils/tokenGeneration');
 const { upload, validateImageDimensions } = require('../middleware/uploadImage');
 
+const runUploadMiddleware = (req, res) => {
+    return new Promise((resolve, reject) => {
+        upload(req, res, (err) => {
+            if (err) return reject(err);
+            resolve();
+        });
+    });
+};
+
+// You'll need to do the same for your image dimension validation middleware
+// if it also uses a callback.
+const runImageDimensionValidation = (req, res) => {
+    return new Promise((resolve, reject) => {
+        validateImageDimensions(req, res, (err) => {
+            if (err) return reject(err);
+            resolve();
+        });
+    });
+};
 class UserController {
 
   // Register a new user
@@ -92,16 +111,24 @@ async login(req, res) {
   }
 }
 
-  
-
-  // Google login
   async googleLogin(req, res) {
-    try {
-      const googleProfile = req.user;
-      const email = googleProfile.emails?.[0]?.value;
+  try {
+    const googleProfile = req.user;
+    const email = googleProfile.emails?.[0]?.value;
 
-      let user = await User.findOne({ email });
-      if (!user) {
+    // Step 1: Find user by Google ID first
+    let user = await User.findOne({ googleId: googleProfile.id });
+
+    // Step 2: If not found, check if a user with same email exists
+    if (!user) {
+      user = await User.findOne({ email });
+
+      if (user) {
+        // Link Google ID to existing user
+        user.googleId = googleProfile.id;
+        await user.save();
+      } else {
+        // New user
         user = await User.create({
           username: googleProfile.displayName,
           email,
@@ -109,30 +136,37 @@ async login(req, res) {
           role: 'user'
         });
       }
-
-      const token = generateToken(user);
-      const hasProfile = Boolean(user.fullName && user.username);
-
-
-      if (hasProfile) {
-        return res.redirect(`http://localhost:3000/HTML/dashboard.html?token=${token}`);
-      } else {
-        return res.redirect(`http://localhost:3000/HTML/profile.html?token=${token}`);
-      }
-    } catch (err) {
-      console.error(err);
-      return sendError(res, "Google login failed", 500);
     }
+
+    const token = generateToken(user);
+    const hasProfile = Boolean(user.fullName && user.username);
+
+    return res.redirect(
+      hasProfile
+        ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
+        : `http://localhost:3000/HTML/profile.html?token=${token}`
+    );
+
+  } catch (err) {
+    console.error("Google login error:", err);
+    return sendError(res, "Google login failed", 500);
   }
+}
 
-  // Facebook login
-  async facebookLogin(req, res) {
-    try {
-      const fbProfile = req.user;
-      const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
+async facebookLogin(req, res) {
+  try {
+    const fbProfile = req.user;
+    const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
 
-      let user = await User.findOne({ email });
-      if (!user) {
+    let user = await User.findOne({ facebookId: fbProfile.id });
+
+    if (!user) {
+      user = await User.findOne({ email });
+
+      if (user) {
+        user.facebookId = fbProfile.id;
+        await user.save();
+      } else {
         user = await User.create({
           username: fbProfile.displayName,
           email,
@@ -140,40 +174,63 @@ async login(req, res) {
           role: 'user'
         });
       }
-
-      const token = generateToken(user);
-     const hasProfile = Boolean(user.fullName && user.username);
-
-
-      if (hasProfile) {
-        return res.redirect(`http://localhost:3000/HTML/dashboard.html?token=${token}`);
-      } else {
-        return res.redirect(`http://localhost:3000/HTML/profile.html?token=${token}`);
-      }
-    } catch (err) {
-      console.error(err);
-      return sendError(res, "Facebook login failed", 500);
     }
+
+    const token = generateToken(user);
+    const hasProfile = Boolean(user.fullName && user.username);
+
+    return res.redirect(
+      hasProfile
+        ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
+        : `http://localhost:3000/HTML/profile.html?token=${token}`
+    );
+
+  } catch (err) {
+    console.error("Facebook login error:", err);
+    return sendError(res, "Facebook login failed", 500);
   }
+}
+
 
   // Update profile
-  async updateProfile(req, res) {
-    upload(req, res, async (err) => {
-      if (err) return sendError(res, err.message || 'File upload failed', 400);
+// A helper function to promisify the upload middleware.
+// This allows you to use 'await' with the callback-based 'upload' function.
 
-      await validateImageDimensions(req, res, async () => {
-        try {
-          const { fullName, username, bio, gender, age } = req.body;
-          const updateData = { fullName, username, bio, gender, age };
 
-          if (req.file) {
+
+// The corrected and simplified updateProfile function
+async updateProfile(req, res) {
+    try {
+        // Step 1: Run the file upload middleware.
+        // The await keyword ensures this completes before moving on.
+        await runUploadMiddleware(req, res);
+
+        // Step 2: Run the image dimension validation.
+        // Again, this is awaited for sequential execution.
+        await runImageDimensionValidation(req, res);
+        
+        // Step 3: Extract data and prepare the update object.
+        const { fullName, username, bio, gender, age } = req.body;
+        const updateData = { fullName, username, bio, gender, age };
+
+        // Step 4: If a file was successfully uploaded, add the photo path to the update.
+        if (req.file) {
             updateData.profilePhoto = `/uploads/profilePhotos/${req.file.filename}`;
-          }
+        }
+        
+        // Step 5: Find the user by ID and update their profile in the database.
+        const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
 
-          const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
-          if (!updatedUser) return sendError(res, 'User not found', 404);
+        // Handle the case where the user is not found.
+        if (!updatedUser) {
+            return sendError(res, 'User not found', 404);
+        }
+        console.log("User ID:", req.info?.id);
+console.log("Body:", req.body);
+console.log("File:", req.file);
 
-          sendSuccess(res, 'Profile added successfully', {
+        // Step 6: Send a success response with the updated user data.
+        sendSuccess(res, 'Profile added successfully', {
             id: updatedUser._id,
             fullName: updatedUser.fullName,
             username: updatedUser.username,
@@ -181,14 +238,14 @@ async login(req, res) {
             gender: updatedUser.gender,
             age: updatedUser.age,
             profilePhoto: updatedUser.profilePhoto
-          });
-        } catch (err) {
-          console.error(err);
-          sendError(res, 'Failed to update profile', 500);
-        }
-      });
-    });
-  }
+        });
+
+    } catch (err) {
+        // Catch any errors from the middleware or the database operation.
+        console.error("Profile update error:", err);
+        return sendError(res, err.message || 'Failed to update profile', 500);
+    }
+}
 }
 
 module.exports = new UserController();

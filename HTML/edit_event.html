@@ -3,71 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Edit Diary Event</title>
+<title>Edit Diary Entry</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-body {
-    background: linear-gradient(135deg,#2c2c2c,#1a1a1a);
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-    padding:20px;
-}
-.container {
-    width:100%;
-    max-width:700px;
-    background:#f5f4f0;
-    border-radius:15px;
-    padding:30px;
-    box-shadow:0 15px 40px rgba(0,0,0,0.3);
-}
-h1 { text-align:center; color:#333; margin-bottom:20px; }
-form input, form textarea {
-    width:100%;
-    padding:12px;
-    margin-bottom:10px;
-    border-radius:8px;
-    border:1px solid #ddd;
-}
-form button {
-    padding:12px 20px;
-    background:#4a90e2;
-    color:white;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-}
-form button:hover { background:#357ABD; }
-.media-preview { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-.media-item { position: relative; display:flex; flex-direction:column; align-items:center; }
-.media-item img, .media-item video, .media-item audio {
-    max-width:100px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-.remove-btn {
-    position:absolute;
-    top:-5px; right:-5px;
-    background:red; color:white; border:none; border-radius:50%;
-    width:20px; height:20px; cursor:pointer; font-weight:bold;
-}
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Georgia','Times New Roman',serif; }
+body { background: linear-gradient(135deg,#f7f3e9,#e8dcc6); min-height:100vh; padding:20px; line-height:1.8; }
+.container { max-width:800px; margin:0 auto; background:#fdfbf7; border-radius:20px; padding:50px 60px; box-shadow:0 20px 60px rgba(139,69,19,0.15); border:3px solid #d4c5a9; position:relative; }
+.container::before { content:''; position:absolute; top:0; left:40px; width:2px; height:100%; background:#e74c3c; opacity:0.3; }
+.back-btn { margin-left:20px; padding:12px 24px; background:#8b4513; color:white; border:none; border-radius:25px; cursor:pointer; font-weight:500; transition:0.3s; text-decoration:none; display:inline-block; margin-bottom:30px; font-family:-apple-system,BlinkMacSystemFont,sans-serif; box-shadow:0 4px 15px rgba(139,69,19,0.3); }
+.back-btn:hover { background:#a0522d; transform:translateY(-2px); }
+.diary-header { text-align:center; margin-bottom:40px; border-bottom:2px solid #d4c5a9; padding-bottom:20px; }
+.diary-title { font-size:2.5rem; color:#5d4037; font-weight:bold; text-shadow:1px 1px 3px rgba(93,64,55,0.2); margin-bottom:10px; }
+.diary-subtitle { font-size:1.2rem; color:#8d6e63; font-style:italic; }
+.form-section { margin-bottom:35px; position:relative; padding-left:40px; }
+.form-section::before { content:'●'; position:absolute; left:-5px; top:5px; color:#e74c3c; font-size:1.5rem; }
+.form-group { margin-bottom:25px; }
+.form-group label { display:block; margin-bottom:12px; font-weight:600; color:#5d4037; font-size:1.2em; text-shadow:1px 1px 2px rgba(93,64,55,0.1); }
+form input, form textarea, .event-category, .event-mood { width:100%; padding:18px; border-radius:15px; border:2px solid #d4c5a9; font-size:1.1rem; background:rgba(255,255,255,0.9); transition:all 0.3s ease; color:#2c2c2c; line-height:1.6; font-family:'Georgia','Times New Roman',serif; }
+form input:focus, form textarea:focus, .event-category:focus, .event-mood:focus { outline:none; border-color:#8b4513; box-shadow:0 0 20px rgba(139,69,19,0.2); transform:translateY(-2px); background:rgba(255,255,255,1); }
+textarea { resize:vertical; min-height:150px; text-align:justify; }
+.file-input-wrapper { position:relative; display:inline-block; cursor:pointer; width:100%; }
+.file-input-wrapper input[type=file] { position:absolute; left:-9999px; }
+.file-input-label { display:flex; align-items:center; justify-content:center; padding:18px; background:linear-gradient(135deg,#8b4513,#a0522d); color:white; border-radius:15px; cursor:pointer; transition:all 0.3s ease; font-weight:600; gap:15px; font-size:1.1rem; box-shadow:0 4px 15px rgba(139,69,19,0.3); border:2px solid transparent; }
+.file-input-label:hover { transform:translateY(-3px); box-shadow:0 8px 25px rgba(139,69,19,0.4); border-color:#d4c5a9; }
+.file-input-label::before { content:"📸"; font-size:1.4em; }
+.media-preview-section { margin-top:30px; padding:25px; background:rgba(212,197,169,0.1); border-radius:15px; border:2px dashed #d4c5a9; }
+.media-preview-title { font-size:1.3rem; color:#5d4037; font-weight:bold; margin-bottom:20px; text-align:center; text-shadow:1px 1px 2px rgba(93,64,55,0.1); }
+.media-preview { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; }
+.media-item { position:relative; border-radius:15px; overflow:hidden; background:white; box-shadow:0 8px 25px rgba(0,0,0,0.15); border:4px solid #fff; transition:all 0.3s ease; }
+.media-item:hover { transform:translateY(-5px) scale(1.02); box-shadow:0 12px 35px rgba(0,0,0,0.2); }
+.media-item img, .media-item video { width:100%; height:150px; object-fit:cover; display:block; }
+.media-item audio { width:100%; padding:15px; background:#f5f4f0; }
+.remove-btn { position:absolute; top:10px; right:10px; background:rgba(231,76,60,0.9); color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-weight:bold; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease; backdrop-filter:blur(10px); box-shadow:0 2px 10px rgba(231,76,60,0.3); }
+.remove-btn:hover { background:rgba(231,76,60,1); transform:scale(1.1); box-shadow:0 4px 15px rgba(231,76,60,0.5); }
+.submit-btn { width:100%; padding:20px; background:linear-gradient(135deg,#8b4513,#a0522d); color:white; border:none; border-radius:15px; cursor:pointer; font-size:1.3rem; font-weight:600; transition:all 0.3s ease; margin-top:30px; font-family:'Georgia','Times New Roman',serif; box-shadow:0 6px 20px rgba(139,69,19,0.3); border:2px solid transparent; }
+.submit-btn:hover { transform:translateY(-3px); box-shadow:0 10px 30px rgba(139,69,19,0.4); border-color:#d4c5a9; }
+.submit-btn:active { transform:translateY(0); }
+.submit-btn:disabled { opacity:0.7; cursor:not-allowed; transform:none; }
+.no-media-placeholder { text-align:center; color:#8d6e63; font-style:italic; padding:40px 20px; font-size:1.1rem; }
+@media (max-width:768px) { .container { margin:10px; padding:30px 40px; } .container::before { left:25px; } .back-btn { margin-left:10px; } .form-section { padding-left:25px; } .media-preview { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:15px; } .diary-title { font-size:2rem; } }
+
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>Edit Event</h1>
+    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+    <div class="diary-header">
+        <div class="diary-title">Edit Memory</div>
+        <div class="diary-subtitle">Revising a moment in time</div>
+    </div>
     <form id="edit-event-form" enctype="multipart/form-data">
-        <input type="text" id="event-title" placeholder="Event Title" required>
-        <textarea id="event-desc" placeholder="Description (optional)"></textarea>
-        <input type="file" id="event-media" name="media" multiple accept="image/*,video/*,audio/*">
-        <div class="media-preview" id="media-preview"></div>
-        <button type="submit">Save Changes</button>
+        <div class="form-section">
+            <div class="form-group">
+                <label for="event-title">Title of Memory</label>
+                <input type="text" id="event-title" placeholder="What happened on this day..." required>
+            </div>
+            <div class="form-group">
+    <label>Category</label>
+     <select id="event-category" class="event-category">
+        <option value="" disabled selected>Select Category</option>
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+        <option value="Travel">Travel</option>
+        <option value="Family">Family</option>
+        <option value="Hobby">Hobby</option>
+        <option value="Other">Other</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label>Mood <span class="mood-emoji"></span></label>
+   
+       
+<select id="event-mood" class="event-mood">
+
+        <option value="" disabled selected>Select Mood</option>
+        <option value="Happy">Happy</option>
+        <option value="Sad">Sad</option>
+        <option value="Excited">Excited</option>
+        <option value="Relaxed">Relaxed</option>
+        <option value="Stressed">Stressed</option>
+        <option value="Neutral">Neutral</option>
+    </select>
+</div>
+
+            <div class="form-group">
+                <label for="event-desc">The Story</label>
+                <textarea id="event-desc" placeholder="Tell the tale of this moment..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Captured Moments</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="event-media" name="media" multiple accept="image/*,video/*,audio/*">
+                    <label for="event-media" class="file-input-label">Add Photos & Videos</label>
+                </div>
+            </div>
+        </div>
+        <div class="media-preview-section" id="media-section" style="display:none;">
+            <div class="media-preview-title">Your Captured Memories</div>
+            <div class="media-preview" id="media-preview"></div>
+        </div>
+        <button type="submit" class="submit-btn" id="submit-btn">Save This Chapter</button>
     </form>
 </div>
 
 <script>
+    const moodEmojis = {
+  Happy: ['😊', '😁', '😄'],
+  Sad: ['😢', '😔', '😞'],
+  Excited: ['🤩', '😃', '😎'],
+  Relaxed: ['😌', '😴', '🧘'],
+  Stressed: ['😣', '😖', '😫'],
+  Neutral: ['😐', '😶', '😑']
+};
+
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
-
 const urlParams = new URLSearchParams(window.location.search);
 const date = urlParams.get('date');
 const eventId = urlParams.get('eventId');
@@ -77,98 +127,121 @@ const titleInput = document.getElementById('event-title');
 const descInput = document.getElementById('event-desc');
 const mediaInput = document.getElementById('event-media');
 const mediaPreview = document.getElementById('media-preview');
+const mediaSection = document.getElementById('media-section');
+const submitBtn = document.getElementById('submit-btn');
+const categorySelect = document.getElementById('event-category');
+const moodSelect = document.getElementById('event-mood');
 
-let existingMedia = []; // Track current media
-let removedMedia = [];  // Track removed media filenames
+let existingMedia = [];
+let removedMedia = [];
+let newMediaFiles = [];
 
-async function loadEvent(){
+async function loadEvent() {
+    if (!date || !eventId) { alert("Invalid URL"); window.location.href='dashboard.html'; return; }
     try {
-        const res = await fetch(`${API_BASE_URL}/diary/${date}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await fetch(`${API_BASE_URL}/diary/${date}`, { headers:{'Authorization':`Bearer ${token}`}});
         const data = await res.json();
-        if(!res.ok) throw new Error(data.message || 'Failed to load event');
-
-        const event = data.data.events.find(ev => ev._id === eventId);
-        if(!event) return alert('Event not found');
-
+        console.log(data);
+        if (!res.ok) throw new Error(data.message || 'Failed to load event');
+        const event = data.data.events.find(ev=>ev._id===eventId);
+        if(!event){ alert('Event not found'); window.location.href='dashboard.html'; return; }
         titleInput.value = event.title;
-        descInput.value = event.description || '';
-        existingMedia = event.media || [];
+        descInput.value = event.description||'';
+        existingMedia = event.media||[];
+        const categorySelect = document.getElementById('event-category');
+const moodSelect = document.getElementById('event-mood');
+const moodEmoji = document.querySelector('.mood-emoji');
 
-        renderMedia();
-    } catch(err){
-        console.error(err);
-        alert('Error loading event');
-    }
+categorySelect.value = event.category || '';
+moodSelect.value = event.mood || '';
+
+// Set initial emoji if mood exists
+if (event.mood && moodEmojis[event.mood]) {
+    const randomIndex = Math.floor(Math.random() * moodEmojis[event.mood].length);
+    moodEmoji.textContent = moodEmojis[event.mood][randomIndex];
 }
 
-function renderMedia(){
-    mediaPreview.innerHTML = '';
-    existingMedia.forEach((file, index) => {
-        const type = file.split('.').pop().toLowerCase();
-        const div = document.createElement('div');
-        div.className = 'media-item';
+// Update emoji when mood changes
+moodSelect.addEventListener('change', (e) => {
+    const mood = e.target.value;
+    if (moodEmojis[mood]) {
+        const randomIndex = Math.floor(Math.random() * moodEmojis[mood].length);
+        moodEmoji.textContent = moodEmojis[mood][randomIndex];
+    } else {
+        moodEmoji.textContent = '';
+    }
+});
 
+        renderMediaPreviews();
+    } catch(err){ console.error(err); alert('Error loading event'); }
+}
+
+function renderMediaPreviews(){
+    mediaPreview.innerHTML='';
+    const totalMedia = existingMedia.length+newMediaFiles.length;
+    mediaSection.style.display = totalMedia===0?'none':'block';
+
+    existingMedia.forEach(mediaPath=>{
+        const type = mediaPath.split('.').pop().toLowerCase();
+        const item = document.createElement('div'); item.className='media-item';
         let mediaEl;
-        if(['jpg','jpeg','png','gif'].includes(type)){
-            mediaEl = document.createElement('img');
-            mediaEl.src = `${API_BASE_URL}/${file}`;
-        } else if(['mp4','webm','ogg'].includes(type)){
-            mediaEl = document.createElement('video');
-            mediaEl.src = `${API_BASE_URL}/${file}`;
-            mediaEl.controls = true;
-        } else if(['mp3','wav','ogg'].includes(type)){
-            mediaEl = document.createElement('audio');
-            mediaEl.src = `${API_BASE_URL}/${file}`;
-            mediaEl.controls = true;
+        if(['jpg','jpeg','png','gif','webp'].includes(type)){
+            mediaEl = document.createElement('img'); mediaEl.src=`http://localhost:3000/uploads/${mediaPath}`;
+        } else if(['mp4','webm','ogg','mov'].includes(type)){
+            mediaEl = document.createElement('video'); mediaEl.src=`http://localhost:3000/uploads/${mediaPath}`; mediaEl.controls=true;
+        } else if(['mp3','wav','ogg','m4a'].includes(type)){
+            mediaEl = document.createElement('audio'); mediaEl.src=`http://localhost:3000/uploads/${mediaPath}`; mediaEl.controls=true;
         }
+        const removeBtn = document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.innerHTML='×';
+        removeBtn.onclick=(e)=>{ e.preventDefault(); if(confirm('Remove this memory?')){ removedMedia.push(mediaPath); existingMedia=existingMedia.filter(m=>m!==mediaPath); renderMediaPreviews(); }};
+        if(mediaEl){ item.appendChild(mediaEl); item.appendChild(removeBtn); mediaPreview.appendChild(item); }
+    });
 
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = '×';
-        removeBtn.className = 'remove-btn';
-        removeBtn.onclick = () => {
-            removedMedia.push(file);
-            existingMedia.splice(index, 1);
-            renderMedia();
-        }
-
-        div.appendChild(mediaEl);
-        div.appendChild(removeBtn);
-        mediaPreview.appendChild(div);
+    newMediaFiles.forEach((file,index)=>{
+        const type = file.type.split('/')[0]; const item = document.createElement('div'); item.className='media-item';
+        const fileURL = URL.createObjectURL(file); let mediaEl;
+        if(type==='image'){ mediaEl=document.createElement('img'); mediaEl.src=fileURL; }
+        else if(type==='video'){ mediaEl=document.createElement('video'); mediaEl.src=fileURL; mediaEl.controls=true; }
+        else if(type==='audio'){ mediaEl=document.createElement('audio'); mediaEl.src=fileURL; mediaEl.controls=true; }
+        const removeBtn = document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.innerHTML='×';
+        removeBtn.onclick=(e)=>{ e.preventDefault(); URL.revokeObjectURL(fileURL); newMediaFiles.splice(index,1); renderMediaPreviews(); };
+        if(mediaEl){ item.appendChild(mediaEl); item.appendChild(removeBtn); mediaPreview.appendChild(item); }
     });
 }
 
-// Submit updated event
-form.onsubmit = async (e) => {
+mediaInput.addEventListener('change', e=>{
+    const files=Array.from(e.target.files);
+    newMediaFiles=[...newMediaFiles,...files]; mediaInput.value='';
+    renderMediaPreviews();
+});
+
+form.onsubmit=async e=>{
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('title', titleInput.value);
-    formData.append('description', descInput.value);
-    formData.append('removedMedia', JSON.stringify(removedMedia));
+    submitBtn.disabled=true; submitBtn.textContent='Saving...';
+    const formData=new FormData();
+    formData.append('title',titleInput.value.trim());
+    formData.append('category', categorySelect.value);
+formData.append('mood', moodSelect.value);
 
-    for(const file of mediaInput.files){
-        formData.append('media', file);
-    }
+    formData.append('description',descInput.value.trim());
+    if(removedMedia.length>0) formData.append('removedMedia',JSON.stringify(removedMedia));
+    newMediaFiles.forEach(file=>formData.append('media',file));
 
-    try {
-        const res = await fetch(`${API_BASE_URL}/diary/${date}/${eventId}`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
+    try{
+        const res=await fetch(`${API_BASE_URL}/diary/${date}/${eventId}`,{
+            method:'PUT', headers:{'Authorization':`Bearer ${token}`}, body:formData
         });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.message || 'Failed to update event');
-
-        alert('Event updated successfully!');
-        window.location.href = `diary-dashboard.html`;
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.message||'Failed to update event');
+        submitBtn.textContent='Saved!'; submitBtn.style.background='linear-gradient(135deg,#28a745,#20c997)';
+        setTimeout(()=>window.location.href='dashboard.html',1500);
     } catch(err){
-        console.error(err);
-        alert('Error updating event');
+        console.error(err); alert('Error updating memory: '+err.message);
+        submitBtn.disabled=false; submitBtn.textContent='Save This Chapter';
     }
-}
+};
 
-// Load event initially
+window.addEventListener('beforeunload', ()=>{ newMediaFiles.forEach(file=>URL.revokeObjectURL(file.url)); });
 loadEvent();
 </script>
 </body>

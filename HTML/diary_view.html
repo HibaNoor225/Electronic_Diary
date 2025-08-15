@@ -5,99 +5,277 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Diary</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
 body {
-    background: linear-gradient(135deg,#2c2c2c,#1a1a1a);
+    background: linear-gradient(135deg, #f7f3e9, #e8dcc6);
     min-height:100vh;
     padding:20px;
+    line-height: 1.8;
 }
 .container {
-    max-width:900px;
+    max-width:800px;
     margin:0 auto;
-    background:#f5f4f0;
-    border-radius:15px;
-    padding:30px;
-    box-shadow:0 15px 40px rgba(0,0,0,0.3);
+    background: #fdfbf7;
+    border-radius:20px;
+    padding:50px 60px;
+    box-shadow:0 20px 60px rgba(139,69,19,0.15);
+    border: 3px solid #d4c5a9;
+    position: relative;
 }
-h1 { text-align:center; color:#333; margin-bottom:25px; }
-.event-folder {
-    background:white;
-    border-radius:12px;
-    padding:20px;
-    margin-bottom:20px;
-    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    width: 2px;
+    height: 100%;
+    background: #e74c3c;
+    opacity: 0.3;
 }
-.event-folder h2 { margin-bottom:15px; color:#4a90e2; }
-.media-gallery {
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
+.back-btn {
+    margin-left: 20px;
+    padding: 12px 24px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
 }
-.media-gallery img, .media-gallery video, .media-gallery audio {
-    max-width:150px;
-    border-radius:8px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+.back-btn:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
 }
-.media-gallery video, .media-gallery audio { max-width:200px; }
+.diary-header {
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 2px solid #d4c5a9;
+    padding-bottom: 20px;
+}
+.diary-date {
+    font-size: 2.5rem;
+    color: #5d4037;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
+    margin-bottom: 10px;
+}
+.diary-subtitle {
+    font-size: 1.2rem;
+    color: #8d6e63;
+    font-style: italic;
+}
+.diary-content {
+    color: #2c2c2c;
+    font-size: 1.1rem;
+    text-align: justify;
+}
+.event-story {
+    margin-bottom: 35px;
+    position: relative;
+    padding-left: 40px;
+}
+.event-story::before {
+    content: '●';
+    position: absolute;
+    left: -5px;
+    top: 5px;
+    color: #e74c3c;
+    font-size: 1.5rem;
+}
+.story-paragraph {
+    margin-bottom: 20px;
+    text-indent: 30px;
+    color: #333;
+}
+.inline-media {
+    margin: 25px 0;
+    text-align: center;
+}
+.inline-media img, .inline-media video {
+    width: 300px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border: 4px solid #fff;
+    transition: transform 0.3s ease;
+}
+.inline-media img:hover, .inline-media video:hover {
+    transform: scale(1.05);
+}
+.media-caption {
+    font-style: italic;
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-align: center;
+}
+.inline-media video, .inline-media audio {
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.no-events {
+    text-align: center;
+    color: #8d6e63;
+    font-style: italic;
+    font-size: 1.2rem;
+    padding: 60px 20px;
+    background: rgba(212,197,169,0.1);
+    border-radius: 15px;
+    border: 2px dashed #d4c5a9;
+}
+.story-time {
+    color: #8d6e63;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-bottom: 15px;
+    text-indent: 0;
+}
+.meta-info {
+    margin-bottom: 10px;
+    color: #8d6e63;
+    font-style: italic;
+    font-size: 0.95rem;
+}
+.category-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #d4c5a9;
+    color: #5d4037;
+    font-size: 0.85rem;
+    margin-left: 6px;
+}
 </style>
 </head>
 <body>
 <div class="container">
-    <h1 id="diary-title">Diary - Date</h1>
-    <div id="events-container"></div>
+    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+    <div class="diary-header">
+        <div class="diary-date" id="diary-date">Loading...</div>
+        <div class="diary-subtitle">My Daily Story</div>
+    </div>
+    <div class="diary-content" id="diary-content"></div>
 </div>
 
 <script>
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
 
 const urlParams = new URLSearchParams(window.location.search);
-const date = urlParams.get('date');
-document.getElementById('diary-title').textContent = `Diary - Date ${date}`;
+let date = urlParams.get('date');
 
-const container = document.getElementById('events-container');
+if (date) {
+    const parsed = new Date(date);
+    if (!isNaN(parsed)) date = parsed.toISOString().split('T')[0];
+}
 
-async function loadEvents(){
-    container.innerHTML = '';
+const readableDate = new Date(date).toLocaleDateString('en-US', { 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+});
+document.getElementById('diary-date').textContent = readableDate;
+
+const contentContainer = document.getElementById('diary-content');
+
+async function loadDiaryStory() {
+    contentContainer.innerHTML = '';
     try {
-        const res = await fetch(`${API_BASE_URL}/diary/${date}`, {
-            headers:{ 'Authorization': `Bearer ${token}` }
+        const res = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (res.status === 404) {
+            contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
+            return;
+        }
+
         const data = await res.json();
         if(!res.ok) throw new Error(data.message);
 
-        const dayEvents = data.data || [];
-        if(dayEvents.length===0){
-            container.innerHTML='<p style="color:#666; text-align:center;">No events for this date</p>';
-        } else {
-            dayEvents.forEach(ev=>{
-                const folder = document.createElement('div');
-                folder.className='event-folder';
-
-                const title = document.createElement('h2'); title.textContent = ev.title;
-                folder.appendChild(title);
-
-                if(ev.media && ev.media.length>0){
-                    const gallery = document.createElement('div'); gallery.className='media-gallery';
-                    ev.media.forEach(file=>{
-                        const type = file.type.split('/')[0];
-                        if(type==='image'){ const img=document.createElement('img'); img.src=`${API_BASE_URL}/${file.url}`; gallery.appendChild(img);}
-                        else if(type==='video'){ const vid=document.createElement('video'); vid.src=`${API_BASE_URL}/${file.url}`; vid.controls=true; gallery.appendChild(vid);}
-                        else if(type==='audio'){ const aud=document.createElement('audio'); aud.src=`${API_BASE_URL}/${file.url}`; aud.controls=true; gallery.appendChild(aud);}
-                    });
-                    folder.appendChild(gallery);
-                }
-
-                container.appendChild(folder);
-            });
+        const dayEvents = data.data?.events || [];
+        if(dayEvents.length === 0){
+            contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
+            return;
         }
+
+        dayEvents.forEach((event, index) => {
+            const storySection = document.createElement('div');
+            storySection.className = 'event-story';
+
+            const timeElement = document.createElement('div');
+            timeElement.className = 'story-time';
+            timeElement.textContent = `Chapter ${index + 1}`;
+            storySection.appendChild(timeElement);
+
+            // Mood & Category
+            if(event.mood || event.category){
+                const metaContainer = document.createElement('div');
+                metaContainer.className = 'meta-info';
+                let metaText = '';
+                if(event.mood) metaText += `Mood: ${event.mood}`;
+                metaContainer.textContent = metaText;
+
+                if(event.category){
+                    const badge = document.createElement('span');
+                    badge.className = 'category-badge';
+                    badge.textContent = event.category;
+                    metaContainer.appendChild(badge);
+                }
+                storySection.appendChild(metaContainer);
+            }
+
+            const storyParagraph = document.createElement('div');
+            storyParagraph.className = 'story-paragraph';
+            storyParagraph.innerHTML = `<strong>${event.title}</strong> - ${event.description || 'A moment worth remembering.'}`;
+            storySection.appendChild(storyParagraph);
+
+            if(event.media && event.media.length > 0){
+                event.media.forEach((file)=>{
+                    const mediaContainer = document.createElement('div');
+                    mediaContainer.className = 'inline-media';
+                    const ext = file.split('.').pop().toLowerCase();
+                    let mediaElement;
+                    if(['jpg','jpeg','png','gif','webp'].includes(ext)) mediaElement = document.createElement('img');
+                    else if(['mp4','webm','ogg'].includes(ext)) { mediaElement = document.createElement('video'); mediaElement.controls=true; }
+                    else if(['mp3','wav','ogg'].includes(ext)) { mediaElement = document.createElement('audio'); mediaElement.controls=true; }
+                    else return;
+
+                    mediaElement.src = `http://localhost:3000/uploads/${file}`;
+                    mediaContainer.appendChild(mediaElement);
+
+                    const caption = document.createElement('div');
+                    caption.className = 'media-caption';
+                    caption.textContent = `A captured moment from this memory`;
+                    mediaContainer.appendChild(caption);
+
+                    storySection.appendChild(mediaContainer);
+                });
+            }
+
+            contentContainer.appendChild(storySection);
+        });
+
+        const closingThought = document.createElement('div');
+        closingThought.className = 'story-paragraph';
+        closingThought.style.textAlign = 'center';
+        closingThought.style.fontStyle = 'italic';
+        closingThought.style.marginTop = '40px';
+        closingThought.style.color = '#8d6e63';
+        closingThought.innerHTML = `<em>And so ended another day in my journey...</em>`;
+        contentContainer.appendChild(closingThought);
+
     } catch(err){
         console.error(err);
-        container.innerHTML='<p style="color:red">Failed to load diary events</p>';
+        contentContainer.innerHTML = `<div class="no-events"><p style="color:#c62828;">Unable to load diary entries.</p></div>`;
     }
 }
 
-loadEvents();
+loadDiaryStory();
 </script>
 </body>
 </html>

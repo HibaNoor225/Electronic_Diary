@@ -38,70 +38,64 @@ body {
 }
 
 .auth-toggle {
-    display:flex; 
-    background:#e0e0e0; 
-    border-radius:8px; 
-    padding:4px; 
-    margin-bottom:30px; 
+    display:flex;
+    background:#e0e0e0;
+    border-radius:8px;
+    padding:4px;
+    margin-bottom:30px;
     width:100%;
     transition: all 0.3s ease;
 }
 
 .toggle-btn {
-    flex:1; 
-    padding:12px; 
-    background:transparent; 
-    border:none; 
-    border-radius:6px; 
-    font-size:16px; 
-    font-weight:500; 
-    cursor:pointer; 
-    transition: all 0.3s ease; 
-    color:#666; 
+    flex:1;
+    padding:12px;
+    background:transparent;
+    border:none;
+    border-radius:6px;
+    font-size:16px;
+    font-weight:500;
+    cursor:pointer;
+    transition: all 0.3s ease;
+    color:#666;
 }
-.toggle-btn.active { 
-    background:white; 
-    color:#333; 
-    box-shadow:0 3px 6px rgba(0,0,0,0.15); 
+.toggle-btn.active {
+    background:white;
+    color:#333;
+    box-shadow:0 3px 6px rgba(0,0,0,0.15);
 }
 
-.title { 
-    font-size:28px; 
-    color:#333; 
-    margin-bottom:20px; 
-    font-weight:400; 
-    text-align:center; 
+.title {
+    font-size:28px;
+    color:#333;
+    margin-bottom:20px;
+    font-weight:400;
+    text-align:center;
     transition: all 0.3s ease;
 }
 
 .social-buttons { width:100%; margin-bottom:20px; }
-.social-btn { 
-    width:100%; 
-    padding:16px 20px; 
-    border:1px solid #ddd; 
-    border-radius:8px; 
-    background:#fff; 
-    display:flex; 
-    align-items:center; 
-    justify-content:center; 
-    gap:12px; 
-    font-size:16px; 
-    color:#333; 
-    cursor:pointer; 
-    transition: all 0.3s ease, transform 0.2s ease; 
-    margin-bottom:15px; 
-    text-decoration:none; 
+.social-btn {
+    width:100%;
+    padding:16px 20px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    font-size:16px;
+    color:#333;
+    cursor:pointer;
+    transition: all 0.3s ease, transform 0.2s ease;
+    margin-bottom:15px;
+    text-decoration:none;
 }
-.social-btn:hover { 
-    background:#f8f8f8; 
-    transform: translateY(-2px);
-}
-.social-btn:active { 
-    transform: translateY(0); 
-}
+.social-btn:hover { background:#f8f8f8; transform: translateY(-2px); }
+.social-btn:active { transform: translateY(0); }
 
 .google-btn .icon { width:20px; height:20px; background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/><path fill="%2334A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/><path fill="%23FBBC05" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/><path fill="%23EA4335" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/></svg>') center/contain no-repeat; }
-
 .facebook-btn .icon { width:20px; height:20px; background:#1877F2; border-radius:3px; position:relative; }
 .facebook-btn .icon::after { content:'f'; position:absolute; color:white; font-family:Arial,sans-serif; font-weight:bold; font-size:14px; top:50%; left:50%; transform:translate(-50%, -50%); }
 
@@ -118,6 +112,9 @@ body {
 .password-group { position:relative; }
 .password-toggle { position:absolute; right:15px; top:50%; transform:translateY(-50%); background:none; border:none; color:#666; cursor:pointer; font-size:14px; transition: transform 0.2s ease; }
 .password-toggle:hover { transform: translateY(-50%) scale(1.1); }
+.password-toggle .icon-visible { display:none; }
+.password-toggle.show .icon-visible { display:inline; }
+.password-toggle.show .icon-hidden { display:none; }
 
 .continue-btn { width:100%; padding:18px; background:#4a90e2; color:white; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; transition: all 0.3s ease; margin-top:10px; }
 .continue-btn:hover { background:#357ABD; }
@@ -141,8 +138,8 @@ body {
 
 <div class="main-content" id="main-content">
     <div class="auth-toggle">
-        <button type="button" class="toggle-btn active" id="login-tab" onclick="switchMode('login')">Login</button>
-        <button type="button" class="toggle-btn" id="signup-tab" onclick="switchMode('signup')">Sign Up</button>
+        <button type="button" class="toggle-btn active" id="login-tab" data-mode="login">Login</button>
+        <button type="button" class="toggle-btn" id="signup-tab" data-mode="signup">Sign Up</button>
     </div>
 
     <h1 class="title" id="page-title">Welcome Back</h1>
@@ -155,24 +152,27 @@ body {
 
     <div class="divider">or</div>
 
-    <form class="auth-form" id="auth-form">
+    <form class="auth-form" id="auth-form" autocomplete="off">
         <div class="form-group signup-only">
             <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-input" id="username" placeholder="Enter your username">
+            <input type="text" name="username" class="form-input" id="username" placeholder="Enter your username" autocomplete="off">
             <div class="error-msg" id="username-error"></div>
         </div>
 
         <div class="form-group">
             <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-input" id="email" placeholder="Enter your email" required>
+            <input type="email" name="email" class="form-input" id="email" placeholder="Enter your email" required autocomplete="off">
             <div class="error-msg" id="email-error"></div>
         </div>
 
         <div class="form-group">
             <label class="form-label">Password</label>
             <div class="password-group">
-                <input type="password" name="password" class="form-input" id="password" placeholder="Enter your password" required>
-                <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+                <input type="password" name="password" class="form-input" id="password" placeholder="Enter your password" required autocomplete="new-password">
+                <button type="button" class="password-toggle" id="password-toggle" aria-label="Toggle password visibility">
+                    <span class="icon-hidden">👁️</span>
+                    <span class="icon-visible">🙈</span>
+                </button>
             </div>
             <div class="error-msg" id="password-error"></div>
         </div>
@@ -180,8 +180,11 @@ body {
         <div class="form-group signup-only">
             <label class="form-label">Confirm Password</label>
             <div class="password-group">
-                <input type="password" name="confirmPassword" class="form-input" id="confirmPassword" placeholder="Confirm your password">
-                <button type="button" class="password-toggle" onclick="toggleConfirmPassword()">👁️</button>
+                <input type="password" name="confirmPassword" class="form-input" id="confirmPassword" placeholder="Confirm your password" autocomplete="new-password">
+                <button type="button" class="password-toggle" id="confirm-password-toggle" aria-label="Toggle confirm password visibility">
+                    <span class="icon-hidden">👁️</span>
+                    <span class="icon-visible">🙈</span>
+                </button>
             </div>
             <div class="error-msg" id="confirmPassword-error"></div>
         </div>
@@ -189,115 +192,106 @@ body {
         <button type="submit" class="continue-btn" id="submit-btn">Login</button>
     </form>
 </div>
+
 <script>
 let currentMode = 'login';
 
+const mainContent = document.getElementById('main-content');
+const loginTab = document.getElementById('login-tab');
+const signupTab = document.getElementById('signup-tab');
+const pageTitle = document.getElementById('page-title');
+const submitBtn = document.getElementById('submit-btn');
+const serverMsg = document.getElementById('server-msg');
+const form = document.getElementById('auth-form');
+
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const usernameInput = document.getElementById('username');
+const confirmPasswordInput = document.getElementById('confirmPassword');
+
+// -----------------
+// ERROR HANDLING
+// -----------------
+function showError(fieldId, message) {
+    const errorEl = document.getElementById(fieldId);
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = message ? 'block' : 'none';
+    }
+}
+
+function clearAllErrors() {
+    ['username-error', 'email-error', 'password-error', 'confirmPassword-error'].forEach(id => showError(id, ''));
+    serverMsg.style.display = 'none';
+}
+
+// -----------------
+// SWITCH MODE
+// -----------------
 function switchMode(mode) {
     currentMode = mode;
-    const mainContent = document.getElementById('main-content');
-    const loginTab = document.getElementById('login-tab');
-    const signupTab = document.getElementById('signup-tab');
-    const pageTitle = document.getElementById('page-title');
-    const submitBtn = document.getElementById('submit-btn');
+    clearAllErrors();
 
-    mainContent.classList.remove('signup-mode');
-    loginTab.classList.remove('active');
-    signupTab.classList.remove('active');
+    loginTab.classList.toggle('active', mode === 'login');
+    signupTab.classList.toggle('active', mode === 'signup');
 
-    if (mode === 'signup') {
-        mainContent.classList.add('signup-mode');
-        signupTab.classList.add('active');
-        pageTitle.textContent = 'Create Account';
-        submitBtn.textContent = 'Sign Up';
-        document.getElementById('username').required = true;
-        document.getElementById('confirmPassword').required = true;
-    } else {
-        loginTab.classList.add('active');
-        pageTitle.textContent = 'Welcome Back';
-        submitBtn.textContent = 'Login';
-        document.getElementById('username').required = false;
-        document.getElementById('confirmPassword').required = false;
-    }
+    pageTitle.textContent = mode === 'signup' ? 'Create Account' : 'Welcome Back';
+    submitBtn.textContent = mode === 'signup' ? 'Sign Up' : 'Login';
+    mainContent.classList.toggle('signup-mode', mode === 'signup');
 
-    // Clear previous errors
-    ['username','email','password','confirmPassword'].forEach(field => showError(field+'-error',''));
-    const serverMsg = document.getElementById('server-msg');
-    serverMsg.style.display = 'none';
-}
+    usernameInput.required = mode === 'signup';
+    confirmPasswordInput.required = mode === 'signup';
 
-function handleBackendResponse(data) {
-    clearErrors();
-    serverMsg.style.display = 'none';
+    // Clear inputs when switching
+    usernameInput.value = '';
+    emailInput.value = '';
+    passwordInput.value = '';
+    confirmPasswordInput.value = '';
 
-    // Error case
-    if (!data.success) {
-        if (data.errors) {
-            Object.keys(data.errors).forEach(field => {
-                showError(`${field}-error`, data.errors[field]);
-            });
-        } else {
-            serverMsg.style.display = 'block';
-            serverMsg.style.color = 'red';
-            serverMsg.textContent = data.message || 'Something went wrong';
-        }
-        return false;
-    }
-
-    // Success case
-    if (currentMode === 'login') {
-        if (data.data.user.hasProfile) {
-            window.location.href = 'HTML/dashboard.html';
-        } else {
-            window.location.href = 'HTML/profile.html';
-        }
-    } else {
-        window.location.href = 'HTML/profile.html';
+    // Only prefill email in login mode
+    if (mode === 'login') {
+        const userData = JSON.parse(localStorage.getItem('user'));
+        if (userData) emailInput.value = userData.email || '';
     }
 }
 
-function togglePassword() {
-    const passwordInput = document.getElementById('password');
-    passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+loginTab.addEventListener('click', () => switchMode('login'));
+signupTab.addEventListener('click', () => switchMode('signup'));
+
+// -----------------
+// PASSWORD TOGGLE
+// -----------------
+function togglePasswordVisibility(inputEl, toggleBtnEl) {
+    const isPassword = inputEl.type === 'password';
+    inputEl.type = isPassword ? 'text' : 'password';
+    toggleBtnEl.classList.toggle('show', isPassword);
 }
 
-function toggleConfirmPassword() {
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    confirmPasswordInput.type = confirmPasswordInput.type === 'password' ? 'text' : 'password';
-}
-
-function showError(id, message) {
-    const el = document.getElementById(id);
-    if(el){
-        el.style.display = message ? 'block' : 'none';
-        el.textContent = message;
-    }
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    const userData = JSON.parse(localStorage.getItem('user'));
-    if(userData){
-        document.getElementById('email').value = userData.email || '';
-        if(currentMode === 'signup'){
-            document.getElementById('username').value = userData.username || '';
-        }
-    }
+document.getElementById('password-toggle').addEventListener('click', (e) => {
+    e.preventDefault();
+    togglePasswordVisibility(passwordInput, e.currentTarget);
 });
 
-document.getElementById('auth-form').addEventListener('submit', async function(e) {
+document.getElementById('confirm-password-toggle').addEventListener('click', (e) => {
     e.preventDefault();
+    togglePasswordVisibility(confirmPasswordInput, e.currentTarget);
+});
 
-    ['username','email','password','confirmPassword'].forEach(field => showError(field+'-error',''));
-    const serverMsg = document.getElementById('server-msg');
-    serverMsg.style.display = 'none';
+// -----------------
+// FORM SUBMIT
+// -----------------
+form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    clearAllErrors();
 
     const payload = {
-        email: document.getElementById('email').value.trim(),
-        password: document.getElementById('password').value.trim()
+        email: emailInput.value.trim(),
+        password: passwordInput.value.trim()
     };
 
-    if(currentMode === 'signup'){
-        payload.username = document.getElementById('username').value.trim();
-        payload.confirmPassword = document.getElementById('confirmPassword').value.trim();
+    if (currentMode === 'signup') {
+        payload.username = usernameInput.value.trim();
+        payload.confirmPassword = confirmPasswordInput.value.trim();
     }
 
     const url = `http://localhost:3000/auth/${currentMode === 'login' ? 'login' : 'register'}`;
@@ -305,39 +299,87 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
     try {
         const res = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type':'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
         const data = await res.json();
-        
-        if (res.ok && data.data && data.data.token) {
-            // Store token and user info
-            localStorage.setItem('token', data.data.token);
-            localStorage.setItem('user', JSON.stringify(data.data.user));
+
+        if (data.success) {
+            if (data.data && data.data.token) {
+                localStorage.setItem('token', data.data.token);
+                localStorage.setItem('user', JSON.stringify(data.data.user));
+            }
+
+            if (currentMode === 'login') {
+                window.location.href = data.data.user.hasProfile ? 'HTML/dashboard.html' : 'HTML/profile.html';
+            } else {
+                window.location.href = 'HTML/profile.html';
+            }
+        } else {
+            if (data.errors && typeof data.errors === 'object') {
+                Object.keys(data.errors).forEach(field => {
+                    showError(`${field}-error`, data.errors[field]);
+                });
+            } else {
+                serverMsg.textContent = data.message || 'Something went wrong.';
+                serverMsg.style.display = 'block';
+            }
         }
-
-        handleBackendResponse(data);
-
-    } catch(err){
-        serverMsg.style.display = 'block';
-        serverMsg.style.color = 'red';
+    } catch(err) {
         serverMsg.textContent = 'Server error, please try again.';
+        serverMsg.style.display = 'block';
         console.error(err);
     }
 });
 
-// OAuth buttons
-document.querySelector('.google-btn').addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.href = 'http://localhost:3000/auth/google';
-});
-document.querySelector('.facebook-btn').addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.href = 'http://localhost:3000/auth/facebook';
+// -----------------
+// OAUTH BUTTONS
+// -----------------
+function handleOAuth(buttonSelector, provider) {
+    document.querySelector(buttonSelector).addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = `http://localhost:3000/auth/${provider}`;
+    });
+}
+
+handleOAuth('.google-btn', 'google');
+handleOAuth('.facebook-btn', 'facebook');
+
+// -----------------
+// HANDLE TOKEN FROM URL AFTER SOCIAL LOGIN
+// -----------------
+(function handleOAuthToken() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (!token) return;
+
+    localStorage.setItem('token', token);
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    fetch('http://localhost:3000/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+            window.location.href = data.data.user.hasProfile ? 'HTML/dashboard.html' : 'HTML/profile.html';
+        } else {
+            serverMsg.textContent = 'Failed to get user info after login.';
+            serverMsg.style.display = 'block';
+        }
+    })
+    .catch(err => console.error(err));
+})();
+
+// -----------------
+// LOAD USER DATA ON DOM LOAD
+// -----------------
+window.addEventListener('DOMContentLoaded', () => {
+    switchMode(currentMode); // Ensure initial mode setup
 });
 </script>
-
 
 </body>
 </html>

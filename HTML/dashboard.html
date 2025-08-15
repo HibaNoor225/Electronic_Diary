@@ -5,32 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Diary Dashboard</title>
 <style>
+/* Your existing CSS */
 * { margin:0; padding:0; box-sizing:border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 body {
     background: linear-gradient(135deg,#2c2c2c,#1a1a1a);
     min-height:100vh;
     display:flex;
+    flex-direction: column;
     justify-content:center;
-    align-items:flex-start;
+    align-items:center;
     padding:20px;
+    color: #e0e0e0;
 }
 .container {
     width:100%;
-    max-width:600px;
+    max-width:800px;
     background:#f5f4f0;
     border-radius:15px;
     padding:30px;
     box-shadow:0 15px 40px rgba(0,0,0,0.3);
+    color: #333;
 }
-h1 { text-align:center; color:#333; margin-bottom:20px; }
-#date-picker {
-    width:100%;
-    padding:12px 15px;
-    font-size:16px;
+h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
+
+/* New calendar styles */
+.calendar-container {
+    width: 100%;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.calendar-header button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #4a90e2;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    text-align: center;
+}
+.day-header {
+    font-weight: bold;
+    color: #666;
+}
+.day-cell {
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border: 1px solid transparent;
+}
+.day-cell:hover {
+    background: #e0e0e0;
+}
+.day-cell.active {
+    background: #4a90e2;
+    color: white;
+    border: 1px solid #357ABD;
+}
+.day-cell.today {
+    border: 2px solid #e74c3c;
+}
+.add-btn, #view-events-btn {
+    padding:12px 20px;
+    background:#4a90e2;
+    color:white;
+    border:none;
     border-radius:8px;
-    border:1px solid #ddd;
+    cursor:pointer;
+    font-weight:500;
+    transition:0.3s;
+    width:100%;
     margin-bottom:15px;
 }
+.add-btn:hover, #view-events-btn:hover { background:#357ABD; }
 .quick-events {
     display:flex;
     flex-direction:column;
@@ -48,164 +108,330 @@ h1 { text-align:center; color:#333; margin-bottom:20px; }
     transition:0.3s;
 }
 .event-card:hover { background:#f0f0f0; }
-.add-btn, #view-events-btn {
-    padding:12px 20px;
-    background:#4a90e2;
-    color:white;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:500;
-    transition:0.3s;
-    width:100%;
-    margin-bottom:15px;
-}
-.add-btn:hover, #view-events-btn:hover { background:#357ABD; }
 .no-events { color:#666; text-align:center; margin-top:10px; }
+.error-msg { color:red; text-align:center; margin-top:10px; }
+
+
+.header-menu {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px; /* space from top */
+}
+
+#hamburger {
+    font-size: 28px;
+    cursor: pointer;
+    color: #4a90e2;
+    user-select: none;
+}
+
+.menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 35px;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    overflow: hidden;
+    min-width: 150px;
+    z-index: 100;
+}
+
+.menu-dropdown a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #333;
+    transition: background 0.2s;
+}
+
+.menu-dropdown a:hover {
+    background: #f0f0f0;
+}
+/* Calendar header dropdowns */
+#month-selector, #year-selector {
+    padding: 5px 10px;
+    margin: 0 5px;
+    border-radius: 5px;
+    border: 1px solid #4a90e2;
+    background: #f5f4f0; /* keep container/light theme color */
+    color: #333;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+body.dark #month-selector,
+body.dark #year-selector {
+    background: #333; /* dark mode background */
+    color: #e0e0e0;
+    border: 1px solid #4a90e2;
+}
+
+
 </style>
 </head>
+
 <body>
 <div class="container">
+    <div class="header-menu">
+    <span id="hamburger">&#9776;</span> 
+        <div id="menu-dropdown" class="menu-dropdown">
+        <a href="profile.html">Edit Profile</a>
+        <a href="settings.html">Settings</a>
+        <a href="#" id="logout-btn">Logout</a>
+    </div>
+</div>
+
     <h1>Diary Dashboard</h1>
     
-    <!-- Date picker -->
-    <input type="date" id="date-picker">
+    <div class="calendar-container">
+      <div class="calendar-header">
+    <button id="prev-month-btn">&lt;</button>
 
-    <!-- Buttons -->
-    <button class="add-btn" id="add-event-btn">+ Add Event for Selected Date</button>
-    <button class="add-btn" id="view-events-btn">See Diary for Selected Date</button>
+    <!-- Month dropdown -->
+    <select id="month-selector"></select>
 
-    <!-- Events list -->
-    <h2>Events for Selected Date</h2>
+    <!-- Year dropdown -->
+    <select id="year-selector"></select>
+
+    <button id="next-month-btn">&gt;</button>
+</div>
+
+        <div class="calendar-grid" id="calendar-grid">
+            <div class="day-header">Sun</div>
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
+        </div>
+    </div>
+
+    <button class="add-btn" id="add-event-btn" disabled>+ Add Event</button>
+    <button class="add-btn" id="view-events-btn" disabled>See Diary</button>
+
+    <h2>Events for <span id="events-date-display">...</span></h2>
     <div class="quick-events" id="quick-events">
         <p class="no-events">Select a date to see events</p>
     </div>
 </div>
 
 <script>
-const API_BASE_URL = "http://localhost:3000/api"; // Backend URL
-const token = localStorage.getItem('token'); // JWT stored after login
+const API_BASE_URL = "http://localhost:3000/api";
+const token = localStorage.getItem('token');
 
-const datePicker = document.getElementById('date-picker');
+const calendarGridEl = document.getElementById('calendar-grid');
+const prevMonthBtn = document.getElementById('prev-month-btn');
+const nextMonthBtn = document.getElementById('next-month-btn');
 const quickEventsEl = document.getElementById('quick-events');
+const eventsDateDisplayEl = document.getElementById('events-date-display');
 const addEventBtn = document.getElementById('add-event-btn');
 const viewDiaryBtn = document.getElementById('view-events-btn');
+const monthSelector = document.getElementById('month-selector');
+const yearSelector = document.getElementById('year-selector');
 
 let selectedDate = null;
+let currentMonth = new Date();
+const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+];
 
-// When date changes
-datePicker.addEventListener('change', () => {
-    selectedDate = datePicker.value;
-    loadEventsForDate(selectedDate);
+// Populate month dropdown
+monthNames.forEach((name,index)=>{
+    const opt = document.createElement('option');
+    opt.value = index;
+    opt.textContent = name;
+    monthSelector.appendChild(opt);
 });
 
-// Load events for selected date
+// Populate year dropdown (10 back + 10 forward)
+const currentYear = new Date().getFullYear();
+for(let y=currentYear-10; y<=currentYear+10; y++){
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelector.appendChild(opt);
+}
+
+// Set initial dropdown values
+monthSelector.value = currentMonth.getMonth();
+yearSelector.value = currentMonth.getFullYear();
+
+// Update calendar when dropdowns change
+monthSelector.addEventListener('change',(e)=>{
+    currentMonth.setMonth(parseInt(e.target.value));
+    renderCalendar();
+});
+
+yearSelector.addEventListener('change',(e)=>{
+    currentMonth.setFullYear(parseInt(e.target.value));
+    renderCalendar();
+});
+
+// Format date YYYY-MM-DD
+function formatDate(date){
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${year}-${month}-${day}`;
+}
+
+// Render calendar
+function renderCalendar(){
+    const today = new Date();
+
+    // Sync dropdowns with currentMonth
+    monthSelector.value = currentMonth.getMonth();
+    yearSelector.value = currentMonth.getFullYear();
+
+    const startOfMonth = new Date(currentMonth.getFullYear(),currentMonth.getMonth(),1);
+    const endOfMonth = new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,0);
+    const startDay = startOfMonth.getDay();
+    const dayCount = endOfMonth.getDate();
+
+    // Clear previous day cells
+    const oldCells = calendarGridEl.querySelectorAll('.day-cell');
+    oldCells.forEach(c=>c.remove());
+
+    // Add empty cells for start of month
+    for(let i=0;i<startDay;i++){
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'day-cell';
+        calendarGridEl.appendChild(emptyCell);
+    }
+
+    // Add day cells
+    for(let i=1;i<=dayCount;i++){
+        const dayCell = document.createElement('div');
+        dayCell.className = 'day-cell';
+        dayCell.textContent = i;
+        dayCell.dataset.date = formatDate(new Date(currentMonth.getFullYear(),currentMonth.getMonth(),i));
+
+        if(i===today.getDate() && currentMonth.getMonth()===today.getMonth() && currentMonth.getFullYear()===today.getFullYear()){
+            dayCell.classList.add('today');
+        }
+
+        // Click to select date
+        dayCell.addEventListener('click',(e)=>{
+            const prev = document.querySelector('.day-cell.active');
+            if(prev) prev.classList.remove('active');
+            e.currentTarget.classList.add('active');
+            selectedDate = e.currentTarget.dataset.date;
+            eventsDateDisplayEl.textContent = selectedDate;
+            addEventBtn.disabled = false;
+            viewDiaryBtn.disabled = false;
+            loadEventsForDate(selectedDate);
+        });
+
+        calendarGridEl.appendChild(dayCell);
+    }
+}
+
+// Load events
 async function loadEventsForDate(date){
     quickEventsEl.innerHTML = '';
-    if(!date) return quickEventsEl.innerHTML = '<p class="no-events">Select a date to see events</p>';
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/diary/${date}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+    if(!date){
+        quickEventsEl.innerHTML='<p class="no-events">Select a date to see events</p>';
+        return;
+    }
+    try{
+        const res = await fetch(`${API_BASE_URL}/diary/${date}`,{
+            method:'GET',
+            headers:{
+                'Authorization':`Bearer ${token}`,
+                'Content-Type':'application/json'
             }
         });
-        const data = await response.json();
-        if(!response.ok) throw new Error(data.message || 'Failed to load events');
-
-        const dayEvents = data.data?.events || [];
-
-        if(dayEvents.length === 0){
-            quickEventsEl.innerHTML = '<p class="no-events">No events for this date</p>';
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.message || 'Failed to load events');
+        const events = data.data?.events || [];
+        if(events.length===0){
+            quickEventsEl.innerHTML='<p class="no-events">No events for this date</p>';
         } else {
-            dayEvents.forEach(ev => {
-                // Event card container
+            events.forEach(ev=>{
                 const div = document.createElement('div');
-                div.className = 'event-card';
-
-                // Event title
+                div.className='event-card';
                 const title = document.createElement('span');
                 title.textContent = ev.title;
 
-                // Buttons container
                 const buttons = document.createElement('div');
-                buttons.style.display = 'flex';
-                buttons.style.gap = '10px';
+                buttons.style.display='flex';
+                buttons.style.gap='10px';
 
-                // Edit button
                 const editBtn = document.createElement('button');
-                editBtn.textContent = 'Edit';
-                editBtn.style.padding = '5px 10px';
-                editBtn.style.border = 'none';
-                editBtn.style.borderRadius = '5px';
-                editBtn.style.background = '#4a90e2';
-                editBtn.style.color = 'white';
-                editBtn.style.cursor = 'pointer';
-                editBtn.onclick = () => {
-                    window.location.href = `edit_event.html?date=${date}&eventId=${ev._id}`;
-                }
+                editBtn.textContent='Edit';
+                editBtn.style.cssText='padding:5px 10px;border:none;border-radius:5px;background:#4a90e2;color:white;cursor:pointer;';
+                editBtn.onclick=()=>window.location.href=`edit_event.html?date=${date}&eventId=${ev._id}`;
 
-                // Delete button
                 const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.style.padding = '5px 10px';
-                deleteBtn.style.border = 'none';
-                deleteBtn.style.borderRadius = '5px';
-                deleteBtn.style.background = '#e74c3c';
-                deleteBtn.style.color = 'white';
-                deleteBtn.style.cursor = 'pointer';
-                deleteBtn.onclick = async () => {
-                    if(!confirm('Are you sure you want to delete this event?')) return;
-                    try {
-                        const res = await fetch(`${API_BASE_URL}/diary/${date}/${ev._id}`, {
-                            method: 'DELETE',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        if(res.ok){
-                            loadEventsForDate(selectedDate); // reload events
-                        } else {
-                            const errData = await res.json();
-                            alert(errData.message || 'Failed to delete event');
-                        }
-                    } catch(err) {
-                        console.error(err);
-                        alert('Error deleting event');
-                    }
-                }
+                deleteBtn.textContent='Delete';
+                deleteBtn.style.cssText='padding:5px 10px;border:none;border-radius:5px;background:#e74c3c;color:white;cursor:pointer;';
+                deleteBtn.onclick=async()=>{
+                    if(!confirm('Are you sure?')) return;
+                    try{
+                        const r = await fetch(`${API_BASE_URL}/diary/${date}/${ev._id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+                        if(r.ok) loadEventsForDate(selectedDate);
+                        else { const d = await r.json(); alert(d.message||'Failed'); }
+                    } catch(err){ alert('Error deleting'); }
+                };
 
                 buttons.appendChild(editBtn);
                 buttons.appendChild(deleteBtn);
-
                 div.appendChild(title);
                 div.appendChild(buttons);
                 quickEventsEl.appendChild(div);
             });
         }
-    } catch(err) {
-        console.error(err);
-        quickEventsEl.innerHTML = '<p class="no-events">Error loading events</p>';
+    } catch(err){
+        quickEventsEl.innerHTML=`<p class="error-msg">${err.message}</p>`;
     }
 }
 
-// Add Event button
-addEventBtn.onclick = () => {
-    if(!selectedDate) return alert('Please select a date first');
-    window.location.href = `diary.html?date=${selectedDate}`;
-}
+// Initial render
+document.addEventListener('DOMContentLoaded',()=>{
+    renderCalendar();
+    const todayFormatted = formatDate(new Date());
+    const todayCell = document.querySelector(`.day-cell[data-date="${todayFormatted}"]`);
+    if(todayCell){
+        todayCell.classList.add('active');
+        selectedDate = todayFormatted;
+        eventsDateDisplayEl.textContent = todayFormatted;
+        addEventBtn.disabled=false;
+        viewDiaryBtn.disabled=false;
+        loadEventsForDate(selectedDate);
+    }
+});
 
-// View diary button
-viewDiaryBtn.onclick = () => {
-    if(!selectedDate) return alert('Please select a date first');
-    window.location.href = `diary-view.html?date=${selectedDate}`;
-}
+// Prev/Next month buttons
+prevMonthBtn.addEventListener('click',()=>{
+    currentMonth.setMonth(currentMonth.getMonth()-1);
+    renderCalendar();
+});
+nextMonthBtn.addEventListener('click',()=>{
+    currentMonth.setMonth(currentMonth.getMonth()+1);
+    renderCalendar();
+});
 
-// Set default to today
-const today = new Date().toISOString().split('T')[0];
-datePicker.value = today;
-selectedDate = today;
-loadEventsForDate(today);
+// Add/View buttons
+addEventBtn.onclick=()=>{ if(!selectedDate) return alert('Select a date'); window.location.href=`diary.html?date=${selectedDate}`;}
+viewDiaryBtn.onclick=()=>{ if(!selectedDate) return alert('Select a date'); window.location.href=`diary_view.html?date=${selectedDate}`;}
+
+// Hamburger menu
+const hamburger = document.getElementById('hamburger');
+const menuDropdown = document.getElementById('menu-dropdown');
+const logoutBtn = document.getElementById('logout-btn');
+hamburger.onclick = ()=>{ menuDropdown.style.display = menuDropdown.style.display==='block'?'none':'block'; }
+document.addEventListener('click',(e)=>{
+    if(!hamburger.contains(e.target) && !menuDropdown.contains(e.target)) menuDropdown.style.display='none';
+});
+logoutBtn.onclick = ()=>{ localStorage.removeItem('token'); window.location.href='register_login.html'; }
+
 </script>
+
 </body>
 </html>
