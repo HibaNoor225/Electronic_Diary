@@ -181,84 +181,117 @@ body {
 </div>
 
 <script>
-
-    // Read token from query string
-function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-}
-
-const tokenFromURL = getQueryParam('token');
-if (tokenFromURL) {
-    localStorage.setItem('token', tokenFromURL); // store token for all API calls
-}
-
-function updateCharacterCount(){
-    const bio = document.getElementById('bio');
-    document.getElementById('char-count').textContent = `${bio.value.length}/150`;
-}
-
-function handlePhotoUpload(event){
-    const file = event.target.files[0];
-    if(file){
-        const reader = new FileReader();
-        reader.onload = function(e){
-            document.getElementById('profile-photo').innerHTML = `<img src="${e.target.result}" alt="Profile">`;
-        }
-        reader.readAsDataURL(file);
+    // ---------- Token handling ----------
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
     }
-}
 
-function saveProfile(){
-    const form = document.getElementById('profile-form');
-    const formData = new FormData(form);
-
-    // Add profile photo file manually if needed
-    const photoFile = document.getElementById('photo-input').files[0];
-    if(photoFile) formData.append('profilePhoto', photoFile);
+    const tokenFromURL = getQueryParam('token');
+    if (tokenFromURL) {
+        localStorage.setItem('token', tokenFromURL);
+        // Clean URL so token isn’t exposed in browser history
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     const token = localStorage.getItem('token');
-    if(!token){ 
-        alert('You are not logged in!'); 
-        return; 
+    if (!token) {
+        // If no token at all, force login
+        window.location.href = "register_login.html";
     }
 
-    fetch('http://localhost:3000/auth/update-profile', {
-        method:'POST',
-        headers:{ 
-            'Authorization': `Bearer ${token}` 
-            // DO NOT set Content-Type for FormData
-        },
-        body: formData
-    })
-    .then(res => {
-    if(res.status === 401){
-        alert("Session expired. Please log in again.");
-        localStorage.removeItem('token');
-        window.location.href = 'register_login.html';
-        return;
+    // ---------- Profile Prefill ----------
+    function loadProfile() {
+        fetch('http://localhost:3000/auth/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => {
+            if (res.status === 401) {
+                alert("Session expired. Please log in again.");
+                localStorage.removeItem('token');
+                window.location.href = 'register_login.html';
+                return;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data && data.success && data.user) {
+                document.getElementById('fullName').value = data.user.fullName || "";
+                document.getElementById('bio').value = data.user.bio || "";
+                document.getElementById('gender').value = data.user.gender || "";
+                document.getElementById('age').value = data.user.age || "";
+                if (data.user.profilePhoto) {
+                    document.getElementById('profile-photo').innerHTML =
+                        `<img src="${data.user.profilePhoto}" alt="Profile">`;
+                }
+                updateCharacterCount();
+            }
+        })
+        .catch(err => console.error("Error loading profile:", err));
     }
-    return res.json();
-})
-    .then(data => {
-        if(data.success){
-            // Redirect immediately to dashboard
-            window.location.href = 'dashboard.html';
-        } else {
-            const error = document.getElementById('form-error');
-            error.textContent = data.message || 'Error saving profile';
-            error.style.display='block';
+
+    // ---------- Helpers ----------
+    function updateCharacterCount() {
+        const bio = document.getElementById('bio');
+        document.getElementById('char-count').textContent = `${bio.value.length}/150`;
+    }
+
+    function handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profile-photo').innerHTML =
+                    `<img src="${e.target.result}" alt="Profile">`;
+            }
+            reader.readAsDataURL(file);
         }
-    })
-    .catch(err=>{
-        console.error(err);
-        const error = document.getElementById('form-error');
-        error.textContent = 'Something went wrong!';
-        error.style.display='block';
-    });
-}
+    }
 
+    // ---------- Save Profile ----------
+    function saveProfile() {
+        const form = document.getElementById('profile-form');
+        const formData = new FormData(form);
+
+        // Add profile photo file manually if selected
+        const photoFile = document.getElementById('photo-input').files[0];
+        if (photoFile) formData.append('profilePhoto', photoFile);
+
+        fetch('http://localhost:3000/auth/update-profile', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }, 
+            body: formData
+        })
+        .then(res => {
+            if (res.status === 401) {
+                alert("Session expired. Please log in again.");
+                localStorage.removeItem('token');
+                window.location.href = 'register_login.html';
+                return;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data && data.success) {
+                window.location.href = 'dashboard.html'; // redirect immediately
+            } else {
+                const error = document.getElementById('form-error');
+                error.textContent = data.message || 'Error saving profile';
+                error.style.display = 'block';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            const error = document.getElementById('form-error');
+            error.textContent = 'Something went wrong!';
+            error.style.display = 'block';
+        });
+    }
+
+    // Run on page load
+    loadProfile();
 </script>
+
 
 </body>
 </html>

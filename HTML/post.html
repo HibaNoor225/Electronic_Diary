@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Posts - Daily Stories</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Georgia', 'Times New Roman', serif; }
+
+        body {
+            background: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fdfbf7;
+            border-radius: 20px;
+            padding: 40px 50px;
+            box-shadow: 0 20px 60px rgba(139,69,19,0.15);
+            border: 3px solid #d4c5a9;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 40px;
+            width: 2px;
+            height: 100%;
+            background: #e74c3c;
+            opacity: 0.3;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #d4c5a9;
+            padding-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            color: #5d4037;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #8d6e63;
+            font-style: italic;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: #8b4513;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+            font-family: 'Georgia', serif;
+        }
+
+        .nav-btn:hover {
+            background: #a0522d;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #8d6e63;
+            font-size: 1.3rem;
+            font-style: italic;
+        }
+
+        .post-card {
+            background: #fff8f0;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(139,69,19,0.1);
+            border: 2px solid #e6d8c5;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .post-card::before {
+            content: '●';
+            position: absolute;
+            left: 15px;
+            top: 20px;
+            color: #e74c3c;
+            font-size: 1.2rem;
+            z-index: 1;
+        }
+
+        .post-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(139,69,19,0.2);
+        }
+
+        .post-header {
+            padding: 25px 25px 20px 40px;
+            border-bottom: 1px solid #e6d8c5;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #fdfbf7;
+        }
+
+        .user-avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: #8b4513;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(139,69,19,0.3);
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .user-info h3 {
+            color: #5d4037;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            font-size: 1.2rem;
+        }
+
+        .user-info h3:hover {
+            color: #8b4513;
+        }
+
+        .user-info p {
+            color: #8d6e63;
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
+        .post-content {
+            padding: 25px 25px 20px 40px;
+            color: #2c2c2c;
+        }
+
+        .diary-events {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .diary-event {
+            background: #8b4513;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(139,69,19,0.3);
+        }
+
+        .diary-content {
+            margin-top: 20px;
+        }
+
+        .diary-entry {
+            background: #f8f6f1;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #8b4513;
+        }
+
+        .diary-entry-title {
+            color: #5d4037;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .diary-entry-text {
+            color: #2c2c2c;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            text-indent: 20px;
+        }
+
+        .diary-entry-photo {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(139,69,19,0.2);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .diary-entry-photo:hover {
+            transform: scale(1.02);
+        }
+
+        .diary-entry-date {
+            color: #8d6e63;
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .post-actions {
+            padding: 20px 25px 20px 40px;
+            border-top: 1px solid #e6d8c5;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            background: #f8f6f1;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            color: #8d6e63;
+            font-family: 'Georgia', serif;
+        }
+
+        .action-btn:hover {
+            background: rgba(139,69,19,0.1);
+            transform: translateY(-1px);
+        }
+
+        .action-btn.liked {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .comments-section {
+            padding: 0 25px 25px 40px;
+            border-top: 1px solid #e6d8c5;
+            margin-top: 10px;
+            background: #fff8f0;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #d4c5a9;
+            border-radius: 20px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+            background: #fdfbf7;
+            font-family: 'Georgia', serif;
+        }
+
+        .comment-input:focus {
+            border-color: #8b4513;
+        }
+
+        .comment-btn {
+            padding: 12px 20px;
+            background: #8b4513;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+        }
+
+        .comment-btn:hover {
+            background: #a0522d;
+            transform: translateY(-1px);
+        }
+
+        .comment {
+            margin-bottom: 18px;
+            padding: 15px 20px;
+            background: #f8f6f1;
+            border-radius: 12px;
+            border: 1px solid #e6d8c5;
+        }
+
+        .comment-user {
+            font-weight: 600;
+            color: #5d4037;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 1.05rem;
+        }
+
+        .comment-user:hover {
+            color: #8b4513;
+        }
+
+        .comment-text {
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #d4c5a9;
+        }
+
+        .page-btn {
+            padding: 12px 18px;
+            background: #fdfbf7;
+            border: 2px solid #d4c5a9;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #8d6e63;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 2px 8px rgba(139,69,19,0.1);
+        }
+
+        .page-btn:hover {
+            background: #f8f6f1;
+            border-color: #8b4513;
+            transform: translateY(-1px);
+        }
+
+        .page-btn.active {
+            background: #8b4513;
+            color: white;
+            border-color: #8b4513;
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .no-posts {
+            text-align: center;
+            padding: 80px 20px;
+            color: #8d6e63;
+            background: rgba(212,197,169,0.1);
+            border-radius: 15px;
+            border: 2px dashed #d4c5a9;
+        }
+
+        .no-posts h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #5d4037;
+        }
+
+        .no-posts p {
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        .photo-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            cursor: pointer;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            margin-top: 5%;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 25px 30px;
+                border-radius: 15px;
+            }
+
+            .header h1 {
+                font-size: 2.2rem;
+            }
+
+            .post-header {
+                padding: 20px;
+            }
+
+            .post-content {
+                padding: 20px;
+            }
+
+            .post-actions {
+                padding: 15px 20px;
+                flex-wrap: wrap;
+            }
+
+            .comment-form {
+                flex-direction: column;
+            }
+
+            .top-nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .diary-entry-photo {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <a href="dashboard.html" class="nav-btn">← Back to Dashboard</a>
+            
+        </div>
+
+        <div class="header">
+            <h1>📖 Community Stories</h1>
+            <p>Discover the beautiful moments shared by our community</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <p>Loading wonderful stories...</p>
+        </div>
+
+        <div id="posts-container"></div>
+
+        <div id="no-posts" class="no-posts" style="display: none;">
+            <h3>📝 No stories shared yet</h3>
+            <p>Be the first to share your beautiful moments with the community</p>
+        </div>
+
+        <div id="pagination" class="pagination" style="display: none;"></div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div id="photo-modal" class="photo-modal" onclick="closePhotoModal()">
+        <span class="close-modal" onclick="closePhotoModal()">&times;</span>
+        <img class="modal-content" id="modal-image">
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const postsPerPage = 5;
+        let totalPosts = 0;
+        let currentUser = null;
+
+        function getCurrentUser() {
+            const user = localStorage.getItem('user');
+            return user ? JSON.parse(user) : null;
+        }
+
+        function getUserInitials(username) {
+            return username ? username.substring(0, 2).toUpperCase() : 'U';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function viewUserProfile(userId) {
+            window.location.href = `socialProfile.html?userId=${userId}`;
+        }
+
+        function openPhotoModal(photoUrl) {
+            const modal = document.getElementById('photo-modal');
+            const modalImg = document.getElementById('modal-image');
+            modal.style.display = 'block';
+            modalImg.src = photoUrl;
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photo-modal').style.display = 'none';
+        }
+
+  async function toggleLike(postId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to appreciate posts');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadPosts(currentPage);
+                }
+            } catch (error) {
+                console.error('Error toggling like:', error);
+            }
+        }
+
+        async function addComment(postId) {
+            const commentText = document.getElementById(`comment-input-${postId}`).value.trim();
+            if (!commentText) return;
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to share your thoughts');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: commentText })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById(`comment-input-${postId}`).value = '';
+                    loadPosts(currentPage);
+                }
+            } catch (error) {
+                console.error('Error adding comment:', error);
+            }
+        }
+
+       function createPostHTML(post) {
+        console.log(post);
+    const isLiked = currentUser && post.likes.includes(currentUser.id);
+    const likesCount = post.likes.length;
+    const commentsCount = post.comments.length;
+
+    // Avatar
+    const avatarHTML = post.userId.profilePhoto ? `
+      <img src="http://localhost:3000/${post.userId.profilePhoto}" 
+           alt="${post.userId.username}"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                  align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
+        ${getUserInitials(post.userId.username)}
+      </div>
+    ` : `
+      <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                  display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
+        ${getUserInitials(post.userId.username)}
+      </div>
+    `;
+
+    // Diary entries
+    let diaryContentHTML = '';
+    if (post.diaryEvents && post.diaryEvents.length > 0) {
+        diaryContentHTML = `
+          <div class="diary-content">
+            ${post.diaryEvents.map(entry => `
+              <div class="diary-entry">
+                <div class="diary-entry-title">${entry.title || 'A Beautiful Moment'}</div>
+                ${entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : ''}
+                
+                ${entry.media && entry.media.filter(m => m.type === 'image').length > 0 ? 
+                  entry.media.filter(m => m.type === 'image').map(img => `
+                    <img src="http://localhost:3000${img.url}" alt="${entry.title || 'Diary moment'}" 
+                         class="diary-entry-photo" 
+                         onclick="openPhotoModal('http://localhost:3000${img.url}')">
+                  `).join('') : ''
+                }
+                
+                <div class="diary-entry-date">
+                  Captured on ${
+                    entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '')
+                  }
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+    }
+
+    return `
+      <div class="post-card">
+          <div class="post-header">
+              <div class="user-avatar" onclick="viewUserProfile('${post.userId._id}')">
+                  ${avatarHTML}
+              </div>
+              <div class="user-info">
+                  <h3 onclick="viewUserProfile('${post.userId._id}')">${post.userId.username}</h3>
+                  <p>Shared on ${formatDate(post.createdAt)}</p>
+              </div>
+          </div>
+
+          <div class="post-content">
+              ${post.content ? `<p style="text-indent: 30px; color: #2c2c2c; margin-bottom: 20px;">${post.content}</p>` : ''}
+              ${diaryContentHTML}
+          </div>
+
+          <div class="post-actions">
+              <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post._id}')">
+                  <span>${isLiked ? '❤️' : '🤍'}</span>
+                  <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
+              </button>
+              <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'">
+                  <span>💬</span>
+                  <span>${commentsCount} ${commentsCount === 1 ? 'Thought' : 'Thoughts'}</span>
+              </button>
+          </div>
+
+          <div id="comments-${post._id}" class="comments-section" style="display: none;">
+              <div class="comment-form">
+                  <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
+                  <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
+              </div>
+              
+              <div class="comments-list">
+                  ${post.comments.map(comment => `
+                      <div class="comment">
+                          <div class="comment-user" onclick="viewUserProfile('${comment.userId._id}')">${comment.userId.username}</div>
+                          <div class="comment-text">${comment.text}</div>
+                      </div>
+                  `).join('')}
+              </div>
+          </div>
+      </div>
+    `;
+}
+
+
+        async function loadPosts(page = 1) {
+            const loading = document.getElementById('loading');
+            const postsContainer = document.getElementById('posts-container');
+            const noPostsDiv = document.getElementById('no-posts');
+            const paginationDiv = document.getElementById('pagination');
+
+            loading.style.display = 'block';
+            postsContainer.innerHTML = '';
+            noPostsDiv.style.display = 'none';
+            paginationDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts?page=${page}&limit=${postsPerPage}`);
+                const data = await response.json();
+
+                loading.style.display = 'none';
+
+                if (data.success && data.posts.length > 0) {
+                    totalPosts = data.totalPosts || data.posts.length;
+                    const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+                    postsContainer.innerHTML = data.posts.map(post => createPostHTML(post)).join('');
+
+                    if (totalPages > 1) {
+                        createPagination(page, totalPages);
+                        paginationDiv.style.display = 'flex';
+                    }
+                } else {
+                    noPostsDiv.style.display = 'block';
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                console.error('Error loading posts:', error);
+                postsContainer.innerHTML = '<div class="no-posts"><h3>📖 Error loading stories</h3><p>Please try again in a moment</p></div>';
+            }
+        }
+
+        function createPagination(currentPage, totalPages) {
+            const paginationDiv = document.getElementById('pagination');
+            let paginationHTML = '';
+
+            paginationHTML += `
+                <button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    ← Previous
+                </button>
+            `;
+
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                paginationHTML += `<button class="page-btn" onclick="changePage(1)">1</button>`;
+                if (startPage > 2) paginationHTML += `<span class="page-btn" disabled>...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) paginationHTML += `<span class="page-btn" disabled>...</span>`;
+                paginationHTML += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+            }
+
+            paginationHTML += `
+                <button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next →
+                </button>
+            `;
+
+            paginationDiv.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(totalPosts / postsPerPage)) return;
+            currentPage = page;
+            loadPosts(page);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+      // Close modal when clicking outside the image
+window.onclick = function(event) {
+    const modal = document.getElementById('photo-modal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+        
+
+        document.addEventListener('DOMContentLoaded', function() {
+            currentUser = getCurrentUser();
+            loadPosts(1);
+        });
+    </script>
+</body>
+</html>

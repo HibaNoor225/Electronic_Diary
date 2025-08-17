@@ -324,17 +324,48 @@ body {
         gap: 10px;
     }
 }
+.top-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.btn {
+    padding: 12px 24px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    font-size: 1rem;
+}
+
+.btn:hover { 
+    background: #a0522d; 
+    transform: translateY(-2px); 
+}
+
 </style>
 </head>
 <body>
 <div class="container">
-    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+    <div class="top-buttons">
+        <a href="dashboard.html" class="btn">← Back to Dashboard</a>
+        <button id="make-public-btn" class="btn">🌍 Make Public</button>
+    </div>
+
     <div class="diary-header">
         <div class="diary-date" id="diary-date">Loading...</div>
         <div class="diary-subtitle">My Daily Story</div>
     </div>
     <div class="diary-content" id="diary-content"></div>
 </div>
+
 
 <!-- Modal for media viewing -->
 <div class="modal" id="mediaModal">
@@ -474,6 +505,39 @@ function createMediaGallery(media, eventTitle) {
 
     return galleryContainer;
 }
+document.getElementById('make-public-btn').addEventListener('click', async () => {
+  try {
+    // collect all diary event IDs for the current date view
+    const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const diaryData = await resDiary.json();
+    const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
+
+    const res = await fetch(`${API_BASE_URL}/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      // 👇 SEND DATE *AND* EVENT IDS
+      body: JSON.stringify({ date, diaryEventIds })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Diary published as a post!");
+      window.location.href = "post.html";
+    } else {
+      alert(`Failed: ${data.message || 'Could not publish'}`);
+    }
+  } catch (err) {
+    console.error("Error publishing post:", err);
+    alert("Error publishing post.");
+  }
+});
+
 
 function switchTab(tabType, galleryContainer) {
     // Remove active class from all tabs and grids

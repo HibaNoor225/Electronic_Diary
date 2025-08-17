@@ -180,7 +180,9 @@ body.dark #year-selector {
     <span id="hamburger">&#9776;</span> 
         <div id="menu-dropdown" class="menu-dropdown">
         <a href="profile.html">Edit Profile</a>
-        <a href="settings.html">Settings</a>
+        
+        <a href="post.html">Explore</a>
+
         <a href="#" id="logout-btn">Logout</a>
     </div>
 </div>
@@ -221,8 +223,24 @@ body.dark #year-selector {
 </div>
 
 <script>
+    // Capture token from URL query if present
+const urlParams = new URLSearchParams(window.location.search);
+const urlToken = urlParams.get("token");
+
+if (urlToken) {
+    localStorage.setItem("token", urlToken); // save it
+    // Remove token from URL so it’s clean
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+const token = localStorage.getItem("token");
+if (!token) {
+    // No token at all, redirect to login
+    window.location.href = "register_login.html";
+}
+
 const API_BASE_URL = "http://localhost:3000/api";
-const token = localStorage.getItem('token');
+
 
 const calendarGridEl = document.getElementById('calendar-grid');
 const prevMonthBtn = document.getElementById('prev-month-btn');

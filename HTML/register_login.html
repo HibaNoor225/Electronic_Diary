@@ -312,9 +312,9 @@ form.addEventListener('submit', async function(e) {
             }
 
             if (currentMode === 'login') {
-                window.location.href = data.data.user.hasProfile ? 'HTML/dashboard.html' : 'HTML/profile.html';
+                window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
             } else {
-                window.location.href = 'HTML/profile.html';
+                window.location.href = '/HTML/profile.html';
             }
         } else {
             if (data.errors && typeof data.errors === 'object') {
@@ -364,7 +364,7 @@ handleOAuth('.facebook-btn', 'facebook');
     .then(data => {
         if (data.success) {
             localStorage.setItem('user', JSON.stringify(data.data.user));
-            window.location.href = data.data.user.hasProfile ? 'HTML/dashboard.html' : 'HTML/profile.html';
+            window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
         } else {
             serverMsg.textContent = 'Failed to get user info after login.';
             serverMsg.style.display = 'block';

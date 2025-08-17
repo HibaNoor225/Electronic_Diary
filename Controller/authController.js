@@ -3,28 +3,28 @@ const { sendSuccess, sendError } = require('../utils/responseFormatter');
 const generateToken = require('../utils/tokenGeneration');
 const { upload, validateImageDimensions } = require('../middleware/uploadImage');
 
+// Promisify upload middleware
 const runUploadMiddleware = (req, res) => {
-    return new Promise((resolve, reject) => {
-        upload(req, res, (err) => {
-            if (err) return reject(err);
-            resolve();
-        });
+  return new Promise((resolve, reject) => {
+    upload(req, res, (err) => {
+      if (err) return reject(err);
+      resolve();
     });
+  });
 };
 
-// You'll need to do the same for your image dimension validation middleware
-// if it also uses a callback.
+// Promisify dimension validation middleware
 const runImageDimensionValidation = (req, res) => {
-    return new Promise((resolve, reject) => {
-        validateImageDimensions(req, res, (err) => {
-            if (err) return reject(err);
-            resolve();
-        });
+  return new Promise((resolve, reject) => {
+    validateImageDimensions(req, res, (err) => {
+      if (err) return reject(err);
+      resolve();
     });
+  });
 };
-class UserController {
 
-  // Register a new user
+class UserController {
+  // ---------------- Register ----------------
   async register(req, res) {
     try {
       if (!req.body.password && !req.body.googleId && !req.body.facebookId) {
@@ -34,11 +34,10 @@ class UserController {
       const user = new User(req.body);
       await user.save();
 
-      // Generate token
       const token = generateToken(user);
-      const hasProfile = false; // First-time user has no profile
+      const hasProfile = false;
 
-      sendSuccess(res, "User registered successfully", {
+      return sendSuccess(res, "User registered successfully", {
         token,
         user: {
           id: user._id,
@@ -66,186 +65,167 @@ class UserController {
     }
   }
 
-  // Manual login
-async login(req, res) {
-  try {
-    const { email, password } = req.body;
-    console.log("Login attempt for:", email); // <- log email
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      console.log("User not found!");
-      return sendError(res, "Invalid credentials", 401);
-    }
-
-    if (!user.password) {
-      console.log("User has no password (social login)");
-      return sendError(res, "Please login using social account", 401);
-    }
-
-    const isPasswordValid = await user.comparePassword(password);
-    console.log("Password valid?", isPasswordValid); // <- log password check
-
-    if (!isPasswordValid) {
-      return sendError(res, "Invalid credentials", 401);
-    }
-
-    const token = generateToken(user);
-  const hasProfile = Boolean(user.fullName && user.username);
-
-
-    return sendSuccess(res, "Login successful", {
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        hasProfile
-      }
-    });
-
-  } catch (err) {
-    console.error("Login error:", err);
-    return sendError(res, "Login failed", 500);
-  }
-}
-
-  async googleLogin(req, res) {
-  try {
-    const googleProfile = req.user;
-    const email = googleProfile.emails?.[0]?.value;
-
-    // Step 1: Find user by Google ID first
-    let user = await User.findOne({ googleId: googleProfile.id });
-
-    // Step 2: If not found, check if a user with same email exists
-    if (!user) {
-      user = await User.findOne({ email });
-
-      if (user) {
-        // Link Google ID to existing user
-        user.googleId = googleProfile.id;
-        await user.save();
-      } else {
-        // New user
-        user = await User.create({
-          username: googleProfile.displayName,
-          email,
-          googleId: googleProfile.id,
-          role: 'user'
-        });
-      }
-    }
-
-    const token = generateToken(user);
-    const hasProfile = Boolean(user.fullName && user.username);
-
-    return res.redirect(
-      hasProfile
-        ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
-        : `http://localhost:3000/HTML/profile.html?token=${token}`
-    );
-
-  } catch (err) {
-    console.error("Google login error:", err);
-    return sendError(res, "Google login failed", 500);
-  }
-}
-
-async facebookLogin(req, res) {
-  try {
-    const fbProfile = req.user;
-    const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
-
-    let user = await User.findOne({ facebookId: fbProfile.id });
-
-    if (!user) {
-      user = await User.findOne({ email });
-
-      if (user) {
-        user.facebookId = fbProfile.id;
-        await user.save();
-      } else {
-        user = await User.create({
-          username: fbProfile.displayName,
-          email,
-          facebookId: fbProfile.id,
-          role: 'user'
-        });
-      }
-    }
-
-    const token = generateToken(user);
-    const hasProfile = Boolean(user.fullName && user.username);
-
-    return res.redirect(
-      hasProfile
-        ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
-        : `http://localhost:3000/HTML/profile.html?token=${token}`
-    );
-
-  } catch (err) {
-    console.error("Facebook login error:", err);
-    return sendError(res, "Facebook login failed", 500);
-  }
-}
-
-
-  // Update profile
-// A helper function to promisify the upload middleware.
-// This allows you to use 'await' with the callback-based 'upload' function.
-
-
-
-// The corrected and simplified updateProfile function
-async updateProfile(req, res) {
+  // ---------------- Manual Login ----------------
+  async login(req, res) {
     try {
-        // Step 1: Run the file upload middleware.
-        // The await keyword ensures this completes before moving on.
-        await runUploadMiddleware(req, res);
+      const { email, password } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) return sendError(res, "Invalid credentials", 401);
 
-        // Step 2: Run the image dimension validation.
-        // Again, this is awaited for sequential execution.
-        await runImageDimensionValidation(req, res);
-        
-        // Step 3: Extract data and prepare the update object.
-        const { fullName, username, bio, gender, age } = req.body;
-        const updateData = { fullName, username, bio, gender, age };
+      if (!user.password) {
+        return sendError(res, "Please login using your social account", 401);
+      }
 
-        // Step 4: If a file was successfully uploaded, add the photo path to the update.
-        if (req.file) {
-            updateData.profilePhoto = `/uploads/profilePhotos/${req.file.filename}`;
+      const isPasswordValid = await user.comparePassword(password);
+      if (!isPasswordValid) {
+        return sendError(res, "Invalid credentials", 401);
+      }
+
+      const token = generateToken(user);
+      const hasProfile = Boolean(user.fullName && user.username);
+
+      return sendSuccess(res, "Login successful", {
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          hasProfile
         }
-        
-        // Step 5: Find the user by ID and update their profile in the database.
-        const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
-
-        // Handle the case where the user is not found.
-        if (!updatedUser) {
-            return sendError(res, 'User not found', 404);
-        }
-        console.log("User ID:", req.info?.id);
-console.log("Body:", req.body);
-console.log("File:", req.file);
-
-        // Step 6: Send a success response with the updated user data.
-        sendSuccess(res, 'Profile added successfully', {
-            id: updatedUser._id,
-            fullName: updatedUser.fullName,
-            username: updatedUser.username,
-            bio: updatedUser.bio,
-            gender: updatedUser.gender,
-            age: updatedUser.age,
-            profilePhoto: updatedUser.profilePhoto
-        });
+      });
 
     } catch (err) {
-        // Catch any errors from the middleware or the database operation.
-        console.error("Profile update error:", err);
-        return sendError(res, err.message || 'Failed to update profile', 500);
+      console.error("Login error:", err);
+      return sendError(res, "Login failed", 500);
     }
-}
+  }
+
+  // ---------------- Google Login ----------------
+  async googleLogin(req, res) {
+    try {
+      const googleProfile = req.user;
+      const email = googleProfile.emails?.[0]?.value;
+
+      let user = await User.findOne({ googleId: googleProfile.id });
+
+      if (!user) {
+        user = await User.findOne({ email });
+        if (user) {
+          user.googleId = googleProfile.id;
+          await user.save();
+        } else {
+          user = await User.create({
+            username: googleProfile.displayName,
+            email,
+            googleId: googleProfile.id,
+            role: 'user'
+          });
+        }
+      }
+
+      const token = generateToken(user);
+      const hasProfile = Boolean(user.fullName && user.username);
+
+     const redirectUrl = hasProfile
+  ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
+  : `http://localhost:3000/HTML/profile.html?token=${token}`;
+
+return res.redirect(redirectUrl);
+
+
+    } catch (err) {
+      console.error("Google login error:", err);
+      return sendError(res, "Google login failed", 500);
+    }
+  }
+
+  // ---------------- Facebook Login ----------------
+  async facebookLogin(req, res) {
+    try {
+      const fbProfile = req.user;
+      const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
+
+      let user = await User.findOne({ facebookId: fbProfile.id });
+
+      if (!user) {
+        user = await User.findOne({ email });
+        if (user) {
+          user.facebookId = fbProfile.id;
+          await user.save();
+        } else {
+          user = await User.create({
+            username: fbProfile.displayName,
+            email,
+            facebookId: fbProfile.id,
+            role: 'user'
+          });
+        }
+      }
+
+      const token = generateToken(user);
+      const hasProfile = Boolean(user.fullName && user.username);
+
+      const redirectUrl = hasProfile
+  ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
+  : `http://localhost:3000/HTML/profile.html?token=${token}`;
+
+return res.redirect(redirectUrl);
+
+
+    } catch (err) {
+      console.error("Facebook login error:", err);
+      return sendError(res, "Facebook login failed", 500);
+    }
+  }
+
+  // ---------------- Update Profile ----------------
+  async updateProfile(req, res) {
+    try {
+      await runUploadMiddleware(req, res);
+      await runImageDimensionValidation(req, res);
+
+      const { fullName, username, bio, gender, age } = req.body;
+      const updateData = { fullName, username, bio, gender, age };
+
+      if (req.file) {
+        updateData.profilePhoto = `/uploads/profilePhotos/${req.file.filename}`;
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
+      if (!updatedUser) return sendError(res, 'User not found', 404);
+
+      return sendSuccess(res, 'Profile updated successfully', {
+        id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        username: updatedUser.username,
+        bio: updatedUser.bio,
+        gender: updatedUser.gender,
+        age: updatedUser.age,
+        profilePhoto: updatedUser.profilePhoto
+      });
+
+    } catch (err) {
+      console.error("Profile update error:", err);
+      return sendError(res, err.message || 'Failed to update profile', 500);
+    }
+  }
+
+ getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error fetching user" });
+  }
+};
 }
 
 module.exports = new UserController();

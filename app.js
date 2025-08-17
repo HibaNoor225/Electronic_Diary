@@ -8,7 +8,8 @@ const sanitize = require('mongo-sanitize');
 const limit=require('./utils/limiter.js')
 const passport=require('./config/passport'); 
 const diaryRoutes = require('./Routes/diaryRoutes');
-
+const postRoutes=require("./Routes/postRoutes");
+const userRoutes = require('./Routes/userRoutes');
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -44,6 +45,12 @@ app.use(express.json())
 
 app.use("/auth",authRoutes)
 app.use('/api/diary', diaryRoutes);
+app.use("/api/posts",postRoutes);
+
+app.use('/api/users', userRoutes);
+
+
+
 
 
 
