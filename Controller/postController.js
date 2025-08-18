@@ -108,6 +108,22 @@ exports.toggleLike = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to toggle like' });
   }
 };
+// GET /api/posts/:postId
+exports.getPostById = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('userId', 'username profilePhoto')
+      .populate('comments.userId', 'username profilePhoto');
+
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    res.json({ success: true, post });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch post' });
+  }
+};
+
 
 // COMMENT
 exports.addComment = async (req, res) => {

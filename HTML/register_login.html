@@ -302,12 +302,16 @@ form.addEventListener('submit', async function(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        
 
         const data = await res.json();
+        console.log('Received login data:', data);
+
 
         if (data.success) {
             if (data.data && data.data.token) {
                 localStorage.setItem('token', data.data.token);
+                  localStorage.setItem('userId', data.data.user.id); 
                 localStorage.setItem('user', JSON.stringify(data.data.user));
             }
 

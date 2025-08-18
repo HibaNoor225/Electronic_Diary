@@ -226,6 +226,19 @@ return res.redirect(redirectUrl);
     res.status(500).json({ success: false, message: "Error fetching user" });
   }
 };
+
+getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error fetching user" });
+  }
+};
+
 }
 
 module.exports = new UserController();

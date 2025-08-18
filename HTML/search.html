@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search My Memories</title>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
+body {
+    background: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+    min-height:100vh;
+    padding:20px;
+    line-height: 1.8;
+}
+.container {
+    max-width:1000px;
+    margin:0 auto;
+    background: #fdfbf7;
+    border-radius:20px;
+    padding:40px 50px;
+    box-shadow:0 20px 60px rgba(139,69,19,0.15);
+    border: 3px solid #d4c5a9;
+    position: relative;
+}
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    width: 2px;
+    height: 100%;
+    background: #e74c3c;
+    opacity: 0.3;
+}
+
+.back-btn {
+    padding: 12px 24px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+}
+.back-btn:hover { background: #a0522d; transform: translateY(-2px); }
+
+.search-header {
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 2px solid #d4c5a9;
+    padding-bottom: 20px;
+}
+
+.search-title {
+    font-size: 2.5rem;
+    color: #5d4037;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
+    margin-bottom: 10px;
+}
+
+.search-subtitle {
+    font-size: 1.2rem;
+    color: #8d6e63;
+    font-style: italic;
+}
+
+.search-container {
+    margin-bottom: 40px;
+    background: #fff8f0;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.search-tabs {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tab-btn {
+    padding: 12px 25px;
+    border: none;
+    background: #d4c5a9;
+    color: #5d4037;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+
+.tab-btn.active {
+    background: #8b4513;
+    color: white;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+}
+
+.tab-btn:hover:not(.active) {
+    background: #c4b59a;
+    transform: translateY(-1px);
+}
+
+.search-form {
+    display: none;
+    animation: slideDown 0.3s ease;
+}
+
+.search-form.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    color: #5d4037;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #d4c5a9;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: white;
+    color: #333;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #8b4513;
+    box-shadow: 0 0 0 3px rgba(139,69,19,0.1);
+}
+
+.search-btn {
+    display: none;
+    width: 100%;
+    padding: 15px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+}
+
+.search-btn:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+}
+
+.search-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.results-container {
+    margin-top: 30px;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #d4c5a9;
+}
+
+.results-count {
+    font-size: 1.2rem;
+    color: #5d4037;
+    font-weight: bold;
+}
+
+.clear-results {
+    padding: 8px 16px;
+    background: transparent;
+    color: #8b4513;
+    border: 2px solid #8b4513;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.clear-results:hover {
+    background: #8b4513;
+    color: white;
+}
+
+.search-result {
+    background: #fff8f0;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease;
+    position: relative;
+    padding-left: 40px;
+    cursor: pointer;
+}
+
+.search-result:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.search-result::before {
+    content: '●';
+    position: absolute;
+    left: 10px;
+    top: 20px;
+    color: #e74c3c;
+    font-size: 1.2rem;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.result-title {
+    font-size: 1.3rem;
+    color: #5d4037;
+    font-weight: bold;
+    margin: 0;
+    flex: 1;
+}
+
+.result-date {
+    background: #8b4513;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.result-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.meta-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.mood-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.category-badge {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.result-description {
+    color: #333;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.result-media {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.media-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    background: rgba(139,69,19,0.1);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #8b4513;
+}
+
+.no-results {
+    text-align: center;
+    color: #8d6e63;
+    font-style: italic;
+    font-size: 1.2rem;
+    padding: 60px 20px;
+    background: rgba(212,197,169,0.1);
+    border-radius: 15px;
+    border: 2px dashed #d4c5a9;
+}
+
+.loading {
+    text-align: center;
+    color: #8b4513;
+    font-size: 1.1rem;
+    padding: 40px;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #d4c5a9;
+    border-radius: 50%;
+    border-top-color: #8b4513;
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 10px;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px 25px;
+    }
+    
+    .search-tabs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .tab-btn {
+        justify-content: center;
+    }
+    
+    .result-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .result-date {
+        align-self: flex-end;
+    }
+}
+
+.mood-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.mood-option {
+    padding: 10px 15px;
+    background: #f8f6f1;
+    border: 2px solid #e6d8c5;
+    border-radius: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.mood-option:hover {
+    background: #8b4513;
+    color: white;
+    border-color: #8b4513;
+}
+
+.mood-option.selected {
+    background: #8b4513;
+    color: white;
+    border-color: #8b4513;
+}
+
+.category-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.category-option {
+    padding: 10px 15px;
+    background: #f8f6f1;
+    border: 2px solid #e6d8c5;
+    border-radius: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.category-option:hover {
+    background: #8b4513;
+    color: white;
+    border-color: #8b4513;
+}
+
+.category-option.selected {
+    background: #8b4513;
+    color: white;
+    border-color: #8b4513;
+}
+
+.clear-option {
+    padding: 8px 16px;
+    background: transparent;
+    color: #8b4513;
+    border: 2px solid #8b4513;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+    margin-top: 10px;
+}
+
+.clear-option:hover {
+    background: #8b4513;
+    color: white;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+    
+    <div class="search-header">
+        <div class="search-title">🔍 Search My Memories</div>
+        <div class="search-subtitle">Find your precious moments</div>
+    </div>
+    
+    <div class="search-container">
+        <div class="search-tabs">
+            <button class="tab-btn active" data-tab="name">
+                📝 Search by Title
+            </button>
+            <button class="tab-btn" data-tab="mood">
+                😊 Search by Mood
+            </button>
+            <button class="tab-btn" data-tab="category">
+                📂 Search by Category
+            </button>
+            <button class="tab-btn" data-tab="combined">
+                🔍 Advanced Search
+            </button>
+        </div>
+        
+        <!-- Search by Name/Title Form -->
+        <form class="search-form active" id="nameForm">
+            <div class="form-group">
+                <label class="form-label" for="titleSearch">Enter keywords from event title:</label>
+                <input type="text" 
+                       class="form-input" 
+                       id="titleSearch" 
+                       placeholder="e.g., birthday, vacation, meeting..."
+                       autocomplete="off">
+            </div>
+            <button type="submit" class="search-btn">
+                🔍 Search by Title
+            </button>
+        </form>
+        
+        <!-- Search by Mood Form -->
+        <form class="search-form" id="moodForm">
+            <div class="form-group">
+                <label class="form-label">Select your mood:</label>
+                <div class="mood-options">
+                    <div class="mood-option" data-mood="Happy">😊 Happy</div>
+                    <div class="mood-option" data-mood="Sad">😢 Sad</div>
+                    <div class="mood-option" data-mood="Excited">🤩 Excited</div>
+                    <div class="mood-option" data-mood="Relaxed">😌 Relaxed</div>
+                    <div class="mood-option" data-mood="Stressed">😰 Stressed</div>
+                    <div class="mood-option" data-mood="Neutral">😐 Neutral</div>
+                </div>
+                <input type="hidden" id="selectedMood" name="mood">
+            </div>
+            <button type="submit" class="search-btn" disabled>
+                😊 Search by Mood
+            </button>
+        </form>
+        
+        <!-- Search by Category Form -->
+        <form class="search-form" id="categoryForm">
+            <div class="form-group">
+                <label class="form-label">Select category:</label>
+                <div class="category-options">
+                    <div class="category-option" data-category="Work">💼 Work</div>
+                    <div class="category-option" data-category="Personal">👤 Personal</div>
+                    <div class="category-option" data-category="Family">👨‍👩‍👧‍👦 Family</div>
+                    <div class="category-option" data-category="Travel">✈️ Travel</div>
+                    <div class="category-option" data-category="Hobby">🎨 Hobby</div>
+                    <div class="category-option" data-category="Other">📝 Other</div>
+                </div>
+                <input type="hidden" id="selectedCategory" name="category">
+            </div>
+            <button type="submit" class="search-btn" disabled>
+                📂 Search by Category
+            </button>
+        </form>
+        
+        <!-- Combined Advanced Search Form -->
+        <form class="search-form" id="combinedForm">
+            <div class="form-group">
+                <label class="form-label" for="combinedTitle">Search by title (optional):</label>
+                <input type="text" 
+                       class="form-input" 
+                       id="combinedTitle" 
+                       placeholder="Keywords from event title..."
+                       autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Filter by mood (optional):</label>
+                <div class="mood-options">
+                    <div class="mood-option" data-mood="Happy">😊 Happy</div>
+                    <div class="mood-option" data-mood="Sad">😢 Sad</div>
+                    <div class="mood-option" data-mood="Excited">🤩 Excited</div>
+                    <div class="mood-option" data-mood="Relaxed">😌 Relaxed</div>
+                    <div class="mood-option" data-mood="Stressed">😰 Stressed</div>
+                    <div class="mood-option" data-mood="Neutral">😐 Neutral</div>
+                </div>
+                <input type="hidden" id="combinedMood" name="mood">
+                <button type="button" class="clear-option" onclick="clearCombinedMood()">Clear Mood</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Filter by category (optional):</label>
+                <div class="category-options">
+                    <div class="category-option" data-category="Work">💼 Work</div>
+                    <div class="category-option" data-category="Personal">👤 Personal</div>
+                    <div class="category-option" data-category="Family">👨‍👩‍👧‍👦 Family</div>
+                    <div class="category-option" data-category="Travel">✈️ Travel</div>
+                    <div class="category-option" data-category="Hobby">🎨 Hobby</div>
+                    <div class="category-option" data-category="Other">📝 Other</div>
+                </div>
+                <input type="hidden" id="combinedCategory" name="category">
+                <button type="button" class="clear-option" onclick="clearCombinedCategory()">Clear Category</button>
+            </div>
+            <button type="submit" class="search-btn">
+                🔍 Advanced Search
+            </button>
+        </form>
+    </div>
+
+    <div id="resultsContainer"></div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE_URL = "http://localhost:3000/api";
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert("Please log in to search your memories.");
+        window.location.href = 'register_login.html';
+    }
+
+    function getUserIdFromToken() {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.id;
+        } catch (err) {
+            console.error('Invalid token:', err);
+            return null;
+        }
+    }
+
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const searchForms = document.querySelectorAll('.search-form');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            searchForms.forEach(form => form.classList.remove('active'));
+            document.getElementById(`${targetTab}Form`).classList.add('active');
+
+            clearResults();
+        });
+    });
+
+    // Mood & Category selection
+    function setupSelection(containerId, hiddenInputId, callback) {
+        const container = document.querySelector(`#${containerId} .mood-options, #${containerId} .category-options`);
+        const hiddenInput = document.getElementById(hiddenInputId);
+        if (!container) return;
+
+        container.querySelectorAll('.mood-option, .category-option').forEach(option => {
+            option.addEventListener('click', async () => {
+                container.querySelectorAll('.mood-option, .category-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                hiddenInput.value = option.dataset.mood || option.dataset.category;
+
+                if (typeof callback === 'function') {
+                    await callback(hiddenInput.value);
+                }
+            });
+        });
+    }
+
+    // Live Search Functions
+    async function searchByName(query) {
+        const userId = getUserIdFromToken();
+        if (!userId) return;
+        if (!query) return clearResults();
+
+        await performSearch(`${API_BASE_URL}/diary/search/name?userId=${userId}&q=${encodeURIComponent(query)}`);
+    }
+
+    async function searchByMood(mood) {
+        const userId = getUserIdFromToken();
+        if (!userId) return;
+        if (!mood) return clearResults();
+
+        await performSearch(`${API_BASE_URL}/diary/search/mood?userId=${userId}&mood=${encodeURIComponent(mood)}`);
+    }
+
+    async function searchByCategory(category) {
+        const userId = getUserIdFromToken();
+        if (!userId) return;
+        if (!category) return clearResults();
+
+        await performSearch(`${API_BASE_URL}/diary/search/category?userId=${userId}&category=${encodeURIComponent(category)}`);
+    }
+
+    // FIXED: Combined search function
+    async function searchCombined() {
+        const userId = getUserIdFromToken();
+        if (!userId) return;
+
+        const title = document.getElementById('combinedTitle').value.trim();
+        const mood = document.getElementById('combinedMood').value;
+        const category = document.getElementById('combinedCategory').value;
+
+        // FIXED: Only clear results if ALL fields are empty
+        if (!title && !mood && !category) {
+            return clearResults();
+        }
+
+        const params = new URLSearchParams({ userId });
+        if (title) params.append('q', title);
+        if (mood) params.append('mood', mood);
+        if (category) params.append('category', category);
+
+        await performSearch(`${API_BASE_URL}/diary/search?${params.toString()}`);
+    }
+
+    // Setup live search
+    document.getElementById('titleSearch').addEventListener('input', async (e) => {
+        await searchByName(e.target.value.trim());
+    });
+
+    setupSelection('moodForm', 'selectedMood', searchByMood);
+    setupSelection('categoryForm', 'selectedCategory', searchByCategory);
+
+    // Combined Form: live search on title + mood + category changes
+    document.getElementById('combinedTitle').addEventListener('input', searchCombined);
+    setupSelection('combinedForm', 'combinedMood', searchCombined);
+    setupSelection('combinedForm', 'combinedCategory', searchCombined);
+
+    // Clear functions for combined form
+    window.clearCombinedMood = function() {
+        document.getElementById('combinedMood').value = '';
+        document.querySelector('#combinedForm .mood-options .selected')?.classList.remove('selected');
+        searchCombined();
+    };
+
+    window.clearCombinedCategory = function() {
+        document.getElementById('combinedCategory').value = '';
+        document.querySelector('#combinedForm .category-options .selected')?.classList.remove('selected');
+        searchCombined();
+    };
+
+    // Perform search and display results
+    async function performSearch(url) {
+        resultsContainer.innerHTML = '<div class="loading">Searching your memories...</div>';
+        resultsContainer.style.display = 'block';
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Search failed');
+            displayResults(data.results || []);
+        } catch (err) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <p>❌ Search failed: ${err.message}</p>
+                    <p>Please try again or contact support.</p>
+                </div>
+            `;
+        }
+    }
+
+    function displayResults(results) {
+        if (!results || results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <p>📭 No memories found matching your search criteria.</p>
+                </div>
+            `;
+            return;
+        }
+
+        resultsContainer.innerHTML = `
+            <div class="results-header">
+                <div class="results-count">Found ${results.length} memory${results.length !== 1 ? 's' : ''}</div>
+                <button class="clear-results" onclick="clearResults()">Clear Results</button>
+            </div>
+            ${results.map(createResultHTML).join('')}
+        `;
+    }
+
+    function createResultHTML(result) {
+        const date = new Date(result.diaryDate);
+        const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const mediaIndicators = [];
+        if (result.media && result.media.length > 0) {
+            const types = {};
+            result.media.forEach(m => types[m.type] = (types[m.type] || 0) + 1);
+            Object.entries(types).forEach(([type, count]) => {
+                let icon = type === 'image' ? '🖼️' : type === 'video' ? '🎬' : '🎵';
+                mediaIndicators.push(`<div class="media-indicator">${icon} ${count} ${type}${count>1?'s':''}</div>`);
+            });
+        }
+
+        return `
+            <div class="search-result" onclick="viewDiary('${result.diaryDate}')">
+                <div class="result-header">
+                    <h3 class="result-title">${result.title}</h3>
+                    <div class="result-date">${formattedDate}</div>
+                </div>
+                <div class="result-meta">
+                    ${result.mood ? `<div class="meta-badge mood-badge">😊 ${result.mood}</div>` : ''}
+                    ${result.category ? `<div class="meta-badge category-badge">📂 ${result.category}</div>` : ''}
+                </div>
+                ${result.description ? `<div class="result-description">${result.description}</div>` : ''}
+                ${mediaIndicators.length>0 ? `<div class="result-media">${mediaIndicators.join('')}</div>` : ''}
+            </div>
+        `;
+    }
+
+    window.viewDiary = function(date) {
+        window.location.href = `diary_view.html?date=${encodeURIComponent(date)}`;
+    };
+
+    window.clearResults = function() {
+        resultsContainer.style.display = 'none';
+        resultsContainer.innerHTML = '';
+
+        document.getElementById('titleSearch').value = '';
+        document.getElementById('combinedTitle').value = '';
+        document.getElementById('selectedMood').value = '';
+        document.getElementById('combinedMood').value = '';
+        document.getElementById('selectedCategory').value = '';
+        document.getElementById('combinedCategory').value = '';
+
+        document.querySelectorAll('.mood-option, .category-option').forEach(opt => opt.classList.remove('selected'));
+    };
+});
+</script>
+
+</body>
+</html>

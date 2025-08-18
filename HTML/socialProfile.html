@@ -73,6 +73,7 @@
             align-items: center;
             justify-content: center;
             font-size: 3rem;
+            margin: 0 auto 20px;
             font-weight: bold;
             margin: 0 auto 20px;
             border: 4px solid rgba(255, 255, 255, 0.3);
@@ -458,6 +459,40 @@
                 font-size: 1.5rem;
             }
         }
+        .avatar {
+    width: 120px;       /* size of the circle */
+    height: 120px;
+    border-radius: 50%; /* makes it a circle */
+    overflow: hidden;   /* ensures image stays inside */
+    display: flex;
+    align-items: center;
+    margin: 0 auto 20px;
+    justify-content: center;
+    background-color: #ddd; /* fallback background if no photo */
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ensures image fills circle without distortion */
+}
+.delete-btn {
+    margin-left: auto;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.3s;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
+}
+
+
     </style>
 </head>
 <body>
@@ -467,7 +502,8 @@
         </button>
 
         <div class="profile-header">
-            <div id="profile-avatar" class="profile-avatar"></div>
+          <div id="profile-avatar" class="avatar"></div>
+
             <h1 id="profile-name" class="profile-name">Loading...</h1>
             <p id="profile-email" class="profile-email"></p>
             
@@ -511,10 +547,9 @@
             <div id="pagination" class="pagination" style="display: none;"></div>
         </div>
     </div>
-
-    <script>
+<script>
 let currentPage = 1;
-const postsPerPage = 10; // posts per page
+const postsPerPage = 10;
 let totalPosts = 0;
 let userId = null;
 
@@ -556,7 +591,8 @@ async function loadUserProfile(userId, page = 1) {
     const postsContainer = document.getElementById('posts-container');
     const noPostsDiv = document.getElementById('no-posts');
     const paginationDiv = document.getElementById('pagination');
-
+const currentUserId = localStorage.getItem('userId');
+    console.log('Current User ID:', currentUserId);
     loading.style.display = 'block';
     errorDiv.style.display = 'none';
     postsContainer.innerHTML = '';
@@ -564,7 +600,12 @@ async function loadUserProfile(userId, page = 1) {
     paginationDiv.style.display = 'none';
 
     try {
-        const response = await fetch(`http://localhost:3000/api/users/profile/${userId}?page=${page}&limit=${postsPerPage}`);
+        const token = localStorage.getItem('token'); // Make sure token is stored after login
+        const response = await fetch(`http://localhost:3000/api/users/profile/${userId}?page=${page}&limit=${postsPerPage}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         const data = await response.json();
 
         loading.style.display = 'none';
@@ -575,29 +616,32 @@ async function loadUserProfile(userId, page = 1) {
             totalPosts = data.totalPosts || posts.length;
 
             // Update profile info
-            profileAvatar.textContent = getUserInitials(user.username);
+            if (user.profilePhoto) {
+                profileAvatar.innerHTML = `<img src="http://localhost:3000${user.profilePhoto}" alt="${user.username}" />`;
+            } else {
+                profileAvatar.textContent = getUserInitials(user.username);
+            }
+
             profileName.textContent = user.username;
             profileEmail.textContent = user.email;
 
             // Update stats
-            const postsCountEl = document.getElementById('posts-count');
-            const likesCountEl = document.getElementById('likes-count');
-            const commentsCountEl = document.getElementById('comments-count');
-
-            postsCountEl.textContent = totalPosts;
-            likesCountEl.textContent = posts.reduce((sum, p) => sum + p.likes.length, 0);
-            commentsCountEl.textContent = posts.reduce((sum, p) => sum + p.comments.length, 0);
+            document.getElementById('posts-count').textContent = totalPosts;
+            document.getElementById('likes-count').textContent = posts.reduce((sum, p) => sum + p.likes.length, 0);
+            document.getElementById('comments-count').textContent = posts.reduce((sum, p) => sum + p.comments.length, 0);
 
             // Display posts
-            if (posts.length > 0) {
-                postsContainer.innerHTML = posts.map(post => createUserPostHTML(post)).join('');
-                if (totalPosts > postsPerPage) {
-                    createPagination(page, Math.ceil(totalPosts / postsPerPage));
-                    paginationDiv.style.display = 'flex';
-                }
-            } else {
-                noPostsDiv.style.display = 'block';
-            }
+           // Display posts
+if (posts.length > 0) {
+    postsContainer.innerHTML = posts.map(post => createUserPostHTML(post, currentUserId)).join('');
+    if (totalPosts > postsPerPage) {
+        createPagination(page, Math.ceil(totalPosts / postsPerPage));
+        paginationDiv.style.display = 'flex';
+    }
+} else {
+    noPostsDiv.style.display = 'block';
+}
+
         } else {
             errorDiv.style.display = 'block';
         }
@@ -607,38 +651,95 @@ async function loadUserProfile(userId, page = 1) {
         errorDiv.style.display = 'block';
     }
 }
+async function deletePost(postId) {
+    if (!confirm("Are you sure you want to delete this post?")) return;
 
-// Create post HTML
-function createUserPostHTML(post) {
+    try {
+        const token = localStorage.getItem('token'); // include auth token
+        const response = await fetch(`http://localhost:3000/api/users/post/${postId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById(`post-${postId}`).remove();
+            totalPosts--;
+            document.getElementById('posts-count').textContent = totalPosts;
+            alert('Post deleted successfully');
+        } else {
+            alert(data.message || "Failed to delete post");
+        }
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        alert("Error deleting post");
+    }
+}
+
+function createUserPostHTML(post, currentUserId) {
+    console.log('Post:', post);
+console.log('Post owner ID:', post.userId);
+console.log('Current user ID:', currentUserId);
+
     const likesCount = post.likes.length;
     const commentsCount = post.comments.length;
+      const postOwnerId = post.userId ? (post.userId._id || post.userId) : null;
+
+    // Only show delete button if current user owns the post
+    const deleteButtonHTML = (currentUserId && postOwnerId && String(currentUserId) === String(postOwnerId)) ?
+        `<button class="delete-btn" onclick="deletePost('${post._id}')" style="margin-left:auto; padding:5px 10px; border:none; background:#e74c3c; color:white; border-radius:5px; cursor:pointer;">🗑 Delete</button>` :
+        '';
+
+    // Render diary events with media
+    const diaryHTML = (post.diaryEvents || []).map(event => {
+        const mediaHTML = (event.media || []).map(m => {
+            const src = `http://localhost:3000${m.url}`;
+            if (m.type === 'image') 
+                return `<img src="${src}" style="width:100%; height:300px; object-fit:cover; margin-top:10px; border-radius:8px;" alt="${m.caption || ''}" />`;
+            if (m.type === 'video') 
+                return `<video controls src="${src}" style="width:100%; height:300px; object-fit:cover; margin-top:10px; border-radius:8px;"></video>`;
+            if (m.type === 'audio') 
+                return `<audio controls src="${src}" style="width:100%; margin-top:10px;"></audio>`;
+            return '';
+        }).join('');
+
+        return `
+            <div class="diary-event-card" style="margin-bottom:15px; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                <strong>${event.title || 'Moment'}</strong>
+                ${event.description ? `<p>${event.description}</p>` : ''}
+                ${event.photo ? `<img src="http://localhost:3000${event.photo}" style="width:100px; height:100px; object-fit:cover; border-radius:5px;" />` : ''}
+                ${event.date ? `<p style="font-size:0.9em; color:#555;">${new Date(event.date).toLocaleDateString()}</p>` : ''}
+                ${event.mood ? `<p style="font-size:0.9em; color:#555;">Mood: ${event.mood}</p>` : ''}
+                ${event.category ? `<p style="font-size:0.9em; color:#555;">Category: ${event.category}</p>` : ''}
+                ${mediaHTML}
+            </div>
+        `;
+    }).join('');
+
+   
+
+
 
     return `
-        <div class="post-card">
+        <div class="post-card" id="post-${post._id}" style="margin-bottom:20px; padding:15px; border:1px solid #ccc; border-radius:10px;">
             <div class="post-content">
-                <div class="post-date">${formatDate(post.createdAt)}</div>
-                <div class="diary-events">
-                    ${post.diaryEvents.map(event => `
-                        <span class="diary-event">${event.title || 'Beautiful Moment'}</span>
-                    `).join('')}
-                </div>
                 ${post.content ? `<p>${post.content}</p>` : ''}
+                <div class="diary-events">${diaryHTML}</div>
             </div>
-            <div class="post-stats">
-                <div class="stat">
-                    <span>❤️</span>
-                    <span>${likesCount} ${likesCount === 1 ? 'like' : 'likes'}</span>
-                </div>
-                <div class="stat">
-                    <span>💬</span>
-                    <span>${commentsCount} ${commentsCount === 1 ? 'comment' : 'comments'}</span>
-                </div>
+            <div class="post-stats" style="display:flex; gap:15px; margin-top:10px; align-items:center;">
+                <div class="stat"><span>❤️</span> <span>${likesCount} ${likesCount === 1 ? 'like' : 'likes'}</span></div>
+                <div class="stat"><span>💬</span> <span>${commentsCount} ${commentsCount === 1 ? 'comment' : 'comments'}</span></div>
+                ${deleteButtonHTML}
             </div>
         </div>
     `;
 }
 
-// Pagination buttons
+
+
+// Pagination
 function createPagination(currentPage, totalPages) {
     const paginationDiv = document.getElementById('pagination');
     let html = '';
@@ -667,7 +768,6 @@ function createPagination(currentPage, totalPages) {
     paginationDiv.innerHTML = html;
 }
 
-// Change page
 function changePage(page) {
     if (page < 1 || page > Math.ceil(totalPosts / postsPerPage)) return;
     currentPage = page;
@@ -685,6 +785,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadUserProfile(userId, currentPage);
 });
+
+// DELETE post
+
 </script>
 
 </body>

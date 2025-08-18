@@ -7,10 +7,24 @@ const authMiddleware = require('../middleware/authMiddleware'); // protect route
 // Add a new event
 router.post('/', authMiddleware, uploadDiary, diaryController.addEvent);
 
+
+router.get('/search/name',authMiddleware, diaryController.searchByName);
+router.get('/search/mood', authMiddleware,diaryController.searchByMood);
+router.get('/search/category',authMiddleware, diaryController.searchByCategory);
+router.get('/search', authMiddleware,diaryController.searchEvents);
+
 // Get all events for a date
 router.get('/:date', authMiddleware, diaryController.getEventsByDate);
 
 // Edit an event
 router.put('/:date/:eventId', authMiddleware, uploadDiary, diaryController.editEvent);
 router.delete('/:date/:eventId', authMiddleware, diaryController.deleteEvent);
+
+
+
+
+
+
 module.exports = router;
+
+

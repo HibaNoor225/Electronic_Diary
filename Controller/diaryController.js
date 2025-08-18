@@ -152,6 +152,116 @@ async getEventsByDate(req, res) {
     }
 }
 
+
+// Search events by name/title
+ async searchByName (req, res) {
+  try {
+    const { userId, q } = req.query;
+    if (!userId || !q) return res.status(400).json({ message: 'userId and query required' });
+
+    const diaries = await Diary.find({ user: userId });
+    const matchedEvents = [];
+
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        if (event.title.toLowerCase().includes(q.toLowerCase())) {
+          matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+        }
+      });
+    });
+
+    res.json({ results: matchedEvents });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Search events by mood
+async searchByMood (req, res){
+  try {
+    const { userId, mood } = req.query;
+    if (!userId || !mood) return res.status(400).json({ message: 'userId and mood required' });
+
+    const diaries = await Diary.find({ user: userId });
+    const matchedEvents = [];
+
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        if (event.mood === mood) {
+          matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+        }
+      });
+    });
+
+    res.json({ results: matchedEvents });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Search events by category
+  async searchByCategory (req, res)  {
+  try {
+    const { userId, category } = req.query;
+    if (!userId || !category) return res.status(400).json({ message: 'userId and category required' });
+
+    const diaries = await Diary.find({ user: userId });
+    const matchedEvents = [];
+
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        if (event.category === category) {
+          matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+        }
+      });
+    });
+
+    res.json({ results: matchedEvents });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Search events with optional filters: title, mood, category
+ async searchEvents (req, res) {
+  try {
+    const { userId, q, mood, category } = req.query;
+
+    if (!userId) return res.status(400).json({ message: 'userId is required' });
+
+    // Build query dynamically
+    const eventFilter = {};
+    if (q) eventFilter.title = { $regex: q, $options: 'i' }; // case-insensitive partial match
+    if (mood) eventFilter.mood = mood;
+    if (category) eventFilter.category = category;
+
+    // Use $elemMatch to find diaries with matching events
+    const diaries = await Diary.find({
+      user: userId,
+      events: { $elemMatch: eventFilter }
+    });
+
+    // Extract matched events from diaries
+    const matchedEvents = [];
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        let match = true;
+        if (q && !event.title.toLowerCase().includes(q.toLowerCase())) match = false;
+        if (mood && event.mood !== mood) match = false;
+        if (category && event.category !== category) match = false;
+        if (match) matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+      });
+    });
+
+    res.json({ results: matchedEvents });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 }
 
 module.exports = new DiaryController();

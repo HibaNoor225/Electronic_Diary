@@ -56,6 +56,7 @@ router.get('/login-failed', (req, res) => {
 });
 
 router.post('/update-profile', verifyToken, authController.updateProfile);
-router.get('/:userId', authController.getUserById);
+router.get('/auth/profile', verifyToken, authController.getProfile);
+
 
 module.exports = router;
