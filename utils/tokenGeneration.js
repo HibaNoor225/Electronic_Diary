@@ -2,13 +2,13 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '1d'; 
 
-const generateToken = (user) =>
-     {
+const generateToken = (user) => {
   return jwt.sign(
     {
       id: user._id,
       role: user.role,
-      email: user.email
+      email: user.email,
+      isAdmin: user.role === 'admin' || user.email === process.env.ADMIN_EMAIL // flag for admin
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }

@@ -67,117 +67,165 @@ class UserController {
 
   // ---------------- Manual Login ----------------
   async login(req, res) {
-    try {
-      const { email, password } = req.body;
-      const user = await User.findOne({ email });
-      if (!user) return sendError(res, "Invalid credentials", 401);
+  try {
+    const { email, password } = req.body;
 
-      if (!user.password) {
-        return sendError(res, "Please login using your social account", 401);
-      }
-
-      const isPasswordValid = await user.comparePassword(password);
-      if (!isPasswordValid) {
-        return sendError(res, "Invalid credentials", 401);
-      }
-
-      const token = generateToken(user);
-      const hasProfile = Boolean(user.fullName && user.username);
-
-      return sendSuccess(res, "Login successful", {
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username,
-          role: user.role,
-          hasProfile
-        }
-      });
-
-    } catch (err) {
-      console.error("Login error:", err);
-      return sendError(res, "Login failed", 500);
+    if (!email || !password) {
+      return sendError(res, "Email and password are required", 400);
     }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("Login failed: user not found");
+      return sendError(res, "Invalid credentials", 401);
+    }
+
+    // Check if user is active
+    if (user.isActive === false) {
+      return sendError(
+        res,
+        `Your account has been deactivated by admin. Contact support at ${process.env.SUPPORT_EMAIL}`,
+        403
+      );
+    }
+
+    // If password not set (social login only)
+    if (!user.password) {
+      return sendError(res, "Please login using your social account", 401);
+    }
+
+    // Compare password safely
+    let isPasswordValid = false;
+    try {
+      isPasswordValid = await user.comparePassword(password);
+    } catch (err) {
+      console.error("Password comparison error:", err);
+      return sendError(res, "Server error during password verification", 500);
+    }
+
+    if (!isPasswordValid) {
+      console.log("Login failed: wrong password");
+      return sendError(res, "Invalid credentials", 401);
+    }
+
+    const token = generateToken(user);
+    const hasProfile = Boolean(user.fullName && user.username);
+    const isAdmin = user.email === process.env.ADMIN_EMAIL;
+
+    return sendSuccess(res, "Login successful", {
+      token,
+      isAdmin, // frontend can redirect to admin panel
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        hasProfile
+      }
+    });
+
+  } catch (err) {
+    console.error("Login error:", err);
+    return sendError(res, "Server error, please try again", 500);
   }
+}
+
 
   // ---------------- Google Login ----------------
   async googleLogin(req, res) {
-    try {
-      const googleProfile = req.user;
-      const email = googleProfile.emails?.[0]?.value;
+  try {
+    const googleProfile = req.user;
+    const email = googleProfile.emails?.[0]?.value;
 
-      let user = await User.findOne({ googleId: googleProfile.id });
+    let user = await User.findOne({ googleId: googleProfile.id });
 
-      if (!user) {
-        user = await User.findOne({ email });
-        if (user) {
-          user.googleId = googleProfile.id;
-          await user.save();
-        } else {
-          user = await User.create({
-            username: googleProfile.displayName,
-            email,
-            googleId: googleProfile.id,
-            role: 'user'
-          });
-        }
+    if (!user) {
+      user = await User.findOne({ email });
+      if (user) {
+        user.googleId = googleProfile.id;
+        await user.save();
+      } else {
+        user = await User.create({
+          username: googleProfile.displayName,
+          email,
+          googleId: googleProfile.id,
+          role: 'user',
+          isActive: true // make sure default is active
+        });
       }
-
-      const token = generateToken(user);
-      const hasProfile = Boolean(user.fullName && user.username);
-
-     const redirectUrl = hasProfile
-  ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
-  : `http://localhost:3000/HTML/profile.html?token=${token}`;
-
-return res.redirect(redirectUrl);
-
-
-    } catch (err) {
-      console.error("Google login error:", err);
-      return sendError(res, "Google login failed", 500);
     }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return sendError(res, `Your account has been deactivated by admin. Contact support at ${process.env.SUPPORT_EMAIL}`, 403);
+    }
+
+    const token = generateToken(user);
+    const hasProfile = Boolean(user.fullName && user.username);
+    const isAdmin = (user.email === process.env.ADMIN_EMAIL);
+
+    const redirectUrl = isAdmin
+      ? `http://localhost:3000/HTML/adminPanel.html?token=${token}`
+      : hasProfile
+        ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
+        : `http://localhost:3000/HTML/profile.html?token=${token}`;
+
+    return res.redirect(redirectUrl);
+
+  } catch (err) {
+    console.error("Google login error:", err);
+    return sendError(res, "Google login failed", 500);
   }
+}
+
 
   // ---------------- Facebook Login ----------------
   async facebookLogin(req, res) {
-    try {
-      const fbProfile = req.user;
-      const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
+  try {
+    const fbProfile = req.user;
+    const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
 
-      let user = await User.findOne({ facebookId: fbProfile.id });
+    let user = await User.findOne({ facebookId: fbProfile.id });
 
-      if (!user) {
-        user = await User.findOne({ email });
-        if (user) {
-          user.facebookId = fbProfile.id;
-          await user.save();
-        } else {
-          user = await User.create({
-            username: fbProfile.displayName,
-            email,
-            facebookId: fbProfile.id,
-            role: 'user'
-          });
-        }
+    if (!user) {
+      user = await User.findOne({ email });
+      if (user) {
+        user.facebookId = fbProfile.id;
+        await user.save();
+      } else {
+        user = await User.create({
+          username: fbProfile.displayName,
+          email,
+          facebookId: fbProfile.id,
+          role: 'user',
+          isActive: true
+        });
       }
-
-      const token = generateToken(user);
-      const hasProfile = Boolean(user.fullName && user.username);
-
-      const redirectUrl = hasProfile
-  ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
-  : `http://localhost:3000/HTML/profile.html?token=${token}`;
-
-return res.redirect(redirectUrl);
-
-
-    } catch (err) {
-      console.error("Facebook login error:", err);
-      return sendError(res, "Facebook login failed", 500);
     }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return sendError(res, `Your account has been deactivated by admin. Contact support at ${process.env.SUPPORT_EMAIL}`, 403);
+    }
+
+    const token = generateToken(user);
+    const hasProfile = Boolean(user.fullName && user.username);
+    const isAdmin = (user.email === process.env.ADMIN_EMAIL);
+
+    const redirectUrl = isAdmin
+      ? `http://localhost:3000/HTML/adminPanel.html?token=${token}`
+      : hasProfile
+        ? `http://localhost:3000/HTML/dashboard.html?token=${token}`
+        : `http://localhost:3000/HTML/profile.html?token=${token}`;
+
+    return res.redirect(redirectUrl);
+
+  } catch (err) {
+    console.error("Facebook login error:", err);
+    return sendError(res, "Facebook login failed", 500);
   }
+}
+
 
   // ---------------- Update Profile ----------------
   async updateProfile(req, res) {

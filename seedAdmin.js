@@ -1,36 +1,38 @@
-const User = require('./Models/User'); // your User model
+const User = require('./Models/User'); 
 const { Category, Mood } = require('./Models/CategoryMood');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 async function seedAdminAndData() {
   try {
-    // 1️⃣ Seed admin user if not exists
     const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD || '@Hiba1122'; // Use a default or .env value
+    const adminPassword = process.env.ADMIN_PASSWORD || '@Hiba1122';
 
     if (!adminEmail) {
-       console.error('ADMIN_EMAIL is not defined in the .env file. Skipping admin seeding.');
-          return;
+      console.error('ADMIN_EMAIL is not defined in the .env file. Skipping admin seeding.');
+      return;
     }
 
-// 1️⃣ Seed admin user by email if not exists
- const existingAdmin = await User.findOne({ email: adminEmail });
- if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash(adminPassword, 10); // default password
-      const admin = new User({
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: adminEmail });
+  if (!existingAdmin) {
+    const admin = new User({
         username: 'admin',
-        email: 'hiba15225@gmail.com',
-        password: hashedPassword,
-        role: 'admin'
-      });
-      await admin.save();
-      console.log('Admin user created!');
-    } else {
+        email: adminEmail,
+        password: adminPassword, // pre-save will hash it
+        role: 'admin',
+        isAdmin: true,
+        isActive: true
+    });
+    await admin.save();
+    console.log('Admin user created!');
+}
+
+     else {
       console.log('Admin already exists, skipping.');
     }
 
-    // 2️⃣ Seed categories if empty
+    // Seed categories if empty
     const catCount = await Category.countDocuments();
     if (catCount === 0) {
       await Category.insertMany([
@@ -44,7 +46,7 @@ async function seedAdminAndData() {
       console.log('Categories seeded!');
     }
 
-    // 3️⃣ Seed moods if empty
+    // Seed moods if empty
     const moodCount = await Mood.countDocuments();
     if (moodCount === 0) {
       await Mood.insertMany([
@@ -63,5 +65,4 @@ async function seedAdminAndData() {
   }
 }
 
-// Call this function after MongoDB connection
 module.exports = seedAdminAndData;

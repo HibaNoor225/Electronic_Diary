@@ -1,14 +1,13 @@
 // middlewares/adminAuth.js
+require('dotenv').config(); // load .env
 module.exports = function adminAuth(req, res, next) {
-  // Assuming you have req.user populated from your auth middleware (JWT/session)
-  if (!req.user) {
+  if (!req.info) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
-  if (req.user.role !== 'admin') {
+  if (!req.info.isAdmin) {
     return res.status(403).json({ message: 'Admin access only' });
   }
 
-  // User is admin, continue
   next();
 };

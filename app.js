@@ -14,6 +14,8 @@ const CategoryMoodRoutes=require("./Routes/CategoryMoodRoutes.js")
 const suggestionRoutes=require("./Routes/suggestions.js")
 
 
+
+
 const seedAdminAndData=require("./seedAdmin.js")
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

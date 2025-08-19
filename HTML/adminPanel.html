@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Diary Management System</title>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
+
+body {
+    background: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+    min-height:100vh;
+    padding:20px;
+    line-height: 1.6;
+}
+
+.admin-container {
+    max-width:1400px;
+    margin:0 auto;
+    background: #fdfbf7;
+    border-radius:20px;
+    padding:40px 50px;
+    box-shadow:0 20px 60px rgba(139,69,19,0.15);
+    border: 3px solid #d4c5a9;
+    position: relative;
+}
+
+.admin-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    width: 2px;
+    height: 100%;
+    background: #e74c3c;
+    opacity: 0.3;
+}
+
+.admin-header {
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 2px solid #d4c5a9;
+    padding-bottom: 20px;
+}
+
+.admin-title {
+    font-size: 2.8rem;
+    color: #5d4037;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
+    margin-bottom: 10px;
+}
+
+.admin-subtitle {
+    font-size: 1.2rem;
+    color: #8d6e63;
+    font-style: italic;
+}
+
+.logout-btn {
+    position: absolute;
+    top: 30px;
+    right: 50px;
+    padding: 10px 20px;
+    background: #c62828;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(198,40,40,0.3);
+}
+
+.logout-btn:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+}
+
+.admin-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.tab-button {
+    padding: 15px 25px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-button:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+}
+
+.tab-button.active {
+    background: #5d4037;
+    box-shadow: 0 6px 20px rgba(93,64,55,0.4);
+}
+
+.admin-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.admin-section.active {
+    display: block;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+    border-bottom: 1px solid #d4c5a9;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    color: #5d4037;
+    font-weight: bold;
+}
+
+.btn {
+    padding: 12px 24px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    font-size: 0.95rem;
+}
+
+.btn:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+}
+
+.btn.danger {
+    background: #c62828;
+}
+
+.btn.danger:hover {
+    background: #d32f2f;
+}
+
+.btn.success {
+    background: #2e7d32;
+}
+
+.btn.success:hover {
+    background: #388e3c;
+}
+
+.data-grid {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.data-table th {
+    background: #f8f6f1;
+    color: #5d4037;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+}
+
+.data-table tr:hover {
+    background: #fafafa;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.status-inactive {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-btn.edit {
+    background: #1976d2;
+    color: white;
+}
+
+.action-btn.edit:hover {
+    background: #1565c0;
+}
+
+.action-btn.delete {
+    background: #c62828;
+    color: white;
+}
+
+.action-btn.delete:hover {
+    background: #b71c1c;
+}
+
+.action-btn.view {
+    background: #2e7d32;
+    color: white;
+}
+
+.action-btn.view:hover {
+    background: #1b5e20;
+}
+
+.action-btn.deactivate {
+    background: #f57c00;
+    color: white;
+}
+
+.action-btn.deactivate:hover {
+    background: #ef6c00;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: #fdfbf7;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: 2px solid #d4c5a9;
+    position: relative;
+}
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #d4c5a9;
+    padding-bottom: 15px;
+}
+
+.modal-title {
+    font-size: 1.8rem;
+    color: #5d4037;
+    font-weight: bold;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #5d4037;
+    font-weight: 500;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #d4c5a9;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: white;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #8b4513;
+    box-shadow: 0 0 0 3px rgba(139,69,19,0.1);
+}
+
+.form-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #8d6e63;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border: 2px solid #e8dcc6;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #5d4037;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #8d6e63;
+    font-size: 1rem;
+}
+
+.notification-item {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-left: 4px solid #8b4513;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.notification-type {
+    background: #8b4513;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.notification-time {
+    color: #8d6e63;
+    font-size: 0.9rem;
+}
+
+.notification-content {
+    color: #333;
+    line-height: 1.5;
+}
+
+.search-bar {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 15px;
+    border: 2px solid #d4c5a9;
+    border-radius: 25px;
+    font-size: 1rem;
+    background: white;
+    margin-bottom: 20px;
+}
+
+.search-bar:focus {
+    outline: none;
+    border-color: #8b4513;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 20px;
+    }
+    
+    .admin-tabs {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .logout-btn {
+        position: static;
+        margin-bottom: 20px;
+        align-self: flex-end;
+    }
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8d6e63;
+    font-style: italic;
+    background: rgba(212,197,169,0.1);
+    border-radius: 15px;
+    border: 2px dashed #d4c5a9;
+}
+</style>
+</head>
+<body>
+<div class="admin-container">
+    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    
+    <div class="admin-header">
+        <div class="admin-title">📊 Admin Panel</div>
+        <div class="admin-subtitle">Diary Management System</div>
+    </div>
+
+    <div class="admin-tabs">
+        <button class="tab-button active" onclick="switchTab('dashboard')" data-tab="dashboard">
+            📈 Dashboard
+        </button>
+        <button class="tab-button" onclick="switchTab('users')" data-tab="users">
+            👥 Users
+        </button>
+        <button class="tab-button" onclick="switchTab('categories')" data-tab="categories">
+            🏷️ Categories
+        </button>
+        <button class="tab-button" onclick="switchTab('moods')" data-tab="moods">
+            😊 Moods
+        </button>
+        <button class="tab-button" onclick="switchTab('notifications')" data-tab="notifications">
+            🔔 Notifications
+        </button>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboard-section" class="admin-section active">
+        <div class="section-header">
+            <h2 class="section-title">📈 Dashboard Overview</h2>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-users">-</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="active-users">-</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-categories">-</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-moods">-</div>
+                <div class="stat-label">Moods</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Section -->
+    <div id="users-section" class="admin-section">
+        <div class="section-header">
+            <h2 class="section-title">👥 User Management</h2>
+            <input type="text" class="search-bar" placeholder="🔍 Search users..." id="user-search">
+        </div>
+        
+        <div class="data-grid">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Join Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <!-- Users will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div id="categories-section" class="admin-section">
+        <div class="section-header">
+            <h2 class="section-title">🏷️ Category Management</h2>
+            <button class="btn" onclick="openCategoryModal()">➕ Add Category</button>
+        </div>
+        
+        <div class="data-grid">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categories-table-body">
+                    <!-- Categories will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Moods Section -->
+    <div id="moods-section" class="admin-section">
+        <div class="section-header">
+            <h2 class="section-title">😊 Mood Management</h2>
+            <button class="btn" onclick="openMoodModal()">➕ Add Mood</button>
+        </div>
+        
+        <div class="data-grid">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Icon</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="moods-table-body">
+                    <!-- Moods will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Notifications Section -->
+    <div id="notifications-section" class="admin-section">
+        <div class="section-header">
+            <h2 class="section-title">🔔 Email Notifications</h2>
+            <button class="btn" onclick="refreshNotifications()">🔄 Refresh</button>
+        </div>
+        
+        <div id="notifications-container">
+            <!-- Notifications will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal" id="category-modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeCategoryModal()">&times;</button>
+        <div class="modal-header">
+            <h3 class="modal-title" id="category-modal-title">Add Category</h3>
+        </div>
+        <form id="category-form">
+            <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <input type="text" class="form-input" id="category-name" required>
+            </div>
+            <div class="form-buttons">
+                <button type="button" class="btn" onclick="closeCategoryModal()">Cancel</button>
+                <button type="submit" class="btn success" id="category-submit-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mood Modal -->
+<div class="modal" id="mood-modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeMoodModal()">&times;</button>
+        <div class="modal-header">
+            <h3 class="modal-title" id="mood-modal-title">Add Mood</h3>
+        </div>
+        <form id="mood-form">
+            <div class="form-group">
+                <label class="form-label">Mood Name</label>
+                <input type="text" class="form-input" id="mood-name" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Emoji/Icon</label>
+                <input type="text" class="form-input" id="mood-icon" placeholder="😊">
+            </div>
+            <div class="form-buttons">
+                <button type="button" class="btn" onclick="closeMoodModal()">Cancel</button>
+                <button type="submit" class="btn success" id="mood-submit-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const API_BASE_URL = "http://localhost:3000/api";
+const token =  localStorage.getItem('token');
+console.log(token)
+let currentEditId = null;
+
+// Check admin authentication
+if (!token) {
+    alert("Admin access required. Please login.");
+    window.location.href = 'register_login.html';
+}
+
+// Tab switching
+function switchTab(tabName) {
+    // Hide all sections
+    document.querySelectorAll('.admin-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected section
+    document.getElementById(tabName + '-section').classList.add('active');
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Load data for the selected tab
+    switch(tabName) {
+        case 'dashboard':
+            loadDashboardData();
+            break;
+        case 'users':
+            loadUsers();
+            break;
+        case 'categories':
+            loadCategories();
+            break;
+        case 'moods':
+            loadMoods();
+            break;
+        case 'notifications':
+            loadNotifications();
+            break;
+    }
+}
+
+// Dashboard functions
+async function loadDashboardData() {
+    try {
+        // Load users count
+        const usersRes = await fetch(`${API_BASE_URL}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (usersRes.ok) {
+            const usersData = await usersRes.json();
+            const users = usersData.data || [];
+            document.getElementById('total-users').textContent = users.length;
+            document.getElementById('active-users').textContent = users.filter(u => u.isActive !== false).length;
+        }
+        
+        // Load categories count
+        const categoriesRes = await fetch(`${API_BASE_URL}/categories`);
+        if (categoriesRes.ok) {
+            const categoriesData = await categoriesRes.json();
+            document.getElementById('total-categories').textContent = (categoriesData.data || []).length;
+        }
+        
+        // Load moods count
+        const moodsRes = await fetch(`${API_BASE_URL}/moods`);
+        if (moodsRes.ok) {
+            const moodsData = await moodsRes.json();
+            document.getElementById('total-moods').textContent = (moodsData.data || []).length;
+        }
+        
+    } catch (err) {
+        console.error('Dashboard loading error:', err);
+    }
+}
+
+// User management functions
+async function loadUsers() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+            if (res.status === 401) {
+                alert("Admin session expired. Please login again.");
+                logout();
+                return;
+            }
+            throw new Error('Failed to load users');
+        }
+        
+        const data = await res.json();
+        const users = data.data || [];
+        
+        const tbody = document.getElementById('users-table-body');
+        tbody.innerHTML = '';
+        
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found</td></tr>';
+            return;
+        }
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            const joinDate = new Date(user.createdAt || Date.now()).toLocaleDateString();
+            const isActive = user.isActive !== false;
+            
+            row.innerHTML = `
+                <td><strong>${user.fullName || user.username || 'Unknown'}</strong></td>
+                <td>${user.email}</td>
+                <td>${joinDate}</td>
+                <td>
+                    <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
+                        ${isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn view" onclick="viewUserProfile('${user._id}')">
+                            👁️ View
+                        </button>
+                        <button class="action-btn ${isActive ? 'deactivate' : 'edit'}" onclick="toggleUserStatus('${user._id}', ${isActive})">
+                            ${isActive ? '🚫 Deactivate' : '✅ Activate'}
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (err) {
+        console.error('Error loading users:', err);
+        document.getElementById('users-table-body').innerHTML = 
+            '<tr><td colspan="5" class="empty-state">Error loading users</td></tr>';
+    }
+}
+
+async function toggleUserStatus(userId, isCurrentlyActive) {
+    const action = isCurrentlyActive ? 'deactivate' : 'activate';
+    
+    if (!confirm(`Are you sure you want to ${action} this user?`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/user/${userId}/deactivate`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ isActive: !isCurrentlyActive })
+        });
+        
+        if (!res.ok) throw new Error('Failed to update user status');
+        
+        alert(`User ${action}d successfully!`);
+        loadUsers(); // Reload users
+        
+    } catch (err) {
+        console.error('Error updating user status:', err);
+        alert('Error updating user status');
+    }
+}
+
+function viewUserProfile(userId) {
+    // Open user's social profile in a new tab
+    window.open(`socialProfile.html?userId=${userId}`, '_blank');
+}
+
+// Category management functions
+async function loadCategories() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/categories`);
+        const data = await res.json();
+        const categories = data.data || [];
+        
+        const tbody = document.getElementById('categories-table-body');
+        tbody.innerHTML = '';
+        
+        if (categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No categories found</td></tr>';
+            return;
+        }
+        
+        categories.forEach(category => {
+            const row = document.createElement('tr');
+            const createdDate = new Date(category.createdAt || Date.now()).toLocaleDateString();
+            
+            row.innerHTML = `
+                <td><strong>${category.name}</strong></td>
+                <td>${createdDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn edit" onclick="editCategory('${category._id}', '${category.name}')">
+                            ✏️ Edit
+                        </button>
+                        <button class="action-btn delete" onclick="deleteCategory('${category._id}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (err) {
+        console.error('Error loading categories:', err);
+        document.getElementById('categories-table-body').innerHTML = 
+            '<tr><td colspan="3" class="empty-state">Error loading categories</td></tr>';
+    }
+}
+
+function openCategoryModal() {
+    currentEditId = null;
+    document.getElementById('category-modal-title').textContent = 'Add Category';
+    document.getElementById('category-name').value = '';
+    document.getElementById('category-submit-btn').textContent = 'Save';
+    document.getElementById('category-modal').classList.add('active');
+}
+
+function editCategory(id, name) {
+    currentEditId = id;
+    document.getElementById('category-modal-title').textContent = 'Edit Category';
+    document.getElementById('category-name').value = name;
+    document.getElementById('category-submit-btn').textContent = 'Update';
+    document.getElementById('category-modal').classList.add('active');
+}
+
+function closeCategoryModal() {
+    document.getElementById('category-modal').classList.remove('active');
+    currentEditId = null;
+}
+
+async function deleteCategory(id) {
+    if (!confirm('Are you sure you want to delete this category?')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/category/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error('Failed to delete category');
+        
+        alert('Category deleted successfully!');
+        loadCategories();
+        
+    } catch (err) {
+        console.error('Error deleting category:', err);
+        alert('Error deleting category');
+    }
+}
+
+// Mood management functions
+async function loadMoods() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/moods`);
+        const data = await res.json();
+        const moods = data.data || [];
+        
+        const tbody = document.getElementById('moods-table-body');
+        tbody.innerHTML = '';
+        
+        if (moods.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No moods found</td></tr>';
+            return;
+        }
+        
+        moods.forEach(mood => {
+            const row = document.createElement('tr');
+            const createdDate = new Date(mood.createdAt || Date.now()).toLocaleDateString();
+            
+            row.innerHTML = `
+                <td><strong>${mood.name}</strong></td>
+                <td style="font-size: 1.5rem;">${mood.icon || '😐'}</td>
+                <td>${createdDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn edit" onclick="editMood('${mood._id}', '${mood.name}', '${mood.icon || ''}')">
+                            ✏️ Edit
+                        </button>
+                        <button class="action-btn delete" onclick="deleteMood('${mood._id}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (err) {
+        console.error('Error loading moods:', err);
+        document.getElementById('moods-table-body').innerHTML = 
+            '<tr><td colspan="4" class="empty-state">Error loading moods</td></tr>';
+    }
+}
+
+function openMoodModal() {
+    currentEditId = null;
+    document.getElementById('mood-modal-title').textContent = 'Add Mood';
+    document.getElementById('mood-name').value = '';
+    document.getElementById('mood-icon').value = '';
+    document.getElementById('mood-submit-btn').textContent = 'Save';
+    document.getElementById('mood-modal').classList.add('active');
+}
+
+function editMood(id, name, icon) {
+    currentEditId = id;
+    document.getElementById('mood-modal-title').textContent = 'Edit Mood';
+    document.getElementById('mood-name').value = name;
+    document.getElementById('mood-icon').value = icon;
+    document.getElementById('mood-submit-btn').textContent = 'Update';
+    document.getElementById('mood-modal').classList.add('active');
+}
+
+function closeMoodModal() {
+    document.getElementById('mood-modal').classList.remove('active');
+    currentEditId = null;
+}
+
+async function deleteMood(id) {
+    if (!confirm('Are you sure you want to delete this mood?')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/mood/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error('Failed to delete mood');
+        
+        alert('Mood deleted successfully!');
+        loadMoods();
+        
+    } catch (err) {
+        console.error('Error deleting mood:', err);
+        alert('Error deleting mood');
+    }
+}
+
+async function loadNotifications() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/suggestions?limit=20`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch notifications');
+
+        const data = await res.json();
+        const suggestions = data.data || [];
+
+        const container = document.getElementById('notifications-container');
+        container.innerHTML = '';
+
+        if (suggestions.length === 0) {
+            container.innerHTML = '<div class="empty-state">No notifications found</div>';
+            return;
+        }
+
+        suggestions.forEach(suggestion => {
+            const notificationItem = document.createElement('div');
+            notificationItem.className = 'notification-item';
+
+            const timeAgo = getTimeAgo(new Date(suggestion.createdAt));
+
+            notificationItem.innerHTML = `
+                <div class="notification-header">
+                    <span class="notification-type">${suggestion.type.toUpperCase()} SUGGESTION</span>
+                    <span class="notification-time">${timeAgo}</span>
+                </div>
+                <div class="notification-content">
+                    <strong>New ${suggestion.type} suggestion:</strong> "${suggestion.name}"<br>
+                    <strong>Suggested by:</strong> ${suggestion.createdBy}
+                </div>
+            `;
+            container.appendChild(notificationItem);
+        });
+    } catch (err) {
+        console.error('Error loading notifications:', err);
+        document.getElementById('notifications-container').innerHTML = 
+            '<div class="empty-state">Error loading notifications</div>';
+    }
+}
+
+// Refresh notifications every 1 minute
+setInterval(loadNotifications, 60000);
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', loadNotifications);
+
+
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInMs = now - date;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInMinutes < 60) {
+        return `${diffInMinutes} minutes ago`;
+    } else if (diffInHours < 24) {
+        return `${diffInHours} hours ago`;
+    } else {
+        return `${diffInDays} days ago`;
+    }
+}
+
+function refreshNotifications() {
+    loadNotifications();
+}
+
+// Form submissions
+document.getElementById('category-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('category-name').value.trim();
+    if (!name) return;
+    
+    const submitBtn = document.getElementById('category-submit-btn');
+    const originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<span class="loading-spinner"></span>';
+    submitBtn.disabled = true;
+    
+    try {
+        const url = currentEditId 
+            ? `${API_BASE_URL}/category/${currentEditId}`
+            : `${API_BASE_URL}/category`;
+        
+        const method = currentEditId ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name })
+        });
+        
+        if (!res.ok) throw new Error('Failed to save category');
+        
+        alert(`Category ${currentEditId ? 'updated' : 'created'} successfully!`);
+        closeCategoryModal();
+        loadCategories();
+        loadDashboardData(); // Refresh stats
+        
+    } catch (err) {
+        console.error('Error saving category:', err);
+        alert('Error saving category');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+});
+
+document.getElementById('mood-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('mood-name').value.trim();
+    const icon = document.getElementById('mood-icon').value.trim();
+    
+    if (!name) return;
+    
+    const submitBtn = document.getElementById('mood-submit-btn');
+    const originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<span class="loading-spinner"></span>';
+    submitBtn.disabled = true;
+    
+    try {
+        const url = currentEditId 
+            ? `${API_BASE_URL}/mood/${currentEditId}`
+            : `${API_BASE_URL}/mood`;
+        
+        const method = currentEditId ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, icon })
+        });
+        
+        if (!res.ok) throw new Error('Failed to save mood');
+        
+        alert(`Mood ${currentEditId ? 'updated' : 'created'} successfully!`);
+        closeMoodModal();
+        loadMoods();
+        loadDashboardData(); // Refresh stats
+        
+    } catch (err) {
+        console.error('Error saving mood:', err);
+        alert('Error saving mood');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+});
+
+// User search functionality
+document.getElementById('user-search').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const tableRows = document.querySelectorAll('#users-table-body tr');
+    
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Modal close handlers
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeCategoryModal();
+        closeMoodModal();
+    }
+});
+
+document.getElementById('category-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        closeCategoryModal();
+    }
+});
+
+document.getElementById('mood-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        closeMoodModal();
+    }
+});
+
+// Logout function
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('adminToken');
+    window.location.href = 'register_login.html';
+}
+
+// Initialize dashboard on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadDashboardData();
+});
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const sendAdminNotification = require('../utils/sendAdminNotification');
+const sendAdminNotification = require('../utils/sendAdminNotifications');
 
 const suggestionSchema = new mongoose.Schema({
     type: { type: String, enum: ['category', 'mood'], required: true },

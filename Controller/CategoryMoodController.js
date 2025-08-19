@@ -1,5 +1,8 @@
 const { Category, Mood } = require('../Models/CategoryMood');
 const Diary = require('../Models/Diary');
+const User = require('../Models/User');
+const { sendSuccess, sendError } = require('../utils/responseFormatter');
+
 
 class CategoryMoodController {
   // ----------------- USER CUSTOM -----------------
@@ -86,13 +89,14 @@ class CategoryMoodController {
 
   async addMood(req, res) {
     try {
-      const { name, emojis } = req.body;
-      if (!name || !emojis) return res.status(400).json({ success: false, message: 'Name and emojis required' });
+      const { name, icon } = req.body;
+if (!name || !icon) return res.status(400).json({ success: false, message: 'Name and icon required' });
+const mood = new Mood({ name, icon });
 
       const existing = await Mood.findOne({ name });
       if (existing) return res.status(400).json({ success: false, message: 'Mood already exists' });
 
-      const mood = new Mood({ name, emojis });
+      
       await mood.save();
       res.json({ success: true, data: mood });
     } catch (err) {
@@ -103,8 +107,8 @@ class CategoryMoodController {
   async updateMood(req, res) {
     try {
       const { id } = req.params;
-      const { name, emojis } = req.body;
-      const mood = await Mood.findByIdAndUpdate(id, { name, emojis }, { new: true });
+      const { name, icon} = req.body;
+      const mood = await Mood.findByIdAndUpdate(id, { name, icon }, { new: true });
       if (!mood) return res.status(404).json({ success: false, message: 'Mood not found' });
       res.json({ success: true, data: mood });
     } catch (err) {
@@ -121,6 +125,35 @@ class CategoryMoodController {
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });
     }
+  }
+  async getAllUsers(req, res) {
+    try {
+      const users = await User.find().select('-password');
+      return sendSuccess(res, 'Users fetched successfully', users);
+    } catch (err) {
+      console.error(err);
+      return sendError(res, 'Failed to fetch users', 500);
+    }
+  }
+
+  // Deactivate a user (admin only)
+  async deactivateUser(req, res) {
+    try {
+    const { id } = req.params;
+    const { isActive } = req.body; // get value from frontend
+    const user = await User.findById(id);
+
+    if (!user) return sendError(res, 'User not found', 404);
+
+    user.isActive = isActive; // set according to request
+    await user.save();
+
+    const action = isActive ? 'activated' : 'deactivated';
+    return sendSuccess(res, `User ${user.email} has been ${action}`);
+  } catch (err) {
+    console.error(err);
+    return sendError(res, 'Failed to update user status', 500);
+  }
   }
 }
 

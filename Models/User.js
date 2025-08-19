@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
 
 
   email: { type: String, required: true, unique: true, lowercase: true },
+  
 
   password: {
     type: String,
@@ -26,7 +27,9 @@ const userSchema = new mongoose.Schema({
     bio: { type: String, maxlength: 150 },
     gender: { type: String, enum: ['male', 'female', 'other', 'prefer-not-to-say'] },
     age: { type: Number, min: 13, max: 120 },
-    profilePhoto: { type: String } // store image URL or path
+    profilePhoto: { type: String } ,// store image URL or path
+   isActive: { type: Boolean, default: true },
+   isAdmin:{ type: Boolean, default: false}
 }, {
   timestamps: true
 });

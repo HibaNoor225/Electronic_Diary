@@ -315,8 +315,11 @@ form.addEventListener('submit', async function(e) {
                 localStorage.setItem('user', JSON.stringify(data.data.user));
             }
 
-            if (currentMode === 'login') {
-                window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
+            if (data.data.isAdmin) {
+                
+        window.location.href = '/HTML/adminPanel.html'; // redirect admin
+    } else if (currentMode === 'login') {
+        window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
             } else {
                 window.location.href = '/HTML/profile.html';
             }
@@ -368,8 +371,11 @@ handleOAuth('.facebook-btn', 'facebook');
     .then(data => {
         if (data.success) {
             localStorage.setItem('user', JSON.stringify(data.data.user));
-            window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
-        } else {
+             if (data.data.user.isAdmin) {
+                window.location.href = '/HTML/adminPanel.html';
+            } else {
+                window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
+            }
             serverMsg.textContent = 'Failed to get user info after login.';
             serverMsg.style.display = 'block';
         }

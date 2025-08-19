@@ -21,8 +21,7 @@ async function sendAdminNotification({ type, name, createdBy, createdAt }) {
         🔖 Name: ${name}
         ⏰ Created At: ${new Date(createdAt).toLocaleString()}
 
-        ✅ If you want to approve this ${type}, you can add it using:
-        ${approveLink}
+        
     `;
 
     await transporter.sendMail({
