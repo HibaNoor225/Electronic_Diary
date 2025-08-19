@@ -48,7 +48,7 @@ h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #4a90e2;
+    color: #a0522d;
 }
 .calendar-grid {
     display: grid;
@@ -71,17 +71,18 @@ h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
     background: #e0e0e0;
 }
 .day-cell.active {
-    background: #4a90e2;
+     background: linear-gradient(135deg, #bf6e49, #c47450);
     color: white;
-    border: 1px solid #357ABD;
+   
+    border: 1px solid transparent ;
 }
 .day-cell.today {
     border: 2px solid #e74c3c;
 }
 .add-btn, #view-events-btn {
     padding:12px 20px;
-    background:#4a90e2;
-    color:white;
+    background: linear-gradient(135deg, #bf6e49, #c47450);
+    color: white;
     border:none;
     border-radius:8px;
     cursor:pointer;
@@ -90,7 +91,7 @@ h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
     width:100%;
     margin-bottom:15px;
 }
-.add-btn:hover, #view-events-btn:hover { background:#357ABD; }
+.add-btn:hover, #view-events-btn:hover { background:#a0522d; }
 .quick-events {
     display:flex;
     flex-direction:column;
@@ -122,7 +123,7 @@ h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
 #hamburger {
     font-size: 28px;
     cursor: pointer;
-    color: #4a90e2;
+    color: #a0522d;
     user-select: none;
 }
 
@@ -155,7 +156,7 @@ h1, h2 { text-align:center; color:#333; margin-bottom:20px; }
     padding: 5px 10px;
     margin: 0 5px;
     border-radius: 5px;
-    border: 1px solid #4a90e2;
+    border: 1px solid #a0522d;
     background: #f5f4f0; /* keep container/light theme color */
     color: #333;
     font-size: 16px;
@@ -166,9 +167,22 @@ body.dark #month-selector,
 body.dark #year-selector {
     background: #333; /* dark mode background */
     color: #e0e0e0;
-    border: 1px solid #4a90e2;
+    border: 1px solid #a0522d;
 }
 
+.btn-dark {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #bf6e49, #c47450);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-dark:hover {
+    background: linear-gradient(135deg, #a55b3f, #b06246); /* darker on hover */
+}
 
 
 </style>
@@ -396,12 +410,15 @@ if(res.status === 401){
 
                 const editBtn = document.createElement('button');
                 editBtn.textContent='Edit';
-                editBtn.style.cssText='padding:5px 10px;border:none;border-radius:5px;background:#4a90e2;color:white;cursor:pointer;';
+                  editBtn.classList.add('btn-dark');
                 editBtn.onclick=()=>window.location.href=`edit_event.html?date=${date}&eventId=${ev._id}`;
 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent='Delete';
-                deleteBtn.style.cssText='padding:5px 10px;border:none;border-radius:5px;background:#e74c3c;color:white;cursor:pointer;';
+            
+deleteBtn.classList.add('btn-dark');
+
+
                 deleteBtn.onclick=async()=>{
                     if(!confirm('Are you sure?')) return;
                     try{

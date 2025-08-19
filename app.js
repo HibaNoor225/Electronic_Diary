@@ -10,15 +10,19 @@ const passport=require('./config/passport');
 const diaryRoutes = require('./Routes/diaryRoutes');
 const postRoutes=require("./Routes/postRoutes");
 const userRoutes = require('./Routes/userRoutes');
+const CategoryMoodRoutes=require("./Routes/CategoryMoodRoutes.js")
+const suggestionRoutes=require("./Routes/suggestions.js")
+
+
+const seedAdminAndData=require("./seedAdmin.js")
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 app.use('/HTML', express.static(path.join(__dirname, 'HTML')));
 app.use(passport.initialize());
 
 
 connectDB()
-
+seedAdminAndData();
 
 
 
@@ -40,19 +44,16 @@ app.use((req, res, next) => {
 })
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 app.use(express.json())
+
+
 
 app.use("/auth",authRoutes)
 app.use('/api/diary', diaryRoutes);
 app.use("/api/posts",postRoutes);
-
 app.use('/api/users', userRoutes);
-
-
-
-
-
+app.use('/api', CategoryMoodRoutes);
+app.use('/api/suggestions', suggestionRoutes);
 
 
 

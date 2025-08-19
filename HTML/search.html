@@ -1,3 +1,4 @@
+</head>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -469,285 +470,252 @@ body {
     
     <div class="search-container">
         <div class="search-tabs">
-            <button class="tab-btn active" data-tab="name">
-                📝 Search by Title
-            </button>
-            <button class="tab-btn" data-tab="mood">
-                😊 Search by Mood
-            </button>
-            <button class="tab-btn" data-tab="category">
-                📂 Search by Category
-            </button>
-            <button class="tab-btn" data-tab="combined">
-                🔍 Advanced Search
-            </button>
+            <button class="tab-btn active" data-tab="name">📝 Search by Title</button>
+            <button class="tab-btn" data-tab="mood">😊 Search by Mood</button>
+            <button class="tab-btn" data-tab="category">📂 Search by Category</button>
+            <button class="tab-btn" data-tab="combined">🔍 Advanced Search</button>
         </div>
         
         <!-- Search by Name/Title Form -->
         <form class="search-form active" id="nameForm">
             <div class="form-group">
                 <label class="form-label" for="titleSearch">Enter keywords from event title:</label>
-                <input type="text" 
-                       class="form-input" 
-                       id="titleSearch" 
-                       placeholder="e.g., birthday, vacation, meeting..."
-                       autocomplete="off">
+                <input type="text" class="form-input" id="titleSearch" placeholder="e.g., birthday, vacation, meeting..." autocomplete="off">
             </div>
-            <button type="submit" class="search-btn">
-                🔍 Search by Title
-            </button>
+            <button type="submit" class="search-btn">🔍 Search by Title</button>
         </form>
         
         <!-- Search by Mood Form -->
         <form class="search-form" id="moodForm">
             <div class="form-group">
                 <label class="form-label">Select your mood:</label>
-                <div class="mood-options">
-                    <div class="mood-option" data-mood="Happy">😊 Happy</div>
-                    <div class="mood-option" data-mood="Sad">😢 Sad</div>
-                    <div class="mood-option" data-mood="Excited">🤩 Excited</div>
-                    <div class="mood-option" data-mood="Relaxed">😌 Relaxed</div>
-                    <div class="mood-option" data-mood="Stressed">😰 Stressed</div>
-                    <div class="mood-option" data-mood="Neutral">😐 Neutral</div>
-                </div>
+                <div class="mood-options"></div>
                 <input type="hidden" id="selectedMood" name="mood">
             </div>
-            <button type="submit" class="search-btn" disabled>
-                😊 Search by Mood
-            </button>
+            <button type="submit" class="search-btn" disabled>😊 Search by Mood</button>
         </form>
         
         <!-- Search by Category Form -->
         <form class="search-form" id="categoryForm">
             <div class="form-group">
                 <label class="form-label">Select category:</label>
-                <div class="category-options">
-                    <div class="category-option" data-category="Work">💼 Work</div>
-                    <div class="category-option" data-category="Personal">👤 Personal</div>
-                    <div class="category-option" data-category="Family">👨‍👩‍👧‍👦 Family</div>
-                    <div class="category-option" data-category="Travel">✈️ Travel</div>
-                    <div class="category-option" data-category="Hobby">🎨 Hobby</div>
-                    <div class="category-option" data-category="Other">📝 Other</div>
-                </div>
+                <div class="category-options"></div>
                 <input type="hidden" id="selectedCategory" name="category">
             </div>
-            <button type="submit" class="search-btn" disabled>
-                📂 Search by Category
-            </button>
+            <button type="submit" class="search-btn" disabled>📂 Search by Category</button>
         </form>
         
         <!-- Combined Advanced Search Form -->
-        <form class="search-form" id="combinedForm">
-            <div class="form-group">
-                <label class="form-label" for="combinedTitle">Search by title (optional):</label>
-                <input type="text" 
-                       class="form-input" 
-                       id="combinedTitle" 
-                       placeholder="Keywords from event title..."
-                       autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Filter by mood (optional):</label>
-                <div class="mood-options">
-                    <div class="mood-option" data-mood="Happy">😊 Happy</div>
-                    <div class="mood-option" data-mood="Sad">😢 Sad</div>
-                    <div class="mood-option" data-mood="Excited">🤩 Excited</div>
-                    <div class="mood-option" data-mood="Relaxed">😌 Relaxed</div>
-                    <div class="mood-option" data-mood="Stressed">😰 Stressed</div>
-                    <div class="mood-option" data-mood="Neutral">😐 Neutral</div>
-                </div>
-                <input type="hidden" id="combinedMood" name="mood">
-                <button type="button" class="clear-option" onclick="clearCombinedMood()">Clear Mood</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Filter by category (optional):</label>
-                <div class="category-options">
-                    <div class="category-option" data-category="Work">💼 Work</div>
-                    <div class="category-option" data-category="Personal">👤 Personal</div>
-                    <div class="category-option" data-category="Family">👨‍👩‍👧‍👦 Family</div>
-                    <div class="category-option" data-category="Travel">✈️ Travel</div>
-                    <div class="category-option" data-category="Hobby">🎨 Hobby</div>
-                    <div class="category-option" data-category="Other">📝 Other</div>
-                </div>
-                <input type="hidden" id="combinedCategory" name="category">
-                <button type="button" class="clear-option" onclick="clearCombinedCategory()">Clear Category</button>
-            </div>
-            <button type="submit" class="search-btn">
-                🔍 Advanced Search
-            </button>
-        </form>
+        <!-- Combined Advanced Search Form -->
+<form class="search-form" id="combinedForm">
+    <div class="form-group">
+        <label for="combinedTitle">Search by title (optional):</label>
+        <input type="text" class="form-input" id="combinedTitle" placeholder="Keywords from event title..." autocomplete="off">
+    </div>
+    <div class="form-group">
+        <label>Category:</label>
+        <div class="combined-category-options"></div>
+        <input type="hidden" id="combinedSelectedCategory" name="category">
+        <button type="button" class="clear-option" onclick="clearCombinedCategory()">Clear Category</button>
+    </div>
+    <div class="form-group">
+        <label>Mood:</label>
+        <div class="combined-mood-options"></div>
+        <input type="hidden" id="combinedSelectedMood" name="mood">
+        <button type="button" class="clear-option" onclick="clearCombinedMood()">Clear Mood</button>
+    </div>
+    <button type="submit" class="search-btn">🔍 Advanced Search</button>
+</form>
+
     </div>
 
     <div id="resultsContainer"></div>
-
 </div>
+<script type="module">
+import { fetchCategories, fetchMoods } from "./api.js";
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+async function getAllCategories(userId) {
+    const defaultCategories = await fetchCategories();
+    const response = await fetch(`http://localhost:3000/api/user/${userId}/customCategories`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    const data = await response.json();
+    const customCategories = data.success ? data.data : [];
+    return [...new Set([...defaultCategories.map(c => c.name), ...customCategories])];
+}
+
+async function getAllMoods(userId) {
+    const defaultMoods = await fetchMoods();
+    const response = await fetch(`http://localhost:3000/api/user/${userId}/customMoods`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    const data = await response.json();
+    const customMoods = data.success ? data.data : [];
+    return [...new Set([...defaultMoods.map(m => m.name), ...customMoods])];
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     const API_BASE_URL = "http://localhost:3000/api";
     const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert("Please log in to search your memories.");
-        window.location.href = 'register_login.html';
-    }
-
-    function getUserIdFromToken() {
-        try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.id;
-        } catch (err) {
-            console.error('Invalid token:', err);
-            return null;
-        }
-    }
-
+    if (!token) { alert("Please log in."); window.location.href = 'register_login.html'; }
+    const userId = JSON.parse(atob(token.split('.')[1])).id;
     const resultsContainer = document.getElementById('resultsContainer');
+
+    // Load categories & moods
+
+    const categories = await getAllCategories(userId);
+    // Populate categoryForm options
+const categoryContainer = document.querySelector('#categoryForm .category-options');
+categories.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'category-option';
+    div.dataset.category = name;
+    div.textContent = name;
+    categoryContainer.appendChild(div);
+});
+
+    const moods = await getAllMoods(userId);
+
+    // Populate moodForm
+    const moodContainer = document.querySelector('#moodForm .mood-options');
+    moods.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'mood-option';
+        div.dataset.mood = name;
+        div.textContent = name;
+        moodContainer.appendChild(div);
+    });
+
+    // Populate combined form options (clickable divs)
+    const combinedCategoryContainer = document.querySelector('.combined-category-options');
+    categories.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'category-option';
+        div.dataset.category = name;
+        div.textContent = name;
+        combinedCategoryContainer.appendChild(div);
+    });
+
+    const combinedMoodContainer = document.querySelector('.combined-mood-options');
+    moods.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'mood-option';
+        div.dataset.mood = name;
+        div.textContent = name;
+        combinedMoodContainer.appendChild(div);
+    });
+
+    // Hidden inputs for combined form
+    const combinedCategorySelect = document.getElementById('combinedSelectedCategory');
+    const combinedMoodSelect = document.getElementById('combinedSelectedMood');
 
     // Tab switching
     const tabButtons = document.querySelectorAll('.tab-btn');
     const searchForms = document.querySelectorAll('.search-form');
-
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetTab = button.dataset.tab;
-
             tabButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-
             searchForms.forEach(form => form.classList.remove('active'));
             document.getElementById(`${targetTab}Form`).classList.add('active');
-
             clearResults();
         });
     });
 
-    // Mood & Category selection
-    function setupSelection(containerId, hiddenInputId, callback) {
-        const container = document.querySelector(`#${containerId} .mood-options, #${containerId} .category-options`);
+    // Setup selection for moodForm & categoryForm
+    function setupSelection(containerId, hiddenInputId, callback, type) {
+        const container = document.querySelector(`#${containerId} .${type}-options`);
         const hiddenInput = document.getElementById(hiddenInputId);
         if (!container) return;
-
-        container.querySelectorAll('.mood-option, .category-option').forEach(option => {
+        container.querySelectorAll(`.${type}-option`).forEach(option => {
             option.addEventListener('click', async () => {
-                container.querySelectorAll('.mood-option, .category-option').forEach(opt => opt.classList.remove('selected'));
+                container.querySelectorAll(`.${type}-option`).forEach(opt => opt.classList.remove('selected'));
                 option.classList.add('selected');
-                hiddenInput.value = option.dataset.mood || option.dataset.category;
-
-                if (typeof callback === 'function') {
-                    await callback(hiddenInput.value);
-                }
+                hiddenInput.value = option.dataset[type];
+                if (typeof callback === 'function') await callback(hiddenInput.value);
             });
         });
     }
 
-    // Live Search Functions
-    async function searchByName(query) {
-        const userId = getUserIdFromToken();
-        if (!userId) return;
-        if (!query) return clearResults();
+    setupSelection('moodForm', 'selectedMood', searchByMood, 'mood');
+    setupSelection('categoryForm', 'selectedCategory', searchByCategory, 'category');
 
+    // Setup selection for combined form
+    function setupCombinedSelection(containerSelector, hiddenInputId, type) {
+        const container = document.querySelector(containerSelector);
+        const hiddenInput = document.getElementById(hiddenInputId);
+        container.querySelectorAll(`.${type}-option`).forEach(option => {
+            option.addEventListener('click', () => {
+                container.querySelectorAll(`.${type}-option`).forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                hiddenInput.value = option.dataset[type];
+                searchCombined();
+            });
+        });
+    }
+
+    setupCombinedSelection('.combined-category-options', 'combinedSelectedCategory', 'category');
+    setupCombinedSelection('.combined-mood-options', 'combinedSelectedMood', 'mood');
+
+    // Clear functions
+    window.clearCombinedMood = function() {
+        combinedMoodSelect.value = '';
+        combinedMoodContainer.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+        searchCombined();
+    };
+    window.clearCombinedCategory = function() {
+        combinedCategorySelect.value = '';
+        combinedCategoryContainer.querySelectorAll('.category-option').forEach(opt => opt.classList.remove('selected'));
+        searchCombined();
+    };
+
+    document.getElementById('titleSearch').addEventListener('input', e => searchByName(e.target.value.trim()));
+    document.getElementById('combinedTitle').addEventListener('input', searchCombined);
+
+    // Search functions
+    async function searchByName(query) {
+        if (!query) return clearResults();
         await performSearch(`${API_BASE_URL}/diary/search/name?userId=${userId}&q=${encodeURIComponent(query)}`);
     }
-
     async function searchByMood(mood) {
-        const userId = getUserIdFromToken();
-        if (!userId) return;
         if (!mood) return clearResults();
-
         await performSearch(`${API_BASE_URL}/diary/search/mood?userId=${userId}&mood=${encodeURIComponent(mood)}`);
     }
-
     async function searchByCategory(category) {
-        const userId = getUserIdFromToken();
-        if (!userId) return;
         if (!category) return clearResults();
-
         await performSearch(`${API_BASE_URL}/diary/search/category?userId=${userId}&category=${encodeURIComponent(category)}`);
     }
-
-    // FIXED: Combined search function
     async function searchCombined() {
-        const userId = getUserIdFromToken();
-        if (!userId) return;
-
         const title = document.getElementById('combinedTitle').value.trim();
-        const mood = document.getElementById('combinedMood').value;
-        const category = document.getElementById('combinedCategory').value;
-
-        // FIXED: Only clear results if ALL fields are empty
-        if (!title && !mood && !category) {
-            return clearResults();
-        }
-
+        const mood = combinedMoodSelect.value;
+        const category = combinedCategorySelect.value;
+        if (!title && !mood && !category) return clearResults();
         const params = new URLSearchParams({ userId });
         if (title) params.append('q', title);
         if (mood) params.append('mood', mood);
         if (category) params.append('category', category);
-
         await performSearch(`${API_BASE_URL}/diary/search?${params.toString()}`);
     }
 
-    // Setup live search
-    document.getElementById('titleSearch').addEventListener('input', async (e) => {
-        await searchByName(e.target.value.trim());
-    });
-
-    setupSelection('moodForm', 'selectedMood', searchByMood);
-    setupSelection('categoryForm', 'selectedCategory', searchByCategory);
-
-    // Combined Form: live search on title + mood + category changes
-    document.getElementById('combinedTitle').addEventListener('input', searchCombined);
-    setupSelection('combinedForm', 'combinedMood', searchCombined);
-    setupSelection('combinedForm', 'combinedCategory', searchCombined);
-
-    // Clear functions for combined form
-    window.clearCombinedMood = function() {
-        document.getElementById('combinedMood').value = '';
-        document.querySelector('#combinedForm .mood-options .selected')?.classList.remove('selected');
-        searchCombined();
-    };
-
-    window.clearCombinedCategory = function() {
-        document.getElementById('combinedCategory').value = '';
-        document.querySelector('#combinedForm .category-options .selected')?.classList.remove('selected');
-        searchCombined();
-    };
-
-    // Perform search and display results
     async function performSearch(url) {
         resultsContainer.innerHTML = '<div class="loading">Searching your memories...</div>';
         resultsContainer.style.display = 'block';
-
         try {
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Search failed');
             displayResults(data.results || []);
         } catch (err) {
-            resultsContainer.innerHTML = `
-                <div class="no-results">
-                    <p>❌ Search failed: ${err.message}</p>
-                    <p>Please try again or contact support.</p>
-                </div>
-            `;
+            resultsContainer.innerHTML = `<div class="no-results"><p>❌ Search failed: ${err.message}</p></div>`;
         }
     }
 
     function displayResults(results) {
         if (!results || results.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="no-results">
-                    <p>📭 No memories found matching your search criteria.</p>
-                </div>
-            `;
+            resultsContainer.innerHTML = `<div class="no-results"><p>📭 No memories found matching your search criteria.</p></div>`;
             return;
         }
-
         resultsContainer.innerHTML = `
             <div class="results-header">
                 <div class="results-count">Found ${results.length} memory${results.length !== 1 ? 's' : ''}</div>
@@ -760,7 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function createResultHTML(result) {
         const date = new Date(result.diaryDate);
         const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
         const mediaIndicators = [];
         if (result.media && result.media.length > 0) {
             const types = {};
@@ -770,7 +737,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 mediaIndicators.push(`<div class="media-indicator">${icon} ${count} ${type}${count>1?'s':''}</div>`);
             });
         }
-
         return `
             <div class="search-result" onclick="viewDiary('${result.diaryDate}')">
                 <div class="result-header">
@@ -787,21 +753,16 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    window.viewDiary = function(date) {
-        window.location.href = `diary_view.html?date=${encodeURIComponent(date)}`;
-    };
-
-    window.clearResults = function() {
+    window.viewDiary = date => window.location.href = `diary_view.html?date=${encodeURIComponent(date)}`;
+    window.clearResults = () => {
         resultsContainer.style.display = 'none';
         resultsContainer.innerHTML = '';
-
         document.getElementById('titleSearch').value = '';
         document.getElementById('combinedTitle').value = '';
         document.getElementById('selectedMood').value = '';
-        document.getElementById('combinedMood').value = '';
+        combinedMoodSelect.value = '';
         document.getElementById('selectedCategory').value = '';
-        document.getElementById('combinedCategory').value = '';
-
+        combinedCategorySelect.value = '';
         document.querySelectorAll('.mood-option, .category-option').forEach(opt => opt.classList.remove('selected'));
     };
 });
@@ -809,3 +770,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+

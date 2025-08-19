@@ -105,19 +105,17 @@ textarea { resize:vertical; min-height:150px; text-align:justify; }
         <button type="submit" class="submit-btn" id="submit-btn">Save This Chapter</button>
     </form>
 </div>
-
-<script>
-    const moodEmojis = {
-  Happy: ['😊', '😁', '😄'],
-  Sad: ['😢', '😔', '😞'],
-  Excited: ['🤩', '😃', '😎'],
-  Relaxed: ['😌', '😴', '🧘'],
-  Stressed: ['😣', '😖', '😫'],
-  Neutral: ['😐', '😶', '😑']
-};
+<script type="module">
+import { fetchCategories, fetchMoods } from './api.js';
 
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
+
+if (!token) {
+    alert("Please log in to continue.");
+    window.location.href = 'register_login.html';
+}
+
 const urlParams = new URLSearchParams(window.location.search);
 const date = urlParams.get('date');
 const eventId = urlParams.get('eventId');
@@ -131,196 +129,268 @@ const mediaSection = document.getElementById('media-section');
 const submitBtn = document.getElementById('submit-btn');
 const categorySelect = document.getElementById('event-category');
 const moodSelect = document.getElementById('event-mood');
+const moodEmoji = document.querySelector('.mood-emoji');
 
+let categories = [];
+let moods = [];
 let existingMedia = [];
 let removedMedia = [];
 let newMediaFiles = [];
 
-async function loadEvent() {
-    if (!date || !eventId) { alert("Invalid URL"); window.location.href='dashboard.html'; return; }
+// Load categories and moods
+async function loadCategoriesAndMoods() {
     try {
-        const res = await fetch(`${API_BASE_URL}/diary/${date}`, { headers:{'Authorization':`Bearer ${token}`}});
-        // ← Add this check here
-if(res.status === 401){
-    alert("Session expired. Please log in again.");
-    localStorage.removeItem('token');
-    window.location.href = 'register_login.html';
-    return;
-}
-        const data = await res.json();
-        console.log(data);
-        if (!res.ok) throw new Error(data.message || 'Failed to load event');
-        const event = data.data.events.find(ev=>ev._id===eventId);
-        if(!event){ alert('Event not found'); window.location.href='dashboard.html'; return; }
-        titleInput.value = event.title;
-        descInput.value = event.description||'';
-        existingMedia = event.media||[];
-        const categorySelect = document.getElementById('event-category');
-const moodSelect = document.getElementById('event-mood');
-const moodEmoji = document.querySelector('.mood-emoji');
+        categories = await fetchCategories();
+        moods = await fetchMoods();
 
-categorySelect.value = event.category || '';
-moodSelect.value = event.mood || '';
+        if (!categories.find(c => c.name === "Other")) categories.push({ name: "Other" });
+        if (!moods.find(m => m.name === "Other")) moods.push({ name: "Other" });
 
-// Set initial emoji if mood exists
-if (event.mood && moodEmojis[event.mood]) {
-    const randomIndex = Math.floor(Math.random() * moodEmojis[event.mood].length);
-    moodEmoji.textContent = moodEmojis[event.mood][randomIndex];
+        // Populate selects
+        categorySelect.innerHTML = `<option value="" disabled selected>Select Category</option>` +
+            categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        moodSelect.innerHTML = `<option value="" disabled selected>Select Mood</option>` +
+            moods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+
+    } catch (err) {
+        console.error("Error loading categories/moods:", err);
+        alert("Failed to load categories and moods.");
+    }
 }
 
-// Update emoji when mood changes
-moodSelect.addEventListener('change', (e) => {
-    const mood = e.target.value;
-    if (moodEmojis[mood]) {
-        const randomIndex = Math.floor(Math.random() * moodEmojis[mood].length);
-        moodEmoji.textContent = moodEmojis[mood][randomIndex];
-    } else {
-        moodEmoji.textContent = '';
+// --- CATEGORY "OTHER" ---
+categorySelect.addEventListener('change', async e => {
+    if (e.target.value === 'Other') {
+        const customCategory = prompt("Enter your custom category:");
+        if (customCategory) {
+            const opt = document.createElement('option');
+            opt.value = customCategory;
+            opt.textContent = customCategory;
+            opt.selected = true;
+            categorySelect.appendChild(opt);
+            categorySelect.dataset.custom = customCategory;
+
+            try {
+                await fetch(`${API_BASE_URL}/suggestions/category`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name: customCategory })
+                });
+            } catch (err) { console.error("Error sending category suggestion:", err); }
+        } else e.target.value = '';
     }
 });
 
-        renderMediaPreviews();
-    } catch(err){ 
-         console.error("Error in loadEvent:", err); 
-        alert('Error loading event'); }
+// --- MOOD "OTHER" ---
+moodSelect.addEventListener('change', async e => {
+    const selectedMood = e.target.value;
+    if (selectedMood === 'Other') {
+        const customMood = prompt("Enter your custom mood:");
+        if (customMood) {
+            const opt = document.createElement('option');
+            opt.value = customMood;
+            opt.textContent = customMood;
+            opt.selected = true;
+            moodSelect.appendChild(opt);
+            moodSelect.dataset.custom = customMood;
+            moodEmoji.textContent = '';
+            try {
+                await fetch(`${API_BASE_URL}/suggestions/mood`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name: customMood })
+                });
+            } catch (err) { console.error("Error sending mood suggestion:", err); }
+        } else e.target.value = '';
+    } else {
+        updateMoodEmoji(selectedMood);
+    }
+});
+
+// Emoji helper
+function updateMoodEmoji(selectedMood) {
+    const mood = moods.find(m => m.name === selectedMood);
+    if (mood?.emojis?.length) {
+        moodEmoji.textContent = mood.emojis[Math.floor(Math.random() * mood.emojis.length)];
+    } else moodEmoji.textContent = '';
 }
 
-function renderMediaPreviews(){
+// Load event data
+async function loadEvent() {
+    if (!date || !eventId) {
+        alert("Invalid URL");
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/diary/${date}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.status === 401) {
+            alert("Session expired. Please log in again.");
+            localStorage.removeItem('token');
+            window.location.href = 'register_login.html';
+            return;
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to load event');
+
+        const ev = data.data.events.find(ev => ev._id === eventId);
+        if (!ev) {
+            alert('Event not found');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // --- Pre-fill form here ---
+        titleInput.value = ev.title;
+        descInput.value = ev.description || '';
+        existingMedia = ev.media || [];
+
+        // Ensure the category and mood exist in the select; if not, add them
+        if (ev.category && !Array.from(categorySelect.options).some(opt => opt.value === ev.category)) {
+            const opt = document.createElement('option');
+            opt.value = ev.category;
+            opt.textContent = ev.category;
+            categorySelect.appendChild(opt);
+        }
+        categorySelect.value = ev.category || '';
+
+        if (ev.mood && !Array.from(moodSelect.options).some(opt => opt.value === ev.mood)) {
+            const opt = document.createElement('option');
+            opt.value = ev.mood;
+            opt.textContent = ev.mood;
+            moodSelect.appendChild(opt);
+        }
+        moodSelect.value = ev.mood || '';
+        updateMoodEmoji(ev.mood);
+
+        renderMediaPreviews();
+
+    } catch (err) {
+        console.error("Error in loadEvent:", err);
+        alert('Error loading event');
+    }
+}
+
+// Render media previews
+function renderMediaPreviews() {
     mediaPreview.innerHTML = '';
     const totalMedia = existingMedia.length + newMediaFiles.length;
     mediaSection.style.display = totalMedia === 0 ? 'none' : 'block';
 
-    // Existing media
-    existingMedia.forEach((mediaObj, idx) => {
-        const type = mediaObj.type; // 'image', 'video', 'audio'
+    const addMediaItem = (mediaEl, captionValue, removeCallback) => {
         const item = document.createElement('div');
         item.className = 'media-item';
-
-        let mediaEl;
-        if (type === 'image') {
-            mediaEl = document.createElement('img');
-            mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
-        } else if (type === 'video') {
-            mediaEl = document.createElement('video');
-            mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
-            mediaEl.controls = true;
-        } else if (type === 'audio') {
-            mediaEl = document.createElement('audio');
-            mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
-            mediaEl.controls = true;
-        }
-
         const captionInput = document.createElement('input');
         captionInput.type = 'text';
         captionInput.placeholder = 'Add caption...';
         captionInput.className = 'media-caption';
-        captionInput.dataset.index = idx;
-        captionInput.value = mediaObj.caption || '';
+        captionInput.value = captionValue || '';
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
         removeBtn.innerHTML = '×';
-        removeBtn.onclick = (e) => {
+        removeBtn.onclick = removeCallback;
+
+        item.appendChild(mediaEl);
+        item.appendChild(captionInput);
+        item.appendChild(removeBtn);
+        mediaPreview.appendChild(item);
+    };
+
+    // Existing media
+    existingMedia.forEach((mediaObj, idx) => {
+        let mediaEl;
+        if (mediaObj.type === 'image') mediaEl = document.createElement('img');
+        else if (mediaObj.type === 'video') { mediaEl = document.createElement('video'); mediaEl.controls = true; }
+        else if (mediaObj.type === 'audio') { mediaEl = document.createElement('audio'); mediaEl.controls = true; }
+        mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
+        addMediaItem(mediaEl, mediaObj.caption, e => {
             e.preventDefault();
-            if(confirm('Remove this memory?')){
-                removedMedia.push(mediaObj.url); 
+            if (confirm('Remove this memory?')) {
+                removedMedia.push(mediaObj.url);
                 existingMedia = existingMedia.filter(m => m.url !== mediaObj.url);
                 renderMediaPreviews();
             }
-        };
-
-        if(mediaEl){
-            item.appendChild(mediaEl);
-            item.appendChild(captionInput);
-            item.appendChild(removeBtn);
-            mediaPreview.appendChild(item);
-        }
+        });
     });
 
-    // New media (same as before)
-    newMediaFiles.forEach((file, index) => {
-        const type = file.type.split('/')[0]; 
-        const item = document.createElement('div'); 
-        item.className = 'media-item';
-
-        const fileURL = URL.createObjectURL(file); 
+    // New media
+    newMediaFiles.forEach((file, idx) => {
+        const type = file.type.split('/')[0];
+        const url = URL.createObjectURL(file);
         let mediaEl;
-        if(type==='image'){ 
-            mediaEl = document.createElement('img'); 
-            mediaEl.src = fileURL; 
-        } else if(type==='video'){ 
-            mediaEl = document.createElement('video'); 
-            mediaEl.src = fileURL; 
-            mediaEl.controls = true; 
-        } else if(type==='audio'){ 
-            mediaEl = document.createElement('audio'); 
-            mediaEl.src = fileURL; 
-            mediaEl.controls = true; 
-        }
+        if (type === 'image') mediaEl = document.createElement('img');
+        else if (type === 'video') { mediaEl = document.createElement('video'); mediaEl.controls = true; }
+        else if (type === 'audio') { mediaEl = document.createElement('audio'); mediaEl.controls = true; }
+        mediaEl.src = url;
 
-        const captionInput = document.createElement('input');
-        captionInput.type = 'text';
-        captionInput.placeholder = 'Add caption...';
-        captionInput.className = 'media-caption';
-        captionInput.dataset.index = index + existingMedia.length;
-
-        const removeBtn = document.createElement('button'); 
-        removeBtn.className = 'remove-btn'; 
-        removeBtn.innerHTML='×';
-        removeBtn.onclick = (e) => { 
-            e.preventDefault(); 
-            URL.revokeObjectURL(fileURL); 
-            newMediaFiles.splice(index,1); 
-            renderMediaPreviews(); 
-        };
-
-        if(mediaEl){ 
-            item.appendChild(mediaEl); 
-            item.appendChild(captionInput);   
-            item.appendChild(removeBtn); 
-            mediaPreview.appendChild(item); 
-        }
+        addMediaItem(mediaEl, '', e => {
+            e.preventDefault();
+            newMediaFiles.splice(idx, 1);
+            URL.revokeObjectURL(url);
+            renderMediaPreviews();
+        });
     });
 }
 
-
-mediaInput.addEventListener('change', e=>{
-    const files=Array.from(e.target.files);
-    newMediaFiles=[...newMediaFiles,...files]; mediaInput.value='';
+// Handle file input
+mediaInput.addEventListener('change', e => {
+    const files = Array.from(e.target.files);
+    newMediaFiles.push(...files);
+    mediaInput.value = '';
     renderMediaPreviews();
 });
 
-form.onsubmit=async e=>{
+// Submit handler
+form.onsubmit = async e => {
     e.preventDefault();
-    submitBtn.disabled=true; submitBtn.textContent='Saving...';
-    const formData=new FormData();
-    formData.append('title',titleInput.value.trim());
+    submitBtn.disabled = true; submitBtn.textContent = 'Saving...';
+
+    const formData = new FormData();
+    formData.append('title', titleInput.value.trim());
     formData.append('category', categorySelect.value);
-formData.append('mood', moodSelect.value);
+    formData.append('mood', moodSelect.value);
+    formData.append('description', descInput.value.trim());
+    if (removedMedia.length) formData.append('removedMedia', JSON.stringify(removedMedia));
+    newMediaFiles.forEach(file => formData.append('media', file));
 
-    formData.append('description',descInput.value.trim());
-    if(removedMedia.length>0) formData.append('removedMedia',JSON.stringify(removedMedia));
-    newMediaFiles.forEach(file=>formData.append('media',file));
-    const captionsInputs = form.querySelectorAll('.media-caption');
-captionsInputs.forEach(input => formData.append('captions', input.value.trim()));
+    form.querySelectorAll('.media-caption').forEach(input => formData.append('captions', input.value.trim()));
 
-    try{
-        const res=await fetch(`${API_BASE_URL}/diary/${date}/${eventId}`,{
-            method:'PUT', headers:{'Authorization':`Bearer ${token}`}, body:formData
+    try {
+        const res = await fetch(`${API_BASE_URL}/diary/${date}/${eventId}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
         });
-        const data=await res.json();
-        if(!res.ok) throw new Error(data.message||'Failed to update event');
-        submitBtn.textContent='Saved!'; submitBtn.style.background='linear-gradient(135deg,#28a745,#20c997)';
-        setTimeout(()=>window.location.href='dashboard.html',1500);
-    } catch(err){
-        console.error(err); alert('Error updating memory: '+err.message);
-        submitBtn.disabled=false; submitBtn.textContent='Save This Chapter';
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to update event');
+
+        submitBtn.textContent = 'Saved!';
+        submitBtn.style.background = 'linear-gradient(135deg,#28a745,#20c997)';
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+    } catch (err) {
+        console.error(err);
+        alert('Error updating memory: ' + err.message);
+        submitBtn.disabled = false; submitBtn.textContent = 'Save This Chapter';
     }
 };
 
-window.addEventListener('beforeunload', ()=>{ newMediaFiles.forEach(file=>URL.revokeObjectURL(file.url)); });
-loadEvent();
+// Cleanup blob URLs
+window.addEventListener('beforeunload', () => {
+    newMediaFiles.forEach(file => URL.revokeObjectURL(file.url));
+});
+
+await loadCategoriesAndMoods();
+await loadEvent();
+
+
 </script>
+
 
 </body>
 </html>

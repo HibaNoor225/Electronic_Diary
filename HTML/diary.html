@@ -426,6 +426,8 @@ body {
 
 
 </style>
+
+
 </head>
 
 <body>
@@ -460,20 +462,23 @@ body {
         </div>
     </div>
 </div>
+<script type="module">
+ import { fetchCategories, fetchMoods } from './api.js';
 
-<script>
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
+
+if (!token) {
+    alert("Please log in to continue.");
+    window.location.href = 'register_login.html';
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const date = urlParams.get('date') || new Date().toISOString().split('T')[0];
 
 // Format date for display
 const readableDate = new Date(date).toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
 });
 document.getElementById('page-date').textContent = `Writing memories for ${readableDate}`;
 
@@ -483,17 +488,33 @@ const saveAllBtn = document.getElementById('save-all-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 let eventCounter = 0;
+let categories = [];
+let moods = [];
 
-const moodEmojis = {
-  Happy: ['😊', '😁', '😄'],
-  Sad: ['😢', '😔', '😞'],
-  Excited: ['🤩', '😃', '😎'],
-  Relaxed: ['😌', '😴', '🧘'],
-  Stressed: ['😣', '😖', '😫'],
-  Neutral: ['😐', '😶', '😑']
-};
+// Load categories and moods
+async function loadCategoriesAndMoods() {
+  try {
+    categories = await fetchCategories();
+    moods = await fetchMoods();
 
-// Function to create a new event form
+    // Add "Other" option only if it's not already in the array
+    if (!categories.find(c => c.name === "Other")) {
+      categories.push({ name: "Other" });
+    }
+    if (!moods.find(m => m.name === "Other")) {
+      moods.push({ name: "Other" });
+    }
+
+  } catch (err) {
+    console.error("Error loading categories/moods:", err);
+    alert("Failed to load categories and moods. Please check your network/server");
+  }
+}
+
+// Call before creating first form
+await loadCategoriesAndMoods();
+
+// Create event form
 function createEventForm() {
     eventCounter++;
     const div = document.createElement('div');
@@ -518,13 +539,6 @@ function createEventForm() {
             <label>Category</label>
             <select class="event-category">
                 <option value="" disabled selected>Select Category</option>
-                <option value="Work">Work</option>
-                <option value="Personal">Personal</option>
-                <option value="Travel">Travel</option>
-                <option value="Family">Family</option>
-                <option value="Hobby">Hobby</option>
-                <option value="Other">Other</option>
-
             </select>
         </div>
 
@@ -532,10 +546,9 @@ function createEventForm() {
             <label>Mood <span class="mood-emoji"></span></label>
             <select class="event-mood">
                 <option value="" disabled selected>Select Mood</option>
-                ${Object.keys(moodEmojis).map(m => `<option value="${m}">${m}</option>`).join('')}
             </select>
         </div>
-
+        
         <div class="form-group">
             <label>Capture the Moment</label>
             <div class="file-input-wrapper">
@@ -543,91 +556,109 @@ function createEventForm() {
                 <label class="file-input-label">Add Photos, Videos & Audio</label>
             </div>
         </div>
-        
         <div class="media-preview"></div>
     `;
-    
+
     const removeBtn = div.querySelector('.remove-event-btn');
     const mediaInput = div.querySelector('.event-media');
     const mediaPreview = div.querySelector('.media-preview');
     const fileLabel = div.querySelector('.file-input-label');
-    const moodSelector = div.querySelector('.event-mood');
+    const categorySelect = div.querySelector('.event-category');
+    const moodSelect = div.querySelector('.event-mood');
     const moodEmoji = div.querySelector('.mood-emoji');
-    
-    fileLabel.onclick = () => mediaInput.click();
-    
-    if (removeBtn) {
-        removeBtn.onclick = () => {
-            div.remove();
-            updateEventNumbers();
-        };
-    }
-    
-    mediaInput.addEventListener('change', (e) => {
-    mediaPreview.innerHTML = '';
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-        mediaPreview.style.display = 'grid';
-        files.forEach((file, idx) => {
-            const type = file.type.split('/')[0];
-            const url = URL.createObjectURL(file);
 
-            const wrapper = document.createElement('div');
-            wrapper.style.display = 'flex';
-            wrapper.style.flexDirection = 'column';
-            wrapper.style.gap = '5px';
+    // Populate selects
+    categorySelect.innerHTML += categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    moodSelect.innerHTML += moods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
 
-            let mediaEl;
-            if (type === 'image') {
-                mediaEl = document.createElement('img');
-                mediaEl.src = url;
-            } else if (type === 'video') {
-                mediaEl = document.createElement('video');
-                mediaEl.src = url;
-                mediaEl.controls = true;
-            } else if (type === 'audio') {
-                mediaEl = document.createElement('audio');
-                mediaEl.src = url;
-                mediaEl.controls = true;
-            }
-            mediaEl.style.maxHeight = '100px';
-            mediaEl.style.borderRadius = '5px';
+    // Other option handling
+    categorySelect.addEventListener('change', (e) => {
+    if (e.target.value === 'Other') {
+        const customCategory = prompt("Enter your custom category:");
+        if (customCategory) {
+            const opt = document.createElement('option');
+            opt.value = customCategory;
+            opt.textContent = customCategory;
+            opt.selected = true;
+            categorySelect.appendChild(opt);
 
-            // **CAPTION INPUT**
-            const captionInput = document.createElement('input');
-            captionInput.type = 'text';
-            captionInput.placeholder = 'Add caption...';
-            captionInput.className = 'media-caption';
-            captionInput.dataset.index = idx;
-
-            wrapper.appendChild(mediaEl);
-            wrapper.appendChild(captionInput);
-            mediaPreview.appendChild(wrapper);
-        });
-    } else {
-        mediaPreview.style.display = 'none';
+            // Mark it as a custom suggestion (store on the element itself)
+            categorySelect.dataset.custom = customCategory;
+        } else e.target.value = '';
     }
 });
 
+moodSelect.addEventListener('change', (e) => {
+    if (e.target.value === 'Other') {
+        const customMood = prompt("Enter your custom mood:");
+        if (customMood) {
+            const opt = document.createElement('option');
+            opt.value = customMood;
+            opt.textContent = customMood;
+            opt.selected = true;
+            moodSelect.appendChild(opt);
 
+            // Mark it as a custom suggestion
+            moodSelect.dataset.custom = customMood;
+        } else e.target.value = '';
+    }
+});
 
-    moodSelector.addEventListener('change', (e) => {
-        const mood = e.target.value;
-        if (moodEmojis[mood]) {
-            const randomIndex = Math.floor(Math.random() * moodEmojis[mood].length);
-            moodEmoji.textContent = moodEmojis[mood][randomIndex];
-        } else {
-            moodEmoji.textContent = '';
-        }
+  
+
+    // Remove button
+    if (removeBtn) removeBtn.onclick = () => { div.remove(); updateEventNumbers(); };
+
+    // Media preview
+    fileLabel.onclick = () => mediaInput.click();
+    mediaInput.addEventListener('change', (e) => {
+        mediaPreview.innerHTML = '';
+        const files = Array.from(e.target.files);
+        if (files.length) {
+            mediaPreview.style.display = 'grid';
+            files.forEach((file, idx) => {
+                const type = file.type.split('/')[0];
+                const url = URL.createObjectURL(file);
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'flex';
+                wrapper.style.flexDirection = 'column';
+                wrapper.style.gap = '5px';
+
+                let mediaEl;
+                if (type === 'image') mediaEl = document.createElement('img');
+                else if (type === 'video') { mediaEl = document.createElement('video'); mediaEl.controls = true; }
+                else if (type === 'audio') { mediaEl = document.createElement('audio'); mediaEl.controls = true; }
+
+                mediaEl.src = url;
+                mediaEl.style.maxHeight = '100px';
+                mediaEl.style.borderRadius = '5px';
+
+                const captionInput = document.createElement('input');
+                captionInput.type = 'text';
+                captionInput.placeholder = 'Add caption...';
+                captionInput.className = 'media-caption';
+                captionInput.dataset.index = idx;
+
+                wrapper.appendChild(mediaEl);
+                wrapper.appendChild(captionInput);
+                mediaPreview.appendChild(wrapper);
+            });
+        } else mediaPreview.style.display = 'none';
     });
-    
+
+    // Mood emoji preview
+    moodSelect.addEventListener('change', () => {
+        const selectedMood = moods.find(m => m.name === moodSelect.value);
+        moodEmoji.textContent = selectedMood?.emojis?.length ? selectedMood.emojis[Math.floor(Math.random() * selectedMood.emojis.length)] : '';
+    });
+
     eventsList.appendChild(div);
 }
 
+// Update memory numbers
 function updateEventNumbers() {
     const cards = document.querySelectorAll('.event-card');
     eventCounter = 0;
-    
     cards.forEach((card, index) => {
         eventCounter++;
         card.querySelector('.event-number').textContent = `Memory ${index + 1}`;
@@ -639,10 +670,7 @@ function updateEventNumbers() {
             btn.className = 'remove-event-btn';
             btn.type = 'button';
             btn.textContent = 'Remove';
-            btn.onclick = () => {
-                card.remove();
-                updateEventNumbers();
-            };
+            btn.onclick = () => { card.remove(); updateEventNumbers(); };
             cardHeader.appendChild(btn);
         }
     });
@@ -650,41 +678,59 @@ function updateEventNumbers() {
 
 addEventBtn.onclick = () => createEventForm();
 
+// Save all events
 saveAllBtn.onclick = async () => {
     const forms = document.querySelectorAll('.event-card');
-    if (forms.length === 0) return alert("Add at least one memory to preserve!");
+    if (!forms.length) return alert("Add at least one memory to preserve!");
     loadingOverlay.style.display = 'flex';
     saveAllBtn.disabled = true;
 
     for (const form of forms) {
-        const title = form.querySelector('.event-title').value.trim();
-        const desc = form.querySelector('.event-desc').value.trim();
-        const category = form.querySelector('.event-category').value;
-        const mood = form.querySelector('.event-mood').value;
-        const mediaFiles = form.querySelector('.event-media').files;
+        const titleInput = form.querySelector('.event-title');
+        const descInput = form.querySelector('.event-desc');
+        const categorySelect = form.querySelector('.event-category');
+        const moodSelect = form.querySelector('.event-mood');
+        const mediaFiles = form.querySelector('.event-media')?.files || [];
 
-        if (!title) {
-            loadingOverlay.style.display = 'none';
-            saveAllBtn.disabled = false;
-            alert("Please give each memory a title before saving!");
-            form.querySelector('.event-title').focus();
-            return;
-        }
+        const title = titleInput && titleInput.value ? titleInput.value.trim() : "";
+const desc = descInput && descInput.value ? descInput.value.trim() : "";
 
-       const formData = new FormData();
-formData.append('title', title);
-formData.append('description', desc);
-formData.append('category', category);
-formData.append('mood', mood);
-formData.append('date', date);
+const customCategory = categorySelect?.dataset.custom?.trim() || "";
+const customMood = moodSelect?.dataset.custom?.trim() || "";
 
-// Add media files
-for (const file of mediaFiles) formData.append('media', file);
+// Prefer custom if available
+const category = customCategory || (categorySelect?.value?.trim() || "");
+const mood = customMood || (moodSelect?.value?.trim() || "");
 
-// **NEW: Add captions**
-const captionsInputs = form.querySelectorAll('.media-caption');
-captionsInputs.forEach(input => formData.append('captions', input.value.trim()));
+if (!title || !category || !mood) {
+    loadingOverlay.style.display = 'none';
+    saveAllBtn.disabled = false;
+    alert("Please fill in title, category, and mood before saving!");
+    return;
+}
+console.log({
+  title,
+  category,
+  mood,
+  customCategory,
+  customMood
+});
 
+const formData = new FormData();
+formData.append("title", title);
+formData.append("description", desc || "");
+formData.append("category", category);
+formData.append("mood", mood);
+formData.append("customCategory", customCategory);
+formData.append("customMood", customMood);
+formData.append("date", date);
+
+
+
+
+        for (const file of mediaFiles) formData.append('media', file);
+        form.querySelectorAll('.media-caption')
+            .forEach(input => formData.append('captions', input.value.trim()));
 
         try {
             const res = await fetch(`${API_BASE_URL}/diary`, {
@@ -692,15 +738,33 @@ captionsInputs.forEach(input => formData.append('captions', input.value.trim()))
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
-            // ← Add this check here
-if(res.status === 401){
-    alert("Session expired. Please log in again.");
-    localStorage.removeItem('token');
-    window.location.href = 'register_login.html';
-    return;
-}
+
+            if (res.status === 401) {
+                alert("Session expired. Please log in again.");
+                localStorage.removeItem('token');
+                window.location.href = 'register_login.html';
+                return;
+            }
+
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
+
+            // Suggest only after successful save
+            if (categorySelect?.dataset.custom) {
+                await fetch(`${API_BASE_URL}/suggestions/category`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name: categorySelect.dataset.custom })
+                });
+            }
+            if (moodSelect?.dataset.custom) {
+                await fetch(`${API_BASE_URL}/suggestions/mood`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name: moodSelect.dataset.custom })
+                });
+            }
+
         } catch (err) {
             console.error(err);
             loadingOverlay.style.display = 'none';
@@ -715,15 +779,18 @@ if(res.status === 401){
     window.location.href = 'dashboard.html';
 };
 
-// Initialize with one form
+
+// Initialize first form
 createEventForm();
 
+// Cleanup blob URLs
 window.addEventListener('beforeunload', () => {
     document.querySelectorAll('.media-preview img, .media-preview video, .media-preview audio').forEach(el => {
         if (el.src.startsWith('blob:')) URL.revokeObjectURL(el.src);
     });
 });
 </script>
+
 
 </body>
 </html>
