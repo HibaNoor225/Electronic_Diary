@@ -14,7 +14,7 @@ const authenticateUser = (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
 
     req.info = decoded; // attaches user info to request
-    console.log('Auth header:', req.headers.authorization);
+   
 
     next(); 
   } catch (error) {

@@ -3,134 +3,533 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login or Signup</title>
+<title>Welcome to Daily Diary</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-    padding:20px;
+    background: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
     transition: background 0.3s ease;
+    line-height: 1.6;
 }
 
 .main-content {
     width: 100%;
-    max-width: 420px;
-    background: #f5f4f0;
-    border-radius: 15px;
-    padding: 40px 30px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    max-width: 450px;
+    background: #fdfbf7;
+    border-radius: 20px;
+    padding: 50px 45px;
+    box-shadow: 0 20px 60px rgba(139,69,19,0.15);
+    border: 3px solid #d4c5a9;
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow-y: auto;
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn 0.6s ease;
+    position: relative;
+}
+
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 35px;
+    width: 2px;
+    height: 100%;
+    background: #e74c3c;
+    opacity: 0.3;
 }
 
 @keyframes fadeIn {
-    0% { opacity:0; transform: translateY(-20px); }
-    100% { opacity:1; transform: translateY(0); }
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
 .auth-toggle {
-    display:flex;
-    background:#e0e0e0;
-    border-radius:8px;
-    padding:4px;
-    margin-bottom:30px;
-    width:100%;
+    display: flex;
+    background: #e8dcc6;
+    border-radius: 15px;
+    padding: 6px;
+    margin-bottom: 35px;
+    width: 100%;
     transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(139,69,19,0.1);
 }
 
 .toggle-btn {
-    flex:1;
-    padding:12px;
-    background:transparent;
-    border:none;
-    border-radius:6px;
-    font-size:16px;
-    font-weight:500;
-    cursor:pointer;
+    flex: 1;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
     transition: all 0.3s ease;
-    color:#666;
+    color: #8d6e63;
+    font-family: 'Georgia', 'Times New Roman', serif;
 }
+
 .toggle-btn.active {
-    background:white;
-    color:#333;
-    box-shadow:0 3px 6px rgba(0,0,0,0.15);
+    background: #8b4513;
+    color: white;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    transform: translateY(-1px);
+}
+
+.toggle-btn:hover:not(.active) {
+    background: rgba(139,69,19,0.1);
+    color: #5d4037;
 }
 
 .title {
-    font-size:28px;
-    color:#333;
-    margin-bottom:20px;
-    font-weight:400;
-    text-align:center;
+    font-size: 2.2rem;
+    color: #5d4037;
+    margin-bottom: 25px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
+}
+
+.social-buttons { 
+    width: 100%; 
+    margin-bottom: 25px; 
+}
+
+.social-btn {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid #d4c5a9;
+    border-radius: 12px;
+    background: #fff8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 1rem;
+    color: #5d4037;
+    cursor: pointer;
+    transition: all 0.3s ease, transform 0.2s ease;
+    margin-bottom: 15px;
+    text-decoration: none;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(139,69,19,0.1);
+}
+
+.social-btn:hover { 
+    background: #ffffff; 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 20px rgba(139,69,19,0.15);
+    border-color: #8b4513;
+}
+
+.social-btn:active { 
+    transform: translateY(0); 
+}
+
+.google-btn .icon { 
+    width: 20px; 
+    height: 20px; 
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/><path fill="%2334A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/><path fill="%23FBBC05" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/><path fill="%23EA4335" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/></svg>') center/contain no-repeat; 
+}
+
+.facebook-btn .icon { 
+    width: 20px; 
+    height: 20px; 
+    background: #1877F2; 
+    border-radius: 3px; 
+    position: relative; 
+}
+
+.facebook-btn .icon::after { 
+    content: 'f'; 
+    position: absolute; 
+    color: white; 
+    font-family: Arial, sans-serif; 
+    font-weight: bold; 
+    font-size: 14px; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+}
+
+.divider { 
+    width: 100%; 
+    text-align: center; 
+    margin: 25px 0; 
+    position: relative; 
+    font-size: 1.1rem; 
+    color: #8d6e63; 
+    font-style: italic;
+}
+
+.divider::before, .divider::after { 
+    content: ''; 
+    position: absolute; 
+    top: 50%; 
+    width: 42%; 
+    height: 2px; 
+    background: linear-gradient(to right, #d4c5a9, #e6d8c5);
+}
+
+.divider::before { left: 0; } 
+.divider::after { right: 0; }
+
+.auth-form { 
+    width: 100%; 
+}
+
+.form-group { 
+    margin-bottom: 25px; 
+    position: relative; 
+}
+
+.form-label { 
+    display: block; 
+    font-size: 1rem; 
+    color: #5d4037; 
+    margin-bottom: 10px; 
+    font-weight: 500; 
+    transition: all 0.3s ease;
+    padding-left: 5px;
+}
+
+.form-input { 
+    width: 100%; 
+    padding: 16px 20px; 
+    border: 2px solid #d4c5a9; 
+    border-radius: 12px; 
+    font-size: 1rem; 
+    background: #fff8f0; 
+    color: #2c2c2c; 
+    transition: all 0.3s ease;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    box-shadow: inset 0 2px 4px rgba(139,69,19,0.05);
+}
+
+.form-input:focus { 
+    border-color: #8b4513; 
+    outline: none; 
+    box-shadow: 0 0 0 3px rgba(139,69,19,0.1), inset 0 2px 4px rgba(139,69,19,0.05);
+    background: #ffffff;
+    transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+    color: #a5a5a5;
+    font-style: italic;
+}
+
+.password-group { 
+    position: relative; 
+}
+
+.password-toggle { 
+    position: absolute; 
+    right: 15px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    background: none; 
+    border: none; 
+    color: #8d6e63; 
+    cursor: pointer; 
+    font-size: 1.2rem; 
+    transition: all 0.3s ease;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle:hover { 
+    background: rgba(139,69,19,0.1);
+    color: #5d4037;
+}
+
+.password-toggle .icon-visible { 
+    display: none; 
+}
+
+.password-toggle.show .icon-visible { 
+    display: inline; 
+}
+
+.password-toggle.show .icon-hidden { 
+    display: none; 
+}
+
+.continue-btn { 
+    width: 100%; 
+    padding: 18px 20px; 
+    background: linear-gradient(135deg, #8b4513, #a0522d);
+    color: white; 
+    border: none; 
+    border-radius: 25px; 
+    font-size: 1.1rem; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    margin-top: 15px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    box-shadow: 0 6px 20px rgba(139,69,19,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.continue-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s;
+}
+
+.continue-btn:hover { 
+    background: linear-gradient(135deg, #a0522d, #8b4513);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139,69,19,0.4);
+}
+
+.continue-btn:hover::before {
+    left: 100%;
+}
+
+.continue-btn:active {
+    transform: translateY(0);
+}
+
+.signup-only { 
+    display: none; 
+}
+
+.login-only { 
+    display: block; 
+}
+
+.signup-mode .signup-only { 
+    display: block; 
+}
+
+.signup-mode .login-only { 
+    display: none; 
+}
+
+.error-msg { 
+    color: #c62828; 
+    font-size: 0.9rem; 
+    margin-top: 8px; 
+    display: none; 
+    position: absolute; 
+    bottom: -22px; 
+    left: 5px; 
+    transition: all 0.3s ease;
+    font-style: italic;
+}
+
+.server-msg { 
+    color: #c62828; 
+    font-size: 1rem; 
+    text-align: center; 
+    margin-bottom: 15px; 
+    display: none; 
+    transition: all 0.3s ease;
+    background: rgba(198,40,40,0.1);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(198,40,40,0.2);
+}
+
+.forgot-password-btn {
+    background: none;
+    border: none;
+    color: #8b4513;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.forgot-password-btn:hover {
+    background: rgba(139,69,19,0.1);
+    color: #5d4037;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(93, 64, 55, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #fdfbf7;
+    border-radius: 20px;
+    padding: 40px 45px;
+    box-shadow: 0 20px 60px rgba(139,69,19,0.25);
+    border: 3px solid #d4c5a9;
+    position: relative;
+    max-width: 400px;
+    width: 100%;
+    transform: translateY(-20px);
+    animation: slideUp 0.3s ease forwards;
+}
+
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 35px;
+    width: 2px;
+    height: 100%;
+    background: #e74c3c;
+    opacity: 0.3;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #8d6e63;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
     transition: all 0.3s ease;
 }
 
-.social-buttons { width:100%; margin-bottom:20px; }
-.social-btn {
-    width:100%;
-    padding:16px 20px;
-    border:1px solid #ddd;
-    border-radius:8px;
-    background:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:12px;
-    font-size:16px;
-    color:#333;
-    cursor:pointer;
-    transition: all 0.3s ease, transform 0.2s ease;
-    margin-bottom:15px;
-    text-decoration:none;
+.modal-close:hover {
+    background: rgba(139, 69, 19, 0.1);
+    color: #5d4037;
+    transform: rotate(90deg);
 }
-.social-btn:hover { background:#f8f8f8; transform: translateY(-2px); }
-.social-btn:active { transform: translateY(0); }
 
-.google-btn .icon { width:20px; height:20px; background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/><path fill="%2334A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/><path fill="%23FBBC05" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/><path fill="%23EA4335" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/></svg>') center/contain no-repeat; }
-.facebook-btn .icon { width:20px; height:20px; background:#1877F2; border-radius:3px; position:relative; }
-.facebook-btn .icon::after { content:'f'; position:absolute; color:white; font-family:Arial,sans-serif; font-weight:bold; font-size:14px; top:50%; left:50%; transform:translate(-50%, -50%); }
+.modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #d4c5a9;
+    padding-bottom: 15px;
+}
 
-.divider { width:100%; text-align:center; margin:20px 0; position:relative; font-size:18px; color:#666; }
-.divider::before,.divider::after { content:''; position:absolute; top:50%; width:45%; height:1px; background:#ddd; }
-.divider::before { left:0; } .divider::after { right:0; }
+.modal-title {
+    font-size: 1.6rem;
+    color: #5d4037;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(93,64,55,0.1);
+}
 
-.auth-form { width:100%; }
-.form-group { margin-bottom:20px; position:relative; }
-.form-label { display:block; font-size:16px; color:#333; margin-bottom:8px; font-weight:500; transition: all 0.3s ease; }
-.form-input { width:100%; padding:16px 20px; border:1px solid #ddd; border-radius:8px; font-size:16px; background:#fff; color:#333; transition: all 0.3s ease; }
-.form-input:focus { border-color:#4a90e2; outline:none; box-shadow:0 0 5px rgba(74,144,226,0.3); }
+.btn {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1rem;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
 
-.password-group { position:relative; }
-.password-toggle { position:absolute; right:15px; top:50%; transform:translateY(-50%); background:none; border:none; color:#666; cursor:pointer; font-size:14px; transition: transform 0.2s ease; }
-.password-toggle:hover { transform: translateY(-50%) scale(1.1); }
-.password-toggle .icon-visible { display:none; }
-.password-toggle.show .icon-visible { display:inline; }
-.password-toggle.show .icon-hidden { display:none; }
+.btn-primary {
+    background: #8b4513;
+    color: white;
+}
 
-.continue-btn { width:100%; padding:18px; background:#4a90e2; color:white; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; transition: all 0.3s ease; margin-top:10px; }
-.continue-btn:hover { background:#357ABD; }
+.btn-primary:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139,69,19,0.3);
+}
 
-.signup-only { display:none; }
-.login-only { display:block; }
-.signup-mode .signup-only { display:block; }
-.signup-mode .login-only { display:none; }
-
-.error-msg { color:red; font-size:14px; margin-top:5px; display:none; position:absolute; bottom:-18px; left:0; transition: all 0.3s ease; }
-.server-msg { color:red; font-size:16px; text-align:center; margin-bottom:10px; display:none; transition: all 0.3s ease; }
+@keyframes slideUp {
+    from { 
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to { 
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
-    .main-content { padding:30px 20px; width: 100%; max-width: 95%; }
-    .title { font-size:24px; }
+    .main-content { 
+        padding: 40px 30px; 
+        width: 100%; 
+        max-width: 95%; 
+        margin: 10px;
+    }
+    
+    .main-content::before {
+        left: 25px;
+    }
+    
+    .title { 
+        font-size: 1.8rem; 
+    }
+    
+    .modal-content {
+        padding: 30px 25px;
+        margin: 20px;
+        max-width: none;
+    }
+    
+    .modal-content::before {
+        left: 20px;
+    }
+}
+
+@media (max-width: 350px) {
+    .toggle-btn {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .form-input {
+        padding: 14px 18px;
+    }
+    
+    .continue-btn {
+        padding: 16px 18px;
+        font-size: 1rem;
+    }
 }
 </style>
 </head>
@@ -174,6 +573,8 @@ body {
                     <span class="icon-visible">🙈</span>
                 </button>
             </div>
+            <input type="password"  id="login-password" placeholder="Password"  style="display: none;" />
+            <button type="button" class="forgot-password-btn login-only" onclick="showForgotPasswordForm()">Forgot Password?</button>
             <div class="error-msg" id="password-error"></div>
         </div>
 
@@ -193,8 +594,27 @@ body {
     </form>
 </div>
 
+<!-- Forgot Password Modal -->
+<div id="forgot-password-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeForgotModal()">&times;</button>
+    <div class="modal-header">
+      <div class="modal-title">Forgot Password</div>
+    </div>
+
+    <form id="forgot-password-form" onsubmit="submitForgotPassword(event)">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="forgot-email" class="form-input" placeholder="Enter your email" required />
+      </div>
+      <button type="submit" class="btn btn-primary">Send Reset Link</button>
+    </form>
+  </div>
+</div>
+
 <script>
 let currentMode = 'login';
+const API_BASE_URL = "http://localhost:3000";
 
 const mainContent = document.getElementById('main-content');
 const loginTab = document.getElementById('login-tab');
@@ -258,6 +678,30 @@ function switchMode(mode) {
 loginTab.addEventListener('click', () => switchMode('login'));
 signupTab.addEventListener('click', () => switchMode('signup'));
 
+async function submitForgotPassword(e) {
+  e.preventDefault();
+  const email = document.getElementById('forgot-email').value.trim();
+
+  if (!email) return alert("Enter your email");
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    alert("Check your email for the password reset link!");
+    closeForgotModal();
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+}
+
 // -----------------
 // PASSWORD TOGGLE
 // -----------------
@@ -276,6 +720,20 @@ document.getElementById('confirm-password-toggle').addEventListener('click', (e)
     e.preventDefault();
     togglePasswordVisibility(confirmPasswordInput, e.currentTarget);
 });
+
+function showForgotPasswordForm() {
+  document.getElementById('forgot-password-modal').classList.add('active');
+}
+
+function closeForgotModal() {
+  document.getElementById('forgot-password-modal').classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.getElementById('forgot-password-modal').onclick = function(e) {
+    if (e.target === this) closeForgotModal();
+};
+
 
 // -----------------
 // FORM SUBMIT
@@ -311,15 +769,14 @@ form.addEventListener('submit', async function(e) {
         if (data.success) {
             if (data.data && data.data.token) {
                 localStorage.setItem('token', data.data.token);
-                  localStorage.setItem('userId', data.data.user.id); 
+                localStorage.setItem('userId', data.data.user.id); 
                 localStorage.setItem('user', JSON.stringify(data.data.user));
             }
 
             if (data.data.isAdmin) {
-                
-        window.location.href = '/HTML/adminPanel.html'; // redirect admin
-    } else if (currentMode === 'login') {
-        window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
+                window.location.href = '/HTML/adminPanel.html'; // redirect admin
+            } else if (currentMode === 'login') {
+                window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
             } else {
                 window.location.href = '/HTML/profile.html';
             }
@@ -371,11 +828,12 @@ handleOAuth('.facebook-btn', 'facebook');
     .then(data => {
         if (data.success) {
             localStorage.setItem('user', JSON.stringify(data.data.user));
-             if (data.data.user.isAdmin) {
+            if (data.data.user.isAdmin) {
                 window.location.href = '/HTML/adminPanel.html';
             } else {
                 window.location.href = data.data.user.hasProfile ? '/HTML/dashboard.html' : '/HTML/profile.html';
             }
+        } else {
             serverMsg.textContent = 'Failed to get user info after login.';
             serverMsg.style.display = 'block';
         }

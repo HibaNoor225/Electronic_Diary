@@ -27,17 +27,42 @@ class CategoryMoodController {
       res.status(500).json({ success: false, message: err.message });
     }
   }
-
-  // ----------------- CATEGORY -----------------
-  async getAllCategories(req, res) {
+// ================== GET ALL ACTIVE MOODS ==================
+async getAllMoods(req, res) {
     try {
-      const categories = await Category.find();
-      res.json({ success: true, data: categories });
+        const moods = await Mood.find({ isActive: true }); // only active moods
+        res.json({ success: true, data: moods });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: err.message });
     }
-  }
+}
+async getAllM(req, res) {
+    try {
+        const moods = await Mood.find(); // only active moods
+        res.json({ success: true, data: moods });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+}
 
+// ================== GET ALL ACTIVE CATEGORIES ==================
+async getAllCategories(req, res) {
+    try {
+        const categories = await Category.find({ isActive: true }); // only active categories
+        res.json({ success: true, data: categories });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+}
+
+async getAllC(req, res) {
+    try {
+        const categories = await Category.find(); // only active categories
+        res.json({ success: true, data: categories });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+}
   async addCategory(req, res) {
     try {
       const { name, color } = req.body;
@@ -78,15 +103,7 @@ class CategoryMoodController {
   }
 
   // ----------------- MOOD -----------------
-  async getAllMoods(req, res) {
-    try {
-      const moods = await Mood.find();
-      res.json({ success: true, data: moods });
-    } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
-    }
-  }
-
+ 
   async addMood(req, res) {
     try {
       const { name, icon } = req.body;

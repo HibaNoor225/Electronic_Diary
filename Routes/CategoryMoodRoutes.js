@@ -7,12 +7,15 @@ const verifyToken=require("../middleware/authMiddleware")
 
 // ---- CATEGORY ROUTES ----
 router.get('/categories', controller.getAllCategories.bind(controller));
+router.get('/all/categories', controller.getAllC.bind(controller));
 router.post('/category', verifyToken,adminAuth, controller.addCategory.bind(controller));
 router.put('/category/:id', verifyToken,adminAuth, controller.updateCategory.bind(controller));
 router.delete('/category/:id', verifyToken,adminAuth, controller.deleteCategory.bind(controller));
 
 // ---- MOOD ROUTES ----
 router.get('/moods', controller.getAllMoods.bind(controller));
+router.get('/all/moods', controller.getAllM.bind(controller));
+
 router.post('/mood',verifyToken, adminAuth, controller.addMood.bind(controller));
 router.put('/mood/:id', verifyToken,adminAuth, controller.updateMood.bind(controller));
 router.delete('/mood/:id',verifyToken, adminAuth, controller.deleteMood.bind(controller));

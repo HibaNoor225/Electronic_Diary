@@ -46,16 +46,18 @@ app.use((req, res, next) => {
 })
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.static(path.join(__dirname, 'HTML'))); 
 app.use(express.json())
 
 
-
+const adminRoutes=require("./Routes/adminRoutes.js")
 app.use("/auth",authRoutes)
 app.use('/api/diary', diaryRoutes);
 app.use("/api/posts",postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', CategoryMoodRoutes);
 app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/admin',adminRoutes)
 
 
 

@@ -29,7 +29,9 @@ const userSchema = new mongoose.Schema({
     age: { type: Number, min: 13, max: 120 },
     profilePhoto: { type: String } ,// store image URL or path
    isActive: { type: Boolean, default: true },
-   isAdmin:{ type: Boolean, default: false}
+   isAdmin:{ type: Boolean, default: false},
+   resetPasswordToken: String,
+resetPasswordExpire: Date
 }, {
   timestamps: true
 });
