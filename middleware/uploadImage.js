@@ -1,4 +1,3 @@
-// middleware/uploadImage.js
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
@@ -6,14 +5,14 @@ const fs = require('fs');
 
 // Storage configuration
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: (req, file, cb) => {
         const uploadPath = path.join(__dirname, '../uploads/profilePhotos');
-        fs.mkdirSync(uploadPath, { recursive: true }); // create folder if not exists
+        fs.mkdirSync(uploadPath, { recursive: true });
         cb(null, uploadPath);
     },
-    filename: function (req, file, cb) {
+    filename: (req, file, cb) => {
         const ext = path.extname(file.originalname);
-        const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
+        const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
         cb(null, filename);
     }
 });
@@ -26,35 +25,55 @@ function fileFilter(req, file, cb) {
     cb(null, true);
 }
 
-// Max file size 2MB
-const upload = multer({ 
-    storage, 
-    fileFilter, 
-    limits: { fileSize: 2 * 1024 * 1024 } 
-}).single('profilePhoto'); // accept only single file
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
+}).single('profilePhoto');
 
-// Validate dimensions
-const validateImageDimensions = async (req, res, next) => {
-    if (!req.file) return next(); // no file uploaded
+// Process 3 versions
+const processProfilePhoto = async (req, res, next) => {
+    if (!req.file) return next();
+
+    const uploadDir = path.dirname(req.file.path);
+    const filename = path.basename(req.file.path, path.extname(req.file.path));
+    const ext = path.extname(req.file.path);
 
     try {
-        const metadata = await sharp(req.file.path).metadata();
+        // Thumbnail 100x100
+        const thumbPath = path.join(uploadDir, `${filename}-thumb${ext}`);
+        await sharp(req.file.path)
+            .resize(100, 100, { fit: 'cover' })
+            .toFile(thumbPath);
 
-        if (metadata.width < 100 || metadata.height < 100) {
-            fs.unlinkSync(req.file.path); // delete file
-            return res.status(400).json({ result: 'failure', message: 'Image must be at least 100x100 pixels' });
-        }
+        // Optimized 400x400
+        const optimizedPath = path.join(uploadDir, `${filename}-optimized${ext}`);
+        await sharp(req.file.path)
+            .resize(400, 400, { fit: 'inside' })
+            .toFile(optimizedPath);
 
-        if (metadata.width > 2000 || metadata.height > 2000) {
-            fs.unlinkSync(req.file.path);
-            return res.status(400).json({ result: 'failure', message: 'Image must be smaller than 2000x2000 pixels' });
-        }
+        // Compressed original max 800x800
+        const compressedPath = path.join(uploadDir, `${filename}-original${ext}`);
+        await sharp(req.file.path)
+            .resize(800, 800, { fit: 'inside' })
+            .jpeg({ quality: 80 })
+            .toFile(compressedPath);
+
+        // Remove uploaded original to avoid duplicate storage
+        //fs.unlinkSync(req.file.path);
+
+        // Pass paths to controller
+        req.file.paths = {
+            thumbnail: thumbPath,
+            optimized: optimizedPath,
+            original: compressedPath
+        };
 
         next();
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ result: 'failure', message: 'Error processing image' });
+        return res.status(500).json({ result: 'failure', message: 'Error processing profile photo' });
     }
 };
 
-module.exports = { upload, validateImageDimensions };
+module.exports = { upload, processProfilePhoto };

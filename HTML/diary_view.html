@@ -375,7 +375,6 @@ body {
         <div class="modal-caption" id="modalCaption"></div>
     </div>
 </div>
-
 <script>
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
@@ -394,18 +393,39 @@ document.getElementById('diary-date').textContent = readableDate;
 
 const contentContainer = document.getElementById('diary-content');
 
+// Helper to get correct URL from file.paths
+// Helper to get correct URL from file.paths
+function getFileUrl(file) {
+    if (!file.url) return '';
+
+    // For images, url might be an object with optimized/original paths
+    let path = '';
+    if (typeof file.url === 'object') {
+        path = file.url.optimized || file.url.original;
+    } else {
+        path = file.url;
+    }
+
+    if (!path) return '';
+
+    // Ensure forward slashes for URL
+    path = path.replace(/\\/g, '/');
+
+    // Frontend access to uploads folder
+    return `http://localhost:3000/uploads/${path}`;
+}
+
+// Create media gallery
 function createMediaGallery(media, eventTitle) {
     if (!media || media.length === 0) return null;
 
     const galleryContainer = document.createElement('div');
     galleryContainer.className = 'media-gallery';
 
-    // Group media by type
     const imageMedia = media.filter(m => m.type === 'image');
     const videoMedia = media.filter(m => m.type === 'video');
     const audioMedia = media.filter(m => m.type === 'audio');
 
-    // Gallery header
     const galleryHeader = document.createElement('div');
     galleryHeader.className = 'gallery-header';
 
@@ -413,7 +433,6 @@ function createMediaGallery(media, eventTitle) {
     galleryTitle.className = 'gallery-title';
     galleryTitle.innerHTML = '📁 Media Gallery';
 
-    // Media type tabs
     const tabsContainer = document.createElement('div');
     tabsContainer.className = 'media-tabs';
 
@@ -448,16 +467,12 @@ function createMediaGallery(media, eventTitle) {
     galleryHeader.appendChild(tabsContainer);
     galleryContainer.appendChild(galleryHeader);
 
-    // Create media grids
     tabs.forEach(tab => {
         if (tab.data.length > 0) {
             const mediaGrid = document.createElement('div');
             mediaGrid.className = 'media-grid';
             mediaGrid.id = `${tab.type}-grid`;
-            
-            if (tab.type === activeTab) {
-                mediaGrid.classList.add('active');
-            }
+            if (tab.type === activeTab) mediaGrid.classList.add('active');
 
             tab.data.forEach(file => {
                 const mediaItem = document.createElement('div');
@@ -467,13 +482,13 @@ function createMediaGallery(media, eventTitle) {
                 if (file.type === 'image') {
                     const img = document.createElement('img');
                     img.className = 'media-thumbnail';
-                    img.src = `http://localhost:3000/uploads/${file.url}`;
+                    img.src = getFileUrl(file);
                     img.alt = file.caption || eventTitle;
                     mediaItem.appendChild(img);
                 } else if (file.type === 'video') {
                     const video = document.createElement('video');
                     video.className = 'media-thumbnail';
-                    video.src = `http://localhost:3000/uploads/${file.url}`;
+                    video.src = getFileUrl(file);
                     video.muted = true;
                     mediaItem.appendChild(video);
                 } else if (file.type === 'audio') {
@@ -495,7 +510,6 @@ function createMediaGallery(media, eventTitle) {
         }
     });
 
-    // Show "no media" message if no media exists
     if (media.length === 0) {
         const noMedia = document.createElement('div');
         noMedia.className = 'no-media';
@@ -505,73 +519,35 @@ function createMediaGallery(media, eventTitle) {
 
     return galleryContainer;
 }
-document.getElementById('make-public-btn').addEventListener('click', async () => {
-  try {
-    // collect all diary event IDs for the current date view
-    const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const diaryData = await resDiary.json();
-    const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
 
-    const res = await fetch(`${API_BASE_URL}/posts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      // 👇 SEND DATE *AND* EVENT IDS
-      body: JSON.stringify({ date, diaryEventIds })
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("Diary published as a post!");
-      window.location.href = "post.html";
-    } else {
-      alert(`Failed: ${data.message || 'Could not publish'}`);
-    }
-  } catch (err) {
-    console.error("Error publishing post:", err);
-    alert("Error publishing post.");
-  }
-});
-
-
+// Switch gallery tabs
 function switchTab(tabType, galleryContainer) {
-    // Remove active class from all tabs and grids
     galleryContainer.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     galleryContainer.querySelectorAll('.media-grid').forEach(grid => grid.classList.remove('active'));
-
-    // Add active class to clicked tab and corresponding grid
     event.target.closest('.tab-btn').classList.add('active');
     const targetGrid = galleryContainer.querySelector(`#${tabType}-grid`);
     if (targetGrid) targetGrid.classList.add('active');
 }
 
+// Open media modal
 function openModal(file, eventTitle) {
     const modal = document.getElementById('mediaModal');
     const modalMediaContainer = document.getElementById('modalMediaContainer');
     const modalCaption = document.getElementById('modalCaption');
-
     modalMediaContainer.innerHTML = '';
 
     if (file.type === 'image') {
         const img = document.createElement('img');
         img.className = 'modal-media';
-        img.src = `http://localhost:3000/uploads/${file.url}`;
+        img.src = getFileUrl(file);
         img.alt = file.caption || eventTitle;
         modalMediaContainer.appendChild(img);
     } else if (file.type === 'video') {
         const video = document.createElement('video');
         video.className = 'modal-media';
-        video.src = `http://localhost:3000/uploads/${file.url}`;
+        video.src = getFileUrl(file);
         video.controls = true;
-        video.autoplay = false;
         video.style.width = '100%';
-        video.style.height = 'auto';
-        video.style.maxHeight = 'calc(95vh - 80px)';
         modalMediaContainer.appendChild(video);
     } else if (file.type === 'audio') {
         const audioContainer = document.createElement('div');
@@ -580,57 +556,41 @@ function openModal(file, eventTitle) {
         audioContainer.style.justifyContent = 'center';
         audioContainer.style.minHeight = '200px';
         audioContainer.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-        
+
         const audio = document.createElement('audio');
-        audio.src = `http://localhost:3000/uploads/${file.url}`;
+        audio.src = getFileUrl(file);
         audio.controls = true;
-        audio.autoplay = false;
-        audio.style.width = '80%';
-        audio.style.maxWidth = '500px';
-        
         audioContainer.appendChild(audio);
+
         modalMediaContainer.appendChild(audioContainer);
     }
 
     modalCaption.textContent = file.caption || `Media from: ${eventTitle}`;
     modal.classList.add('active');
-    
-    // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
 }
 
+// Close modal
 function closeModal() {
     const modal = document.getElementById('mediaModal');
     modal.classList.remove('active');
-    
-    // Stop any playing media
     const modalMedia = modal.querySelectorAll('video, audio');
-    modalMedia.forEach(media => {
-        media.pause();
-        media.currentTime = 0;
-    });
-    
-    // Restore body scroll
+    modalMedia.forEach(media => { media.pause(); media.currentTime = 0; });
     document.body.style.overflow = 'auto';
 }
 
-// Close modal when clicking outside
-document.getElementById('mediaModal').onclick = function(e) {
-    if (e.target === this) closeModal();
-};
+document.getElementById('mediaModal').onclick = e => { if(e.target===this) closeModal(); };
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
 
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal();
-});
-
+// Load diary events
 async function loadDiaryStory() {
     contentContainer.innerHTML = '';
     try {
         const res = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (res.status === 404) {
+
+        if(res.status === 404){
             contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
             return;
         }
@@ -680,12 +640,9 @@ async function loadDiaryStory() {
             storyParagraph.innerHTML = `<strong>${event.title}</strong> - ${event.description || 'A moment worth remembering.'}`;
             storySection.appendChild(storyParagraph);
 
-            // Add professional media gallery
             if(event.media && event.media.length > 0){
                 const gallery = createMediaGallery(event.media, event.title);
-                if (gallery) {
-                    storySection.appendChild(gallery);
-                }
+                if (gallery) storySection.appendChild(gallery);
             }
 
             contentContainer.appendChild(storySection);
@@ -708,5 +665,6 @@ async function loadDiaryStory() {
 
 loadDiaryStory();
 </script>
+
 </body>
 </html>

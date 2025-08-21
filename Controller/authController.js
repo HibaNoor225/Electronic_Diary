@@ -228,37 +228,28 @@ class UserController {
 
 
   // ---------------- Update Profile ----------------
-  async updateProfile(req, res) {
+// controller
+async updateProfile(req, res) {
     try {
-      await runUploadMiddleware(req, res);
-      await runImageDimensionValidation(req, res);
+        const { fullName, username, bio, gender, age } = req.body;
+        const updateData = { fullName, username, bio, gender, age };
 
-      const { fullName, username, bio, gender, age } = req.body;
-      const updateData = { fullName, username, bio, gender, age };
+        if (req.file) {
+            // sharp processing already done in processProfilePhoto if needed
+            updateData.profilePhoto = req.file.paths || {
+                original: `/uploads/profilePhotos/${req.file.filename}`
+            };
+        }
 
-      if (req.file) {
-        updateData.profilePhoto = `/uploads/profilePhotos/${req.file.filename}`;
-      }
+        const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
+        if (!updatedUser) return sendError(res, 'User not found', 404);
 
-      const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
-      if (!updatedUser) return sendError(res, 'User not found', 404);
-
-      return sendSuccess(res, 'Profile updated successfully', {
-        id: updatedUser._id,
-        fullName: updatedUser.fullName,
-        username: updatedUser.username,
-        bio: updatedUser.bio,
-        gender: updatedUser.gender,
-        age: updatedUser.age,
-        profilePhoto: updatedUser.profilePhoto
-      });
-
+        return sendSuccess(res, 'Profile updated successfully', updatedUser);
     } catch (err) {
-      console.error("Profile update error:", err);
-      return sendError(res, err.message || 'Failed to update profile', 500);
+        console.error("Profile update error:", err);
+        return sendError(res, err.message || 'Failed to update profile', 500);
     }
-  }
-
+}
  getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -277,7 +268,7 @@ class UserController {
 
 getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.info.id).select('-password');
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     res.json({ success: true, user });

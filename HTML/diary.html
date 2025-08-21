@@ -463,7 +463,7 @@ body {
     </div>
 </div>
 <script type="module">
- import { fetchCategories, fetchMoods } from './api.js';
+import { fetchCategories, fetchMoods } from './api.js';
 
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
@@ -497,13 +497,8 @@ async function loadCategoriesAndMoods() {
     categories = await fetchCategories();
     moods = await fetchMoods();
 
-    // Add "Other" option only if it's not already in the array
-    if (!categories.find(c => c.name === "Other")) {
-      categories.push({ name: "Other" });
-    }
-    if (!moods.find(m => m.name === "Other")) {
-      moods.push({ name: "Other" });
-    }
+    if (!categories.find(c => c.name === "Other")) categories.push({ name: "Other" });
+    if (!moods.find(m => m.name === "Other")) moods.push({ name: "Other" });
 
   } catch (err) {
     console.error("Error loading categories/moods:", err);
@@ -511,7 +506,6 @@ async function loadCategoriesAndMoods() {
   }
 }
 
-// Call before creating first form
 await loadCategoriesAndMoods();
 
 // Create event form
@@ -567,49 +561,39 @@ function createEventForm() {
     const moodSelect = div.querySelector('.event-mood');
     const moodEmoji = div.querySelector('.mood-emoji');
 
-    // Populate selects
     categorySelect.innerHTML += categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
     moodSelect.innerHTML += moods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
 
-    // Other option handling
     categorySelect.addEventListener('change', (e) => {
-    if (e.target.value === 'Other') {
-        const customCategory = prompt("Enter your custom category:");
-        if (customCategory) {
-            const opt = document.createElement('option');
-            opt.value = customCategory;
-            opt.textContent = customCategory;
-            opt.selected = true;
-            categorySelect.appendChild(opt);
+        if (e.target.value === 'Other') {
+            const customCategory = prompt("Enter your custom category:");
+            if (customCategory) {
+                const opt = document.createElement('option');
+                opt.value = customCategory;
+                opt.textContent = customCategory;
+                opt.selected = true;
+                categorySelect.appendChild(opt);
+                categorySelect.dataset.custom = customCategory;
+            } else e.target.value = '';
+        }
+    });
 
-            // Mark it as a custom suggestion (store on the element itself)
-            categorySelect.dataset.custom = customCategory;
-        } else e.target.value = '';
-    }
-});
+    moodSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'Other') {
+            const customMood = prompt("Enter your custom mood:");
+            if (customMood) {
+                const opt = document.createElement('option');
+                opt.value = customMood;
+                opt.textContent = customMood;
+                opt.selected = true;
+                moodSelect.appendChild(opt);
+                moodSelect.dataset.custom = customMood;
+            } else e.target.value = '';
+        }
+    });
 
-moodSelect.addEventListener('change', (e) => {
-    if (e.target.value === 'Other') {
-        const customMood = prompt("Enter your custom mood:");
-        if (customMood) {
-            const opt = document.createElement('option');
-            opt.value = customMood;
-            opt.textContent = customMood;
-            opt.selected = true;
-            moodSelect.appendChild(opt);
-
-            // Mark it as a custom suggestion
-            moodSelect.dataset.custom = customMood;
-        } else e.target.value = '';
-    }
-});
-
-  
-
-    // Remove button
     if (removeBtn) removeBtn.onclick = () => { div.remove(); updateEventNumbers(); };
 
-    // Media preview
     fileLabel.onclick = () => mediaInput.click();
     mediaInput.addEventListener('change', (e) => {
         mediaPreview.innerHTML = '';
@@ -646,7 +630,6 @@ moodSelect.addEventListener('change', (e) => {
         } else mediaPreview.style.display = 'none';
     });
 
-    // Mood emoji preview
     moodSelect.addEventListener('change', () => {
         const selectedMood = moods.find(m => m.name === moodSelect.value);
         moodEmoji.textContent = selectedMood?.emojis?.length ? selectedMood.emojis[Math.floor(Math.random() * selectedMood.emojis.length)] : '';
@@ -685,112 +668,124 @@ saveAllBtn.onclick = async () => {
     loadingOverlay.style.display = 'flex';
     saveAllBtn.disabled = true;
 
-    for (const form of forms) {
-        const titleInput = form.querySelector('.event-title');
-        const descInput = form.querySelector('.event-desc');
-        const categorySelect = form.querySelector('.event-category');
-        const moodSelect = form.querySelector('.event-mood');
-        const mediaFiles = form.querySelector('.event-media')?.files || [];
+    try {
+        for (const form of forms) {
+            const titleInput = form.querySelector('.event-title');
+            const descInput = form.querySelector('.event-desc');
+            const categorySelect = form.querySelector('.event-category');
+            const moodSelect = form.querySelector('.event-mood');
+            const mediaFiles = form.querySelector('.event-media')?.files || [];
 
-        const title = titleInput && titleInput.value ? titleInput.value.trim() : "";
-const desc = descInput && descInput.value ? descInput.value.trim() : "";
+            const title = titleInput.value.trim();
+            const desc = descInput.value.trim();
+            const customCategory = categorySelect?.dataset.custom?.trim() || "";
+            const customMood = moodSelect?.dataset.custom?.trim() || "";
+            const category = customCategory || categorySelect.value.trim();
+            const mood = customMood || moodSelect.value.trim();
 
-const customCategory = categorySelect?.dataset.custom?.trim() || "";
-const customMood = moodSelect?.dataset.custom?.trim() || "";
+            if (!title || !category || !mood) {
+                throw new Error("Please fill in title, category, and mood before saving!");
+            }
 
-// Prefer custom if available
-const category = customCategory || (categorySelect?.value?.trim() || "");
-const mood = customMood || (moodSelect?.value?.trim() || "");
-
-if (!title || !category || !mood) {
-    loadingOverlay.style.display = 'none';
-    saveAllBtn.disabled = false;
-    alert("Please fill in title, category, and mood before saving!");
-    return;
-}
-console.log({
-  title,
-  category,
-  mood,
-  customCategory,
-  customMood
-});
-
-const formData = new FormData();
-formData.append("title", title);
-formData.append("description", desc || "");
-formData.append("category", category);
-formData.append("mood", mood);
-formData.append("customCategory", customCategory);
-formData.append("customMood", customMood);
-formData.append("date", date);
-
-
-
-
-        for (const file of mediaFiles) formData.append('media', file);
-        form.querySelectorAll('.media-caption')
-            .forEach(input => formData.append('captions', input.value.trim()));
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/diary`, {
+            // 1️⃣ Send metadata first, backend generates ObjectId
+            const metaRes = await fetch(`${API_BASE_URL}/diary`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title, description: desc || "", category, mood,
+                    customCategory, customMood, date,
+                    captions: Array.from(form.querySelectorAll('.media-caption')).map(c => c.value.trim())
+                })
             });
+            if (!metaRes.ok) throw new Error((await metaRes.json()).message);
 
-            if (res.status === 401) {
-                alert("Session expired. Please log in again.");
-                localStorage.removeItem('token');
-                window.location.href = 'register_login.html';
-                return;
-            }
+           const metaJson = await metaRes.json();
+const eventId = metaJson.data?.eventId;
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message);
+if (!eventId) {
+    throw new Error("Failed to get eventId from server");
+}
+// backend returns generated ObjectId
 
-            // Suggest only after successful save
-            if (categorySelect?.dataset.custom) {
-                await fetch(`${API_BASE_URL}/suggestions/category`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ name: categorySelect.dataset.custom })
+            // 2️⃣ Upload media files in chunks
+            const chunkSize = 5 * 1024 * 1024; // 5MB
+            for (const file of mediaFiles) {
+                const totalChunks = Math.ceil(file.size / chunkSize);
+                const fileId = `${eventId}-${file.name.replace(/\s+/g,'_')}`;
+
+                for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                    const start = chunkIndex * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    const formData = new FormData();
+                    formData.append('chunk', chunk, file.name);
+                    formData.append('fileId', fileId);
+                    formData.append('chunkIndex', chunkIndex);
+                    formData.append('totalChunks', totalChunks);
+                    formData.append('filename', file.name);
+                    formData.append('eventId', eventId);
+
+                    const res = await fetch(`${API_BASE_URL}/diary/upload-chunk`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (!res.ok) throw new Error(`Failed to upload chunk ${chunkIndex+1} of ${file.name}`);
+                }
+
+                // Merge chunks
+                await fetch(`${API_BASE_URL}/diary/merge-chunks`, {
+                    method: "POST",
+                    headers: { 
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        fileId,
+                        filename: file.name,
+                        eventId,
+                        totalChunks: Number(totalChunks)
+                    })
                 });
             }
-            if (moodSelect?.dataset.custom) {
-                await fetch(`${API_BASE_URL}/suggestions/mood`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ name: moodSelect.dataset.custom })
-                });
-            }
 
-        } catch (err) {
-            console.error(err);
-            loadingOverlay.style.display = 'none';
-            saveAllBtn.disabled = false;
-            alert(`Error saving memory: ${err.message || 'Unknown error occurred'}`);
-            return;
+            // 3️⃣ Save custom suggestions
+            if (customCategory) await fetch(`${API_BASE_URL}/suggestions/category`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name: customCategory })
+            });
+            if (customMood) await fetch(`${API_BASE_URL}/suggestions/mood`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name: customMood })
+            });
         }
-    }
 
-    loadingOverlay.style.display = 'none';
-    alert(`All memories have been beautifully preserved in the diary!`);
-    window.location.href = 'dashboard.html';
+        alert("All memories have been beautifully preserved in the diary!");
+        window.location.href = 'dashboard.html';
+    } catch (err) {
+        console.error(err);
+        alert(`Error saving memory: ${err.message || 'Unknown error occurred'}`);
+    } finally {
+        loadingOverlay.style.display = 'none';
+        saveAllBtn.disabled = false;
+    }
 };
 
-
-// Initialize first form
 createEventForm();
 
-// Cleanup blob URLs
 window.addEventListener('beforeunload', () => {
     document.querySelectorAll('.media-preview img, .media-preview video, .media-preview audio').forEach(el => {
         if (el.src.startsWith('blob:')) URL.revokeObjectURL(el.src);
     });
 });
 </script>
-
 
 </body>
 </html>

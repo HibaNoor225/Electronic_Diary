@@ -9,11 +9,14 @@ exports.getUserProfile = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
 
     try {
+        // Validate userId first
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ success: false, message: 'Invalid user ID' });
+        }
+
         // Get user info
         const user = await User.findById(userId).select('username email profilePhoto age sex');
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
         // Count total posts
         const totalPosts = await Post.countDocuments({ userId });
@@ -23,38 +26,39 @@ exports.getUserProfile = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
-             .populate('userId', '_id username profilePhoto');
+            .populate('userId', '_id username profilePhoto');
 
-        // Format posts for frontend
-    const formattedPosts = posts.map(post => ({
-    _id: post._id,
-    userId: post.userId ? post.userId._id : null, 
-    content: post.content || '',
-    diaryEvents: (post.diaryEvents || []).map(ev => ({
-        eventId: ev.eventId,
-        title: ev.title || '',
-        description: ev.description || '',
-        date: ev.date || '',
-        category: ev.category || '',
-        mood: ev.mood || '',
-        photo: ev.photo || '',
-        media: (ev.media || []).map(m => ({
-            url: m.url,
-            type: m.type,
-            caption: m.caption || ''
-        }))
-    })),
-    likes: post.likes || [],
-    comments: post.comments || [],
-    createdAt: post.createdAt
-}));
+        // Format posts
+        const formattedPosts = posts.map(post => ({
+            _id: post._id,
+            userId: post.userId ? post.userId._id : null,
+            content: post.content || '',
+            diaryEvents: (post.diaryEvents || []).map(ev => ({
+                eventId: ev.eventId,
+                title: ev.title || '',
+                description: ev.description || '',
+                date: ev.date || '',
+                category: ev.category || '',
+                mood: ev.mood || '',
+                photo: ev.photo ? (typeof ev.photo === 'object' ? ev.photo.thumbnail || ev.photo.original : ev.photo) : '',
+                media: (ev.media || []).map(m => ({
+                    url: typeof m.url === 'object' ? m.url.thumbnail || m.url.original : m.url,
+                    type: m.type || 'image',
+                    caption: m.caption || ''
+                }))
+            })),
+            likes: post.likes || [],
+            comments: post.comments || [],
+            createdAt: post.createdAt
+        }));
 
-
-
-        // Total likes & comments across all posts (optional)
-        const allPosts = await Post.find({ userId });
-        const totalLikes = allPosts.reduce((sum, post) => sum + post.likes.length, 0);
-        const totalComments = allPosts.reduce((sum, post) => sum + post.comments.length, 0);
+        // Aggregate total likes and comments
+        const stats = await Post.aggregate([
+            { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+            { $group: { _id: null, totalLikes: { $sum: { $size: "$likes" } }, totalComments: { $sum: { $size: "$comments" } } } }
+        ]);
+        const totalLikes = stats[0]?.totalLikes || 0;
+        const totalComments = stats[0]?.totalComments || 0;
 
         res.json({
             success: true,
@@ -73,44 +77,39 @@ exports.getUserProfile = async (req, res) => {
             currentPage: page,
             totalPages: Math.ceil(totalPosts / limit)
         });
+
     } catch (err) {
-        console.error(err);
+        console.error('getUserProfile error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
 
 
+// Delete a post
 exports.deletePost = async (req, res) => {
     const userId = req.info.id;
-
     const { postId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+        return res.status(400).json({ success: false, message: 'Invalid postId' });
+    }
+
     try {
-        console.log('Received postId:', postId);
-        console.log('Valid ObjectId?', mongoose.Types.ObjectId.isValid(postId));
-        console.log('req.info.id:', req.info.id);
-
         const post = await Post.findById(postId);
-        if (!post) {
-            console.log('Post not found');
-            return res.status(404).json({ success: false, message: 'Post not found' });
-        }
-
-        console.log('post.userId:', post.userId.toString());
+        if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
         // Ownership check
-        if (post.userId.toString() !== req.info.id) {
-            console.log('Unauthorized access');
+        if (post.userId.toString() !== userId) {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
-        // Delete post
-        const deleted = await post.deleteOne();  // safer than findByIdAndDelete here
-        console.log('Deleted result:', deleted);
+        // TODO: If needed, delete associated uploaded media files here
 
+        await post.deleteOne();
         res.json({ success: true, message: 'Post deleted successfully' });
+
     } catch (err) {
-        console.error('Delete post error:', err);
+        console.error('deletePost error:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

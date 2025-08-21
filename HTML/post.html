@@ -617,8 +617,7 @@
             }
         }
 
-       function createPostHTML(post) {
-        console.log(post);
+function createPostHTML(post) {
     const isLiked = currentUser && post.likes.includes(currentUser.id);
     const likesCount = post.likes.length;
     const commentsCount = post.comments.length;
@@ -639,51 +638,49 @@
       </div>
     `;
 
-   let diaryContentHTML = '';
-if (post.diaryEvents && post.diaryEvents.length > 0) {
-    diaryContentHTML = `
-      <div class="diary-content">
-        ${post.diaryEvents.map(entry => `
-          <div class="diary-entry">
-            <div class="diary-entry-title">${entry.title || 'A Beautiful Moment'}</div>
-            ${entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : ''}
+    // Diary content
+    let diaryContentHTML = '';
+    if (post.diaryEvents && post.diaryEvents.length > 0) {
+        diaryContentHTML = `
+          <div class="diary-content">
+            ${post.diaryEvents.map(entry => `
+              <div class="diary-entry">
+                <div class="diary-entry-title">${entry.title || 'A Beautiful Moment'}</div>
+                ${entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : ''}
 
-            ${entry.media && entry.media.length > 0 ? 
-              entry.media.map(m => {
-                 if (!m.url) return '';
-                if (m.type === 'image') {
-                  return `<img src="http://localhost:3000${m.url}" 
-                               alt="${entry.title || 'Diary moment'}"
-                               class="diary-entry-photo"
-                               style="max-width: 400px; max-height: 300px; object-fit: cover; cursor:pointer;"
-                               onclick="openPhotoModal('http://localhost:3000${m.url}')">`;
-                } else if (m.type === 'video') {
-                  return `<video controls class="diary-entry-video" 
-       style="width: 100%; max-width: 400px; height: auto; max-height: 300px; display:block; margin-top:10px;">
-    <source src="http://localhost:3000${m.url}" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
-
-`;
-                } else if (m.type === 'audio') {
-                  return `<audio controls class="diary-entry-audio" 
-                                 style="display:block; margin-top:10px; width:100%;">
-                            <source src="http://localhost:3000${m.url}" type="audio/mpeg">
-                            Your browser does not support the audio tag.
-                          </audio>`;
+                ${entry.media && entry.media.length > 0 ? 
+                  entry.media.map(m => {
+                    if (!m.paths) return '';
+                    if (m.type === 'image') {
+                      return `<img src="http://localhost:3000${m.paths.optimized}" 
+                                   alt="${entry.title || 'Diary moment'}"
+                                   class="diary-entry-photo"
+                                   style="max-width: 400px; max-height: 300px; object-fit: cover; cursor:pointer;"
+                                   onclick="openPhotoModal('http://localhost:3000${m.paths.original}')">`;
+                    } else if (m.type === 'video') {
+                      return `<video controls class="diary-entry-video" 
+                                   style="width: 100%; max-width: 400px; height: auto; max-height: 300px; display:block; margin-top:10px;">
+                                <source src="http://localhost:3000${m.paths.original}" type="video/mp4">
+                                Your browser does not support the video tag.
+                              </video>`;
+                    } else if (m.type === 'audio') {
+                      return `<audio controls class="diary-entry-audio" 
+                                     style="display:block; margin-top:10px; width:100%;">
+                                <source src="http://localhost:3000${m.paths.original}" type="audio/mpeg">
+                                Your browser does not support the audio tag.
+                              </audio>`;
+                    }
+                  }).join('') : ''
                 }
-              }).join('') : ''
-            }
 
-            <div class="diary-entry-date">
-              Captured on ${entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '')}
-            </div>
+                <div class="diary-entry-date">
+                  Captured on ${entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '')}
+                </div>
+              </div>
+            `).join('')}
           </div>
-        `).join('')}
-      </div>
-    `;
-}
-
+        `;
+    }
 
     return `
       <div class="post-card">

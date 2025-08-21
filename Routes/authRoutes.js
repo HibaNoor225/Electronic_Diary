@@ -7,6 +7,7 @@ const authController = require('../Controller/authController');
 const verifyToken = require('../middleware/authMiddleware');
 const authValidator = require('../validators/userValidator');
 const limit = require('../utils/limiter.js');
+const { upload, processProfilePhoto } = require('../middleware/uploadImage');
 const { sendPasswordResetEmail } = require('../utils/sendAdminnotifications');
 
 
@@ -60,8 +61,17 @@ router.get('/login-failed', (req, res) => {
   res.status(401).json({ error: 'Login failed' });
 });
 
-router.post('/update-profile', verifyToken, authController.updateProfile);
-router.get('/auth/profile', verifyToken, authController.getProfile);
+
+
+router.post(
+  '/update-profile',
+  verifyToken,
+  upload,               // handles file upload
+  processProfilePhoto,  // resizes & compresses
+  authController.updateProfile
+);
+
+router.get('/profile', verifyToken, authController.getProfile);
 
 
 router.post('/forgot-password', async (req, res) => {

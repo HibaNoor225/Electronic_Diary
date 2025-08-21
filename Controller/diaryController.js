@@ -1,137 +1,214 @@
 const Diary = require('../Models/Diary');
 const { sendSuccess, sendError } = require('../utils/responseFormatter');
-
-class DiaryController {
   // Add event with media
-  async addEvent(req, res) {
-    try {
-     
-console.log("REQ.INFO:", req.info);
-console.log("REQ.BODY:", req.body);
-console.log("REQ.FILES:", req.files);
+  const path = require('path');
+  const mongoose = require('mongoose');
+const fs = require('fs');
+const sharp = require('sharp');
+class DiaryController {
+async uploadChunk(req, res) {
+  try {
+    // multer has already handled file and fields
+    const { fileId, chunkIndex, totalChunks, fileName } = req.body;
 
-
-      const { title, description, date, category, mood, customCategory, customMood } = req.body;
-      if (!title || !date) return sendError(res, "Title and date are required", 400);
-
-      // Convert uploaded files into media objects
-      const mediaFiles = req.files ? req.files.map((file, index) => {
-        let type = "image";
-        if (file.mimetype.startsWith("video")) type = "video";
-        else if (file.mimetype.startsWith("audio")) type = "audio";
-
-        const captionsArray = Array.isArray(req.body.captions) ? req.body.captions : [];
-        const caption = captionsArray[index] || "";
-
-        return { url: `diary/${req.info.id}/${file.filename}`, caption, type };
-      }) : [];
-
-      const newEvent = {
-        title,
-        description,
-        media: mediaFiles,
-        category: category || "Other",
-        mood: mood || "Other",
-        customCategory: "",
-        customMood: ""
-      };
-
-      // Handle "Other" category/mood
-     // Handle custom category/mood
-if (customCategory) {
-  newEvent.category = customCategory;
-  newEvent.customCategory = customCategory;
-}
-if (customMood) {
-  newEvent.mood = customMood;
-  newEvent.customMood = customMood;
-}
-
-
-      let diary = await Diary.findOne({ user: req.info.id, date });
-      if (diary) diary.events.push(newEvent);
-      else diary = new Diary({ user: req.info.id, date, events: [newEvent] });
-
-      await diary.save();
-      sendSuccess(res, "Event added successfully", diary);
-    } catch (err) {
-      console.error(err);
-      sendError(res, "Failed to add event", 500);
+    if (!fileId || !chunkIndex) {
+      return res.status(400).json({ error: "Missing fileId or chunkIndex" });
     }
+
+    // multer already saved the chunk in uploads/chunks
+    res.json({
+      success: true,
+      message: `Chunk ${chunkIndex} of ${fileId} uploaded`,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Upload failed" });
   }
 
-  // Edit event
-  async editEvent(req, res) {
+}
+  async mergeChunks(req, res) {
     try {
-      const { date, eventId } = req.params;
-      const { title, description, category, mood, customCategory, customMood } = req.body;
-
-      const diary = await Diary.findOne({ user: req.info.id, date });
-      if (!diary) return sendError(res, "Diary not found", 404);
-
-      const event = diary.events.id(eventId);
-      if (!event) return sendError(res, "Event not found", 404);
-
-      // Update basic fields
-      if (title) event.title = title;
-      if (description) event.description = description;
-      if (category) event.category = category;
-      if (mood) event.mood = mood;
-
-      // Handle "Other" category/mood
-      // Handle custom category/mood
-if (customCategory) {
-  event.category = customCategory;
-  event.customCategory = customCategory;
-}
-if (customMood) {
-  event.mood = customMood;
-  event.customMood = customMood;
-}
-
-
-      // Convert uploaded files into media objects
-      const mediaFiles = req.files ? req.files.map((file, index) => {
-        let type = "image";
-        if (file.mimetype.startsWith("video")) type = "video";
-        else if (file.mimetype.startsWith("audio")) type = "audio";
-
-        const captionsArray = Array.isArray(req.body.captions) ? req.body.captions : [];
-        const caption = captionsArray[index] || "";
-
-        return { url: `diary/${req.info.id}/${file.filename}`, caption, type };
-      }) : [];
-
-      if (mediaFiles.length) event.media.push(...mediaFiles);
-
-      // Remove unwanted media
-      const removedMedia = req.body.removedMedia ? JSON.parse(req.body.removedMedia) : [];
-      if (removedMedia.length) {
-        event.media = event.media.filter(m => !removedMedia.includes(m.url));
+      const { fileId, fileName } = req.body;
+      if (!fileId || !fileName) {
+        return sendError(res, "fileId and fileName are required", 400);
       }
 
-      await diary.save();
-      sendSuccess(res, "Event updated successfully", event);
+      const chunkDir = path.join(__dirname, "../uploads/chunks", fileId);
+      const files = fs.readdirSync(chunkDir).sort((a, b) => a - b);
+
+      const finalPath = path.join(__dirname, "../uploads/diary", fileName);
+      const writeStream = fs.createWriteStream(finalPath);
+
+      for (const file of files) {
+        const filePath = path.join(chunkDir, file);
+        const data = fs.readFileSync(filePath);
+        writeStream.write(data);
+        fs.unlinkSync(filePath);
+      }
+      writeStream.end();
+
+      fs.rmdirSync(chunkDir);
+
+      sendSuccess(res, "File merged", { url: `diary/${fileName}` });
     } catch (err) {
       console.error(err);
-      sendError(res, "Failed to update event", 500);
+      sendError(res, "Failed to merge chunks", 500);
     }
   }
 
-  // Get all events for a date
-  async getDiaryByDate(req, res) {
-    try {
-      const { date } = req.params;
-      const diary = await Diary.findOne({ user: req.info.id, date });
+  
 
-      if (!diary) return sendError(res, "No events found for this date", 404);
+async addEvent(req, res) {
+  try {
+    const { title, description, date, category, mood, customCategory, customMood, captions } = req.body;
+    if (!title || !date) return sendError(res, "Title and date are required", 400);
 
-      sendSuccess(res, "Diary fetched successfully", diary);
-    } catch (err) {
-      console.error(err);
-      sendError(res, "Failed to fetch diary", 500);
-    }
+    const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
+
+    const mediaFiles = req.files
+      ? await Promise.all(
+          req.files.map(async (file, index) => {
+            let type = "image";
+            if (file.mimetype.startsWith("video")) type = "video";
+            else if (file.mimetype.startsWith("audio")) type = "audio";
+
+            const caption = captionsArray[index] || "";
+            const uploadDir = path.join(__dirname, "../uploads/diary", req.info.id.toString());
+            const ext = path.extname(file.filename);
+            const baseName = path.basename(file.filename, ext);
+
+            if (type === "image") {
+              const thumbPath = path.join(uploadDir, `${baseName}-thumb${ext}`);
+              const optimizedPath = path.join(uploadDir, `${baseName}-optimized${ext}`);
+              const compressedPath = path.join(uploadDir, `${baseName}-compressed${ext}`);
+
+              await sharp(file.path).resize(150, 150).toFile(thumbPath);
+              await sharp(file.path).resize(600, 600, { fit: "inside" }).toFile(optimizedPath);
+              await sharp(file.path).resize(1200, 1200, { fit: "inside" }).jpeg({ quality: 80 }).toFile(compressedPath);
+
+              return {
+                type,
+                caption,
+                url: {
+                  original: `diary/${req.info.id}/${file.filename}`,
+                  thumbnail: `diary/${req.info.id}/${baseName}-thumb${ext}`,
+                  optimized: `diary/${req.info.id}/${baseName}-optimized${ext}`,
+                  compressed: `diary/${req.info.id}/${baseName}-compressed${ext}`,
+                },
+              };
+            }
+            return { type, caption, url: `diary/${req.info.id}/${file.filename}` };
+          })
+        )
+      : [];
+
+    const newEvent = {
+      _id: new mongoose.Types.ObjectId(),  // <-- Add this line
+      title,
+      description,
+      media: mediaFiles,
+      category: customCategory || category || "Other",
+      mood: customMood || mood || "Other",
+      customCategory: customCategory || "",
+      customMood: customMood || "",
+    };
+
+    let diary = await Diary.findOne({ user: req.info.id, date });
+    if (diary) diary.events.push(newEvent);
+    else diary = new Diary({ user: req.info.id, date, events: [newEvent] });
+
+    await diary.save();
+    sendSuccess(res, "Event added successfully", { diary, eventId: newEvent._id });  // return ObjectId
+  } catch (err) {
+    console.error(err);
+    sendError(res, "Failed to add event", 500);
   }
+}
+async editEvent(req, res) {
+  try {
+    const { date, eventId } = req.params;
+    const { title, description, category, mood, customCategory, customMood, removedMedia, captions } = req.body;
+
+    if (!eventId) return sendError(res, "Event ID is required", 400);
+
+    const diary = await Diary.findOne({ user: req.info.id, date });
+    if (!diary) return sendError(res, "Diary not found", 404);
+
+    const event = diary.events.id(eventId);
+    if (!event) return sendError(res, "Event not found", 404);
+
+    // Update basic fields
+    if (title) event.title = title;
+    if (description) event.description = description;
+    if (category) event.category = category;
+    if (mood) event.mood = mood;
+    if (customCategory) { event.category = customCategory; event.customCategory = customCategory; }
+    if (customMood) { event.mood = customMood; event.customMood = customMood; }
+
+    const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
+
+    // ---------------------------
+    // Process newly uploaded files (chunked)
+    // ---------------------------
+    const mediaFiles = req.files
+      ? await Promise.all(
+          req.files.map(async (file, index) => {
+            let type = "image";
+            if (file.mimetype.startsWith("video")) type = "video";
+            else if (file.mimetype.startsWith("audio")) type = "audio";
+
+            const caption = captionsArray[index] || "";
+            const uploadDir = path.join(__dirname, "../uploads/diary", req.info.id.toString());
+            const ext = path.extname(file.filename);
+            const baseName = path.basename(file.filename, ext);
+
+            if (type === "image") {
+              const thumbPath = path.join(uploadDir, `${baseName}-thumb${ext}`);
+              const optimizedPath = path.join(uploadDir, `${baseName}-optimized${ext}`);
+              const compressedPath = path.join(uploadDir, `${baseName}-compressed${ext}`);
+
+              await sharp(file.path).resize(150, 150).toFile(thumbPath);
+              await sharp(file.path).resize(600, 600, { fit: "inside" }).toFile(optimizedPath);
+              await sharp(file.path).resize(1200, 1200, { fit: "inside" }).jpeg({ quality: 80 }).toFile(compressedPath);
+
+              return {
+                type,
+                caption,
+                url: {
+                  original: `diary/${req.info.id}/${file.filename}`,
+                  thumbnail: `diary/${req.info.id}/${baseName}-thumb${ext}`,
+                  optimized: `diary/${req.info.id}/${baseName}-optimized${ext}`,
+                  compressed: `diary/${req.info.id}/${baseName}-compressed${ext}`,
+                },
+              };
+            }
+            return { type, caption, url: `diary/${req.info.id}/${file.filename}` };
+          })
+        )
+      : [];
+
+    if (mediaFiles.length) event.media.push(...mediaFiles);
+
+    // ---------------------------
+    // Remove unwanted media
+    // ---------------------------
+    const removed = removedMedia ? JSON.parse(removedMedia) : [];
+    if (removed.length) {
+      event.media = event.media.filter((m) => {
+        if (typeof m.url === "object") {
+          return !Object.values(m.url).some((u) => removed.includes(u));
+        }
+        return !removed.includes(m.url);
+      });
+    }
+
+    await diary.save();
+    sendSuccess(res, "Event updated successfully", { diary, eventId });
+  } catch (err) {
+    console.error(err);
+    sendError(res, "Failed to update event", 500);
+  }
+}
 
   // Delete an event
   async deleteEvent(req, res) {

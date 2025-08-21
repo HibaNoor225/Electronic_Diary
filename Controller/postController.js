@@ -3,50 +3,73 @@ const Post = require('../Models/Post');
 const Diary = require('../Models/Diary');
 
 // CREATE: from diary events (called by "Make Public" on diary-view.html)
+// CREATE: from diary events (called by "Make Public" on diary-view.html)
 exports.createFromDiary = async (req, res) => {
   try {
-    const userId = req.info.id;                       
+    const userId = req.info.id; // Make sure we get userId from auth
     const { date, diaryEventIds, content = '' } = req.body;
 
     if (!date || !Array.isArray(diaryEventIds) || diaryEventIds.length === 0) {
       return res.status(400).json({ success: false, message: 'date and diaryEventIds[] are required' });
     }
 
-    // find the diary
+    // Find the diary
     const diary = await Diary.findOne({ user: userId, date });
     if (!diary) {
       return res.status(404).json({ success: false, message: 'Diary for this date not found' });
     }
 
-    // only keep selected events
+    // Only keep selected events
     const selected = diary.events.filter(ev => diaryEventIds.includes(String(ev._id)));
     if (selected.length === 0) {
       return res.status(400).json({ success: false, message: 'No matching events found in diary' });
     }
 
-    // build post
+    // Build post
     const post = new Post({
-      userId: userId,   // ✅ match schema & populate field
+      userId: userId,
       content: content,
-      diaryEvents: selected.map(ev => ({
-        eventId: String(ev._id),
-        title: ev.title || '',
-        description: ev.description || '',
-        date: date,
-        category: ev.category || 'Other',
-        mood: ev.mood || 'Neutral',
-        media: (ev.media || []).map(m => ({
-          url: `/uploads/${m.filename || m.url}`,  // ✅ fix file path
-          caption: m.caption || '',
-          type: m.type || 'image'
-        })),
-        photo: (ev.media.find(m => m.type === 'image')
-          ? `/uploads/${ev.media.find(m => m.type === 'image').filename || ev.media.find(m => m.type === 'image').url}`
-          : '')
-      }))
+      diaryEvents: selected.map(ev => {
+        // Prepare media array
+        const mediaArray = (ev.media || []).map(m => {
+          if (m.type === 'image' && typeof m.url === 'object') {
+            return {
+              type: m.type,
+              caption: m.caption || '',
+              url: {
+                original: `/uploads/${m.url.original}`,
+                compressed: `/uploads/${m.url.compressed}`,
+                optimized: `/uploads/${m.url.optimized}`,
+                thumbnail: `/uploads/${m.url.thumbnail}`
+              }
+            };
+          } else {
+            return {
+              type: m.type,
+              caption: m.caption || '',
+              url: `/uploads/${m.filename || m.url}`
+            };
+          }
+        });
+
+        const firstImage = ev.media.find(m => m.type === 'image');
+
+        return {
+          eventId: String(ev._id),
+          title: ev.title || '',
+          description: ev.description || '',
+          date: date,
+          category: ev.category || 'Other',
+          mood: ev.mood || 'Neutral',
+          media: mediaArray,
+          photo: firstImage
+            ? (typeof firstImage.url === 'object' ? `/uploads/${firstImage.url.thumbnail}` : `/uploads/${firstImage.url}`)
+            : ''
+        };
+      })
     });
 
-    // ✅ save to database
+    // Save post
     await post.save();
 
     return res.status(201).json({ success: true, message: 'Diary published as a post', post });
@@ -55,6 +78,7 @@ exports.createFromDiary = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to publish post' });
   }
 };
+
 
 
 // GET: paginated posts with user + comment users populated

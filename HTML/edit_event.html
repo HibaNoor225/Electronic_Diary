@@ -137,7 +137,9 @@ let existingMedia = [];
 let removedMedia = [];
 let newMediaFiles = [];
 
+// ---------------------------
 // Load categories and moods
+// ---------------------------
 async function loadCategoriesAndMoods() {
     try {
         categories = await fetchCategories();
@@ -146,19 +148,19 @@ async function loadCategoriesAndMoods() {
         if (!categories.find(c => c.name === "Other")) categories.push({ name: "Other" });
         if (!moods.find(m => m.name === "Other")) moods.push({ name: "Other" });
 
-        // Populate selects
         categorySelect.innerHTML = `<option value="" disabled selected>Select Category</option>` +
             categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         moodSelect.innerHTML = `<option value="" disabled selected>Select Mood</option>` +
             moods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-
     } catch (err) {
         console.error("Error loading categories/moods:", err);
         alert("Failed to load categories and moods.");
     }
 }
 
-// --- CATEGORY "OTHER" ---
+// ---------------------------
+// Custom category/mood
+// ---------------------------
 categorySelect.addEventListener('change', async e => {
     if (e.target.value === 'Other') {
         const customCategory = prompt("Enter your custom category:");
@@ -176,12 +178,11 @@ categorySelect.addEventListener('change', async e => {
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ name: customCategory })
                 });
-            } catch (err) { console.error("Error sending category suggestion:", err); }
+            } catch (err) { console.error(err); }
         } else e.target.value = '';
     }
 });
 
-// --- MOOD "OTHER" ---
 moodSelect.addEventListener('change', async e => {
     const selectedMood = e.target.value;
     if (selectedMood === 'Other') {
@@ -200,22 +201,21 @@ moodSelect.addEventListener('change', async e => {
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ name: customMood })
                 });
-            } catch (err) { console.error("Error sending mood suggestion:", err); }
+            } catch (err) { console.error(err); }
         } else e.target.value = '';
     } else {
         updateMoodEmoji(selectedMood);
     }
 });
 
-// Emoji helper
 function updateMoodEmoji(selectedMood) {
     const mood = moods.find(m => m.name === selectedMood);
-    if (mood?.emojis?.length) {
-        moodEmoji.textContent = mood.emojis[Math.floor(Math.random() * mood.emojis.length)];
-    } else moodEmoji.textContent = '';
+    moodEmoji.textContent = mood?.emojis?.length ? mood.emojis[Math.floor(Math.random() * mood.emojis.length)] : '';
 }
 
-// Load event data
+// ---------------------------
+// Load existing event
+// ---------------------------
 async function loadEvent() {
     if (!date || !eventId) {
         alert("Invalid URL");
@@ -228,59 +228,52 @@ async function loadEvent() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (res.status === 401) {
-            alert("Session expired. Please log in again.");
-            localStorage.removeItem('token');
-            window.location.href = 'register_login.html';
-            return;
-        }
+        if (res.status === 401) throw new Error("Session expired");
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to load event');
 
         const ev = data.data.events.find(ev => ev._id === eventId);
-        if (!ev) {
-            alert('Event not found');
-            window.location.href = 'dashboard.html';
-            return;
-        }
+        if (!ev) throw new Error('Event not found');
 
-        // --- Pre-fill form here ---
         titleInput.value = ev.title;
         descInput.value = ev.description || '';
         existingMedia = ev.media || [];
 
-        // Ensure the category and mood exist in the select; if not, add them
+        // Add category/mood options if missing
         if (ev.category && !Array.from(categorySelect.options).some(opt => opt.value === ev.category)) {
             const opt = document.createElement('option');
-            opt.value = ev.category;
-            opt.textContent = ev.category;
-            categorySelect.appendChild(opt);
+            opt.value = ev.category; opt.textContent = ev.category; categorySelect.appendChild(opt);
         }
         categorySelect.value = ev.category || '';
 
         if (ev.mood && !Array.from(moodSelect.options).some(opt => opt.value === ev.mood)) {
             const opt = document.createElement('option');
-            opt.value = ev.mood;
-            opt.textContent = ev.mood;
-            moodSelect.appendChild(opt);
+            opt.value = ev.mood; opt.textContent = ev.mood; moodSelect.appendChild(opt);
         }
         moodSelect.value = ev.mood || '';
         updateMoodEmoji(ev.mood);
 
         renderMediaPreviews();
-
     } catch (err) {
-        console.error("Error in loadEvent:", err);
-        alert('Error loading event');
+        console.error(err);
+        alert(err.message);
+        window.location.href = 'dashboard.html';
     }
 }
 
-// Render media previews
+// ---------------------------
+// Media preview and handling
+// ---------------------------
+mediaInput.addEventListener('change', e => {
+    newMediaFiles = Array.from(e.target.files);
+    renderMediaPreviews();
+});
+
 function renderMediaPreviews() {
     mediaPreview.innerHTML = '';
     const totalMedia = existingMedia.length + newMediaFiles.length;
-    mediaSection.style.display = totalMedia === 0 ? 'none' : 'block';
+    mediaSection.style.display = totalMedia ? 'block' : 'none';
 
     const addMediaItem = (mediaEl, captionValue, removeCallback) => {
         const item = document.createElement('div');
@@ -290,12 +283,10 @@ function renderMediaPreviews() {
         captionInput.placeholder = 'Add caption...';
         captionInput.className = 'media-caption';
         captionInput.value = captionValue || '';
-
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
         removeBtn.innerHTML = '×';
         removeBtn.onclick = removeCallback;
-
         item.appendChild(mediaEl);
         item.appendChild(captionInput);
         item.appendChild(removeBtn);
@@ -305,25 +296,33 @@ function renderMediaPreviews() {
     // Existing media
     existingMedia.forEach((mediaObj, idx) => {
         let mediaEl;
+        let src = typeof mediaObj.url === 'object' ? mediaObj.url.optimized || mediaObj.url.original : mediaObj.url;
+        if (!src.startsWith('http')) src = `http://localhost:3000/uploads/${src}`;
+
         if (mediaObj.type === 'image') mediaEl = document.createElement('img');
         else if (mediaObj.type === 'video') { mediaEl = document.createElement('video'); mediaEl.controls = true; }
         else if (mediaObj.type === 'audio') { mediaEl = document.createElement('audio'); mediaEl.controls = true; }
-        mediaEl.src = `http://localhost:3000/uploads/${mediaObj.url}`;
+
+        mediaEl.src = src;
+
         addMediaItem(mediaEl, mediaObj.caption, e => {
             e.preventDefault();
             if (confirm('Remove this memory?')) {
-                removedMedia.push(mediaObj.url);
-                existingMedia = existingMedia.filter(m => m.url !== mediaObj.url);
+                removedMedia.push(src);
+                existingMedia = existingMedia.filter(m => {
+                    if (typeof m.url === 'object') return m.url.original !== mediaObj.url.original;
+                    return m.url !== src;
+                });
                 renderMediaPreviews();
             }
         });
     });
 
-    // New media
+    // New files
     newMediaFiles.forEach((file, idx) => {
         const type = file.type.split('/')[0];
-        const url = URL.createObjectURL(file);
         let mediaEl;
+        const url = URL.createObjectURL(file);
         if (type === 'image') mediaEl = document.createElement('img');
         else if (type === 'video') { mediaEl = document.createElement('video'); mediaEl.controls = true; }
         else if (type === 'audio') { mediaEl = document.createElement('audio'); mediaEl.controls = true; }
@@ -338,59 +337,125 @@ function renderMediaPreviews() {
     });
 }
 
-// Handle file input
-mediaInput.addEventListener('change', e => {
-    const files = Array.from(e.target.files);
-    newMediaFiles.push(...files);
-    mediaInput.value = '';
-    renderMediaPreviews();
-});
+// ---------------------------
+// Chunked upload helper
+// ---------------------------
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB
+async function uploadFileInChunks(file) {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const fileId = `${file.name}-${Date.now()}`;
 
-// Submit handler
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(file.size, start + CHUNK_SIZE);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append('chunk', chunk);
+       formData.append('filename', file.name); 
+        formData.append('fileId', fileId);
+        formData.append('chunkIndex', i);
+        formData.append('totalChunks', totalChunks);
+
+        const res = await fetch(`${API_BASE_URL}/diary/upload-chunk`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+
+        if (!res.ok) throw new Error(`Chunk ${i + 1} failed`);
+    }
+
+    // Merge chunks
+    const mergeRes = await fetch(`${API_BASE_URL}/diary/merge-chunks`, {
+        method: "POST",
+        headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            fileId,
+            filename: file.name,
+            eventId,
+            totalChunks
+        })
+    });
+
+    if (!mergeRes.ok) {
+        const errData = await mergeRes.json();
+        throw new Error(errData.error || 'Failed to merge chunks');
+    }
+
+    const { path: fileUrl } = await mergeRes.json();
+    return fileUrl;
+}
+
+// ---------------------------
+// Form submission
+// ---------------------------
 form.onsubmit = async e => {
     e.preventDefault();
-    submitBtn.disabled = true; submitBtn.textContent = 'Saving...';
-
-    const formData = new FormData();
-    formData.append('title', titleInput.value.trim());
-    formData.append('category', categorySelect.value);
-    formData.append('mood', moodSelect.value);
-    formData.append('description', descInput.value.trim());
-    if (removedMedia.length) formData.append('removedMedia', JSON.stringify(removedMedia));
-    newMediaFiles.forEach(file => formData.append('media', file));
-
-    form.querySelectorAll('.media-caption').forEach(input => formData.append('captions', input.value.trim()));
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
 
     try {
+        const uploadedMedia = [];
+        for (const file of newMediaFiles) {
+            const fileUrl = await uploadFileInChunks(file);
+            uploadedMedia.push({ url: fileUrl, type: file.type.split('/')[0] });
+        }
+
+        // Attach captions for uploaded media
+        const captionsInputs = Array.from(form.querySelectorAll('.media-caption'));
+        const uploadedMediaWithCaptions = uploadedMedia.map((m, idx) => ({
+            ...m,
+            caption: captionsInputs[existingMedia.length + idx]?.value.trim() || ''
+        }));
+
+        const removedMediaUrls = removedMedia;
+
+        const formData = new FormData();
+        formData.append('title', titleInput.value.trim());
+        formData.append('category', categorySelect.value);
+        formData.append('mood', moodSelect.value);
+        formData.append('description', descInput.value.trim());
+        formData.append('removedMedia', JSON.stringify(removedMediaUrls));
+        formData.append('uploadedMedia', JSON.stringify(uploadedMediaWithCaptions));
+
         const res = await fetch(`${API_BASE_URL}/diary/${date}/${eventId}`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to update event');
 
         submitBtn.textContent = 'Saved!';
         submitBtn.style.background = 'linear-gradient(135deg,#28a745,#20c997)';
         setTimeout(() => window.location.href = 'dashboard.html', 1500);
+
     } catch (err) {
         console.error(err);
         alert('Error updating memory: ' + err.message);
-        submitBtn.disabled = false; submitBtn.textContent = 'Save This Chapter';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save This Chapter';
     }
 };
 
+// ---------------------------
 // Cleanup blob URLs
+// ---------------------------
 window.addEventListener('beforeunload', () => {
     newMediaFiles.forEach(file => URL.revokeObjectURL(file.url));
 });
 
+// ---------------------------
+// Initialize
+// ---------------------------
 await loadCategoriesAndMoods();
 await loadEvent();
-
-
 </script>
-
 
 </body>
 </html>

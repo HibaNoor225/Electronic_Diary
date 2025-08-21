@@ -547,6 +547,7 @@
             <div id="pagination" class="pagination" style="display: none;"></div>
         </div>
     </div>
+
 <script>
 let currentPage = 1;
 const postsPerPage = 10;
@@ -591,8 +592,8 @@ async function loadUserProfile(userId, page = 1) {
     const postsContainer = document.getElementById('posts-container');
     const noPostsDiv = document.getElementById('no-posts');
     const paginationDiv = document.getElementById('pagination');
-const currentUserId = localStorage.getItem('userId');
-    console.log('Current User ID:', currentUserId);
+    const currentUserId = localStorage.getItem('userId');
+
     loading.style.display = 'block';
     errorDiv.style.display = 'none';
     postsContainer.innerHTML = '';
@@ -600,14 +601,11 @@ const currentUserId = localStorage.getItem('userId');
     paginationDiv.style.display = 'none';
 
     try {
-        const token = localStorage.getItem('token'); // Make sure token is stored after login
+        const token = localStorage.getItem('token'); 
         const response = await fetch(`http://localhost:3000/api/users/profile/${userId}?page=${page}&limit=${postsPerPage}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
-
         loading.style.display = 'none';
 
         if (data.success && data.user) {
@@ -615,9 +613,12 @@ const currentUserId = localStorage.getItem('userId');
             const posts = data.posts || [];
             totalPosts = data.totalPosts || posts.length;
 
-            // Update profile info
+            // Update profile info with thumbnail
             if (user.profilePhoto) {
-                profileAvatar.innerHTML = `<img src="http://localhost:3000${user.profilePhoto}" alt="${user.username}" />`;
+                const profileSrc = user.profilePhoto.thumbnail 
+                    ? `http://localhost:3000${user.profilePhoto.thumbnail}` 
+                    : `http://localhost:3000${user.profilePhoto}`;
+                profileAvatar.innerHTML = `<img src="${profileSrc}" alt="${user.username}" />`;
             } else {
                 profileAvatar.textContent = getUserInitials(user.username);
             }
@@ -631,17 +632,15 @@ const currentUserId = localStorage.getItem('userId');
             document.getElementById('comments-count').textContent = posts.reduce((sum, p) => sum + p.comments.length, 0);
 
             // Display posts
-           // Display posts
-if (posts.length > 0) {
-    postsContainer.innerHTML = posts.map(post => createUserPostHTML(post, currentUserId)).join('');
-    if (totalPosts > postsPerPage) {
-        createPagination(page, Math.ceil(totalPosts / postsPerPage));
-        paginationDiv.style.display = 'flex';
-    }
-} else {
-    noPostsDiv.style.display = 'block';
-}
-
+            if (posts.length > 0) {
+                postsContainer.innerHTML = posts.map(post => createUserPostHTML(post, currentUserId)).join('');
+                if (totalPosts > postsPerPage) {
+                    createPagination(page, Math.ceil(totalPosts / postsPerPage));
+                    paginationDiv.style.display = 'flex';
+                }
+            } else {
+                noPostsDiv.style.display = 'block';
+            }
         } else {
             errorDiv.style.display = 'block';
         }
@@ -651,16 +650,16 @@ if (posts.length > 0) {
         errorDiv.style.display = 'block';
     }
 }
+
+// Delete post
 async function deletePost(postId) {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
-        const token = localStorage.getItem('token'); // include auth token
+        const token = localStorage.getItem('token');
         const response = await fetch(`http://localhost:3000/api/users/post/${postId}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
 
@@ -678,24 +677,23 @@ async function deletePost(postId) {
     }
 }
 
+// Create HTML for each post with thumbnails
 function createUserPostHTML(post, currentUserId) {
-    console.log('Post:', post);
-console.log('Post owner ID:', post.userId);
-console.log('Current user ID:', currentUserId);
-
     const likesCount = post.likes.length;
     const commentsCount = post.comments.length;
-      const postOwnerId = post.userId ? (post.userId._id || post.userId) : null;
+    const postOwnerId = post.userId ? (post.userId._id || post.userId) : null;
 
-    // Only show delete button if current user owns the post
+    // Delete button only for owner
     const deleteButtonHTML = (currentUserId && postOwnerId && String(currentUserId) === String(postOwnerId)) ?
         `<button class="delete-btn" onclick="deletePost('${post._id}')" style="margin-left:auto; padding:5px 10px; border:none; background:#e74c3c; color:white; border-radius:5px; cursor:pointer;">🗑 Delete</button>` :
         '';
 
-    // Render diary events with media
+    // Render diary events with thumbnails
     const diaryHTML = (post.diaryEvents || []).map(event => {
         const mediaHTML = (event.media || []).map(m => {
-            const src = `http://localhost:3000${m.url}`;
+            let src = `http://localhost:3000${m.url}`;
+            if (m.thumbnail) src = `http://localhost:3000${m.thumbnail}`;
+
             if (m.type === 'image') 
                 return `<img src="${src}" style="width:100%; height:300px; object-fit:cover; margin-top:10px; border-radius:8px;" alt="${m.caption || ''}" />`;
             if (m.type === 'video') 
@@ -709,7 +707,7 @@ console.log('Current user ID:', currentUserId);
             <div class="diary-event-card" style="margin-bottom:15px; padding:10px; border:1px solid #ddd; border-radius:8px;">
                 <strong>${event.title || 'Moment'}</strong>
                 ${event.description ? `<p>${event.description}</p>` : ''}
-                ${event.photo ? `<img src="http://localhost:3000${event.photo}" style="width:100px; height:100px; object-fit:cover; border-radius:5px;" />` : ''}
+                ${event.photo ? `<img src="${event.photo.thumbnail ? 'http://localhost:3000' + event.photo.thumbnail : 'http://localhost:3000' + event.photo}" style="width:100px; height:100px; object-fit:cover; border-radius:5px;" />` : ''}
                 ${event.date ? `<p style="font-size:0.9em; color:#555;">${new Date(event.date).toLocaleDateString()}</p>` : ''}
                 ${event.mood ? `<p style="font-size:0.9em; color:#555;">Mood: ${event.mood}</p>` : ''}
                 ${event.category ? `<p style="font-size:0.9em; color:#555;">Category: ${event.category}</p>` : ''}
@@ -717,10 +715,6 @@ console.log('Current user ID:', currentUserId);
             </div>
         `;
     }).join('');
-
-   
-
-
 
     return `
         <div class="post-card" id="post-${post._id}" style="margin-bottom:20px; padding:15px; border:1px solid #ccc; border-radius:10px;">
@@ -736,8 +730,6 @@ console.log('Current user ID:', currentUserId);
         </div>
     `;
 }
-
-
 
 // Pagination
 function createPagination(currentPage, totalPages) {
@@ -764,7 +756,6 @@ function createPagination(currentPage, totalPages) {
     }
 
     html += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>`;
-
     paginationDiv.innerHTML = html;
 }
 
@@ -785,9 +776,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadUserProfile(userId, currentPage);
 });
-
-// DELETE post
-
 </script>
 
 </body>

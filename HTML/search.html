@@ -729,14 +729,19 @@ categories.forEach(name => {
         const date = new Date(result.diaryDate);
         const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const mediaIndicators = [];
-        if (result.media && result.media.length > 0) {
-            const types = {};
-            result.media.forEach(m => types[m.type] = (types[m.type] || 0) + 1);
-            Object.entries(types).forEach(([type, count]) => {
-                let icon = type === 'image' ? '🖼️' : type === 'video' ? '🎬' : '🎵';
-                mediaIndicators.push(`<div class="media-indicator">${icon} ${count} ${type}${count>1?'s':''}</div>`);
-            });
-        }
+       if (result.media && result.media.length > 0) {
+    const types = {};
+    result.media.forEach(m => {
+        types[m.type] = (types[m.type] || 0) + 1;
+        // Replace media URL with optimized path if available
+        if (m.paths && m.paths.optimized) m.url = m.paths.optimized;
+    });
+    Object.entries(types).forEach(([type, count]) => {
+        let icon = type === 'image' ? '🖼️' : type === 'video' ? '🎬' : '🎵';
+        mediaIndicators.push(`<div class="media-indicator">${icon} ${count} ${type}${count>1?'s':''}</div>`);
+    });
+}
+
         return `
             <div class="search-result" onclick="viewDiary('${result.diaryDate}')">
                 <div class="result-header">

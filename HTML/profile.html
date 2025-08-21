@@ -144,7 +144,7 @@ body {
     <div class="profile-photo-section">
         <div class="profile-photo" id="profile-photo">👤</div>
         <button class="photo-upload-btn" onclick="document.getElementById('photo-input').click()">Change Photo</button>
-        <input type="file" id="photo-input" style="display:none" accept="image/*" onchange="handlePhotoUpload(event)">
+        <input type="file" id="photo-input" name="profilePhoto"  style="display:none" accept="image/*" onchange="handlePhotoUpload(event)">
     </div>
 
     <div class="success-message" id="success-message"></div>
@@ -196,38 +196,39 @@ body {
 
     const token = localStorage.getItem('token');
     if (!token) {
-        // If no token at all, force login
         window.location.href = "register_login.html";
     }
 
     // ---------- Profile Prefill ----------
-    function loadProfile() {
-        fetch('http://localhost:3000/auth/profile', {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        .then(res => {
+    async function loadProfile() {
+        try {
+            const res = await fetch('http://localhost:3000/auth/profile', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (res.status === 401) {
                 alert("Session expired. Please log in again.");
                 localStorage.removeItem('token');
                 window.location.href = 'register_login.html';
                 return;
             }
-            return res.json();
-        })
-        .then(data => {
-            if (data && data.success && data.user) {
+            const data = await res.json();
+            if (data.success && data.user) {
                 document.getElementById('fullName').value = data.user.fullName || "";
                 document.getElementById('bio').value = data.user.bio || "";
                 document.getElementById('gender').value = data.user.gender || "";
                 document.getElementById('age').value = data.user.age || "";
+
                 if (data.user.profilePhoto) {
+                    // Use optimized version if available, else original
+                    const photoUrl = data.user.profilePhoto.optimized || data.user.profilePhoto.original || data.user.profilePhoto;
                     document.getElementById('profile-photo').innerHTML =
-                        `<img src="${data.user.profilePhoto}" alt="Profile">`;
+                        `<img src="http://localhost:3000${photoUrl}" alt="Profile" style="max-width:150px; max-height:150px; border-radius:50%;">`;
                 }
                 updateCharacterCount();
             }
-        })
-        .catch(err => console.error("Error loading profile:", err));
+        } catch (err) {
+            console.error("Error loading profile:", err);
+        }
     }
 
     // ---------- Helpers ----------
@@ -242,51 +243,56 @@ body {
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('profile-photo').innerHTML =
-                    `<img src="${e.target.result}" alt="Profile">`;
+                    `<img src="${e.target.result}" alt="Profile" style="max-width:150px; max-height:150px; border-radius:50%;">`;
             }
             reader.readAsDataURL(file);
         }
     }
 
     // ---------- Save Profile ----------
-    function saveProfile() {
-        const form = document.getElementById('profile-form');
-        const formData = new FormData(form);
+    async function saveProfile() {
+    const form = document.getElementById('profile-form');
+    const formData = new FormData();
 
-        // Add profile photo file manually if selected
-        const photoFile = document.getElementById('photo-input').files[0];
-        if (photoFile) formData.append('profilePhoto', photoFile);
+    // Append all form fields manually to ensure they exist
+    formData.append('fullName', document.getElementById('fullName').value || '');
+    formData.append('bio', document.getElementById('bio').value || '');
+    formData.append('gender', document.getElementById('gender').value || '');
+    formData.append('age', document.getElementById('age').value || '');
 
-        fetch('http://localhost:3000/auth/update-profile', {
+    // Append photo if selected
+    const photoFile = document.getElementById('photo-input').files[0];
+    if (photoFile) formData.append('profilePhoto', photoFile);
+
+    try {
+        const res = await fetch('http://localhost:3000/auth/update-profile', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }, 
-            body: formData
-        })
-        .then(res => {
-            if (res.status === 401) {
-                alert("Session expired. Please log in again.");
-                localStorage.removeItem('token');
-                window.location.href = 'register_login.html';
-                return;
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (data && data.success) {
-                window.location.href = 'dashboard.html'; // redirect immediately
-            } else {
-                const error = document.getElementById('form-error');
-                error.textContent = data.message || 'Error saving profile';
-                error.style.display = 'block';
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            const error = document.getElementById('form-error');
-            error.textContent = 'Something went wrong!';
-            error.style.display = 'block';
+            headers: { 'Authorization': `Bearer ${token}` }, // only auth header
+            body: formData // do NOT set Content-Type manually!
         });
+
+        if (res.status === 401) {
+            alert("Session expired. Please log in again.");
+            localStorage.removeItem('token');
+            window.location.href = 'register_login.html';
+            return;
+        }
+
+        const data = await res.json();
+        if (data.success) {
+            window.location.href = 'dashboard.html';
+        } else {
+            const error = document.getElementById('form-error');
+            error.textContent = data.message || 'Error saving profile';
+            error.style.display = 'block';
+        }
+    } catch (err) {
+        console.error(err);
+        const error = document.getElementById('form-error');
+        error.textContent = 'Something went wrong!';
+        error.style.display = 'block';
     }
+}
 
     // Run on page load
     loadProfile();
