@@ -5,15 +5,13 @@ const Record = require('../Models/Record'); // Activity log model
 
 // Helper to log user activity
 async function logActivity(userId, detail) {
-  try {
-    const record = new Record({ user: userId, detail, date: new Date() });
-    await record.save();
-    console.log(`[ActivityLog] User: ${userId}, Detail: ${detail}`);
-  } catch (err) {
-    console.error('[ActivityLog] Failed to log activity:', err.message);
-  }
+    try {
+        if (!userId) return; // skip if no user
+        await Record.create({ user: userId, detail, date: new Date() });
+    } catch (err) {
+        console.error('[ActivityLog] Failed to log activity:', err.message);
+    }
 }
-
 // CREATE: from diary events (called by "Make Public" on diary-view.html)
 exports.createFromDiary = async (req, res) => {
   try {

@@ -7,11 +7,20 @@ const authController = require('../Controller/authController');
 const verifyToken = require('../middleware/authMiddleware');
 const authValidator = require('../validators/userValidator');
 const limit = require('../utils/limiter.js');
+const Record = require('../Models/Record'); 
 const { upload, processProfilePhoto } = require('../middleware/uploadImage');
 const { sendPasswordResetEmail } = require('../utils/sendAdminNotifications');
 
 
 const router = express.Router();
+async function logActivity(userId, detail) {
+    try {
+        if (!userId) return; // skip if no user
+        await Record.create({ user: userId, detail, date: new Date() });
+    } catch (err) {
+        console.error('[ActivityLog] Failed to log activity:', err.message);
+    }
+}
 
 // Normal register
 router.post(
@@ -105,7 +114,7 @@ router.post('/forgot-password', async (req, res) => {
     to: user.email,
     resetUrl: resetUrl   // pass the URL here
 });
-
+await logActivity(user._id, 'Requested password reset');
 
         res.status(200).json({ success: true, message: 'Password reset link sent to your email' });
 
@@ -147,12 +156,12 @@ router.put('/reset-password', async (req, res) => {
         }
 
         // Update password
-        user.password = await bcrypt.hash(newPassword, 10);
+        user.password =newPassword;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpire = undefined;
 
         await user.save();
-
+await logActivity(user._id, 'Password reset successfully');
         res.status(200).json({ success: true, message: 'Password has been reset successfully' });
 
     } catch (error) {

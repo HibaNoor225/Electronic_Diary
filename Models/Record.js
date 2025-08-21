@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 const recordSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     date: { type: Date, default: Date.now },
     detail: { type: String, required: true } // e.g., "Logged in", "Deleted a record", etc.
 });

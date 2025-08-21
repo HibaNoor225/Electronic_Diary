@@ -677,12 +677,21 @@ function switchMode(mode) {
 
 loginTab.addEventListener('click', () => switchMode('login'));
 signupTab.addEventListener('click', () => switchMode('signup'));
-
 async function submitForgotPassword(e) {
   e.preventDefault();
-  const email = document.getElementById('forgot-email').value.trim();
+  const emailInputEl = document.getElementById('forgot-email');
+  const email = emailInputEl.value.trim();
+  const btn = e.currentTarget.querySelector('button[type="submit"]');
+  const btnText = btn.textContent;
 
-  if (!email) return alert("Enter your email");
+  if (!email) {
+    alert("Enter your email");
+    return;
+  }
+
+  // Disable button and show loading
+  btn.disabled = true;
+  btn.textContent = 'Sending mail...';
 
   try {
     const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
@@ -692,15 +701,37 @@ async function submitForgotPassword(e) {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
+    if (!res.ok) throw new Error(data.message || 'Failed to send reset link');
 
-    alert("Check your email for the password reset link!");
-    closeForgotModal();
+    // Success message
+    showForgotMessage('✅ Password reset link sent! Check your email.', 'success');
+
+    // Optionally close modal after a delay
+    setTimeout(() => closeForgotModal(), 2500);
   } catch (err) {
     console.error(err);
-    alert(err.message);
+    showForgotMessage(err.message || 'Something went wrong.', 'error');
+  } finally {
+    // Re-enable button
+    btn.disabled = false;
+    btn.textContent = btnText;
   }
 }
+
+// Helper function to show message instead of alert
+function showForgotMessage(message, type='error') {
+  let msgDiv = document.getElementById('forgot-msg');
+  if (!msgDiv) {
+    msgDiv = document.createElement('div');
+    msgDiv.id = 'forgot-msg';
+    msgDiv.style.marginTop = '10px';
+    msgDiv.style.fontWeight = 'bold';
+    document.getElementById('forgot-password-form').appendChild(msgDiv);
+  }
+  msgDiv.style.color = type === 'success' ? 'green' : 'red';
+  msgDiv.textContent = message;
+}
+
 
 // -----------------
 // PASSWORD TOGGLE

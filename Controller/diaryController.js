@@ -7,23 +7,30 @@ const fs = require('fs');
 const sharp = require('sharp');
 
 // Helper to log activity
-const logActivity = async (userId, detail) => {
-  try {
-    await Record.create({ userId, detail });
-  } catch (err) {
-    console.error("Failed to log activity:", err);
-  }
-};
+async function logActivity(userId, detail) {
+    try {
+        if (!userId) return; // skip if no user
+        await Record.create({ user: userId, detail, date: new Date() });
+    } catch (err) {
+        console.error('[ActivityLog] Failed to log activity:', err.message);
+    }
+}
 
 class DiaryController {
   async uploadChunk(req, res) {
     try {
-      const { fileId, chunkIndex } = req.body;
-      if (!fileId || !chunkIndex) return res.status(400).json({ error: "Missing fileId or chunkIndex" });
+      const { fileId, chunkIndex, totalChunks, fileName } = req.body;
+
+      if (!fileId || !chunkIndex) {
+        return res.status(400).json({ error: "Missing fileId or chunkIndex" });
+      }
 
       await logActivity(req.info.id, `Uploaded chunk ${chunkIndex} for file ${fileId}`);
 
-      res.json({ success: true, message: `Chunk ${chunkIndex} of ${fileId} uploaded` });
+      res.json({
+        success: true,
+        message: `Chunk ${chunkIndex} of ${fileId} uploaded`,
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "Upload failed" });
@@ -151,7 +158,6 @@ class DiaryController {
 
       const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
 
-      // Add new media
       const mediaFiles = req.files
         ? await Promise.all(
             req.files.map(async (file, index) => {
@@ -191,7 +197,6 @@ class DiaryController {
 
       if (mediaFiles.length) event.media.push(...mediaFiles);
 
-      // Remove unwanted media
       const removed = removedMedia ? JSON.parse(removedMedia) : [];
       if (removed.length) {
         event.media = event.media.filter((m) => {
@@ -249,7 +254,6 @@ class DiaryController {
     }
   }
 
-  // Search methods (by name, mood, category, filters)
   async searchEvents(req, res) {
     try {
       const { userId, q, mood, category } = req.query;
@@ -260,9 +264,12 @@ class DiaryController {
       if (mood) eventFilter.mood = mood;
       if (category) eventFilter.category = category;
 
-      const diaries = await Diary.find({ user: userId, events: { $elemMatch: eventFilter } });
-      const matchedEvents = [];
+      const diaries = await Diary.find({
+        user: userId,
+        events: { $elemMatch: eventFilter }
+      });
 
+      const matchedEvents = [];
       diaries.forEach(diary => {
         diary.events.forEach(event => {
           let match = true;
@@ -281,6 +288,82 @@ class DiaryController {
       res.status(500).json({ message: "Server error" });
     }
   }
+
+async searchByName(req, res) {
+  try {
+    const { userId, q } = req.query;
+    if (!userId || !q) return res.status(400).json({ message: "userId and query required" });
+
+    const diaries = await Diary.find({ user: userId });
+    const matchedEvents = [];
+
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        if (event.title.toLowerCase().includes(q.toLowerCase())) {
+          matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+        }
+      });
+    });
+
+    await logActivity(req.info.id, `Searched events by name: "${q}"`);
+
+    res.json({ results: matchedEvents });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+async searchByMood(req, res) {
+  try {
+    const { userId, mood } = req.query;
+    if (!userId || !mood) return res.status(400).json({ message: "userId and mood required" });
+
+    const diaries = await Diary.find({ user: userId });
+    const matchedEvents = [];
+
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        if (event.mood === mood) {
+          matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+        }
+      });
+    });
+
+    await logActivity(req.info.id, `Searched events by mood: "${mood}"`);
+
+    res.json({ results: matchedEvents });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+async searchByCategory(req, res) {
+  try {
+    const { userId, category } = req.query;
+    if (!userId || !category) return res.status(400).json({ message: "userId and category required" });
+
+    const diaries = await Diary.find({ user: userId });
+    const matchedEvents = [];
+
+    diaries.forEach(diary => {
+      diary.events.forEach(event => {
+        if (event.category === category) {
+          matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
+        }
+      });
+    });
+
+    await logActivity(req.info.id, `Searched events by category: "${category}"`);
+
+    res.json({ results: matchedEvents });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 }
 
 module.exports = new DiaryController();

@@ -915,14 +915,14 @@ async function loadDashboardData() {
         }
         
         // Load categories count
-        const categoriesRes = await fetch(`${API_BASE_URL}/categories`);
+        const categoriesRes = await fetch(`${API_BASE_URL}/all/categories`);
         if (categoriesRes.ok) {
             const categoriesData = await categoriesRes.json();
             document.getElementById('total-categories').textContent = (categoriesData.data || []).length;
         }
         
         // Load moods count
-        const moodsRes = await fetch(`${API_BASE_URL}/moods`);
+        const moodsRes = await fetch(`${API_BASE_URL}/all/moods`);
         if (moodsRes.ok) {
             const moodsData = await moodsRes.json();
             document.getElementById('total-moods').textContent = (moodsData.data || []).length;

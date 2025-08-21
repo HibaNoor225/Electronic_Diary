@@ -5,13 +5,14 @@ const Record = require('../Models/Record'); // <-- import record model
 const { sendSuccess, sendError } = require('../utils/responseFormatter');
 
 // Helper function to log activity
-const logActivity = async (userId, detail) => {
-  try {
-    await Record.create({ userId, detail });
-  } catch (err) {
-    console.error("Failed to log activity:", err);
-  }
-};
+async function logActivity(userId, detail) {
+    try {
+        if (!userId) return; // skip if no user
+        await Record.create({ user: userId, detail, date: new Date() });
+    } catch (err) {
+        console.error('[ActivityLog] Failed to log activity:', err.message);
+    }
+}
 
 class CategoryMoodController {
   // ----------------- USER CUSTOM -----------------
@@ -56,17 +57,7 @@ class CategoryMoodController {
     }
   }
 
-  async getAllM(req, res) {
-    try {
-      const moods = await Mood.find();
-
-      await logActivity(req.info.id, "Fetched all moods");
-
-      res.json({ success: true, data: moods });
-    } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
-    }
-  }
+ 
 
   // ================== GET ALL ACTIVE CATEGORIES ==================
   async getAllCategories(req, res) {
@@ -80,18 +71,37 @@ class CategoryMoodController {
       res.status(500).json({ success: false, message: err.message });
     }
   }
-
-  async getAllC(req, res) {
+async getAllC(req, res) {
     try {
-      const categories = await Category.find();
+        const categories = await Category.find();
 
-      await logActivity(req.info.id, "Fetched all categories");
+        // Safe logging: only log if req.info exists
+        if (req.info && req.info.id) {
+            await logActivity(req.info.id, "Fetched all categories");
+        }
 
-      res.json({ success: true, data: categories });
+        res.json({ success: true, data: categories });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+        console.error('Error fetching all categories:', err); // <-- log full error
+        res.status(500).json({ success: false, message: err.message });
     }
-  }
+}
+
+async getAllM(req, res) {
+    try {
+        const moods = await Mood.find();
+
+        if (req.info && req.info.id) {
+            await logActivity(req.info.id, "Fetched all moods");
+        }
+
+        res.json({ success: true, data: moods });
+    } catch (err) {
+        console.error('Error fetching all moods:', err); // <-- log full error
+        res.status(500).json({ success: false, message: err.message });
+    }
+}
+
 
   async addCategory(req, res) {
     try {

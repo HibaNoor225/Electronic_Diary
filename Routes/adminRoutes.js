@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../Models/User');
-const bcrypt = require("bcrypt");
-const { Category, Mood } = require('../Models/CategoryMood');
-const Record = require('../Models/Record'); // Activity log
+const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 
-// Helper to log activity
+const User = require('../Models/User');
+const { Category, Mood } = require('../Models/CategoryMood');
+const Record = require('../Models/Record');
+
+const verifyToken = require("../middleware/authMiddleware");
+
+// ------------------ Helper: Log Activity ------------------
 async function logActivity(userId, detail) {
   try {
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      console.warn(`[ActivityLog] Skipped logging: invalid userId. Detail: ${detail}`);
+      return;
+    }
     await Record.create({ user: userId, detail, date: new Date() });
     console.log(`[ActivityLog] User: ${userId}, Detail: ${detail}`);
   } catch (err) {
@@ -17,7 +25,7 @@ async function logActivity(userId, detail) {
 
 // ==================== USER ROUTES ==================== //
 
-// Create user
+// Public route: Create user
 router.post('/user', async (req, res) => {
   try {
     const { username, email, password, fullName } = req.body;
@@ -41,21 +49,21 @@ router.post('/user', async (req, res) => {
   }
 });
 
+// ------------------ Protected user routes ------------------
+router.use('/user/:id', verifyToken);
+
 // Update user
 router.put('/user/:id', async (req, res) => {
   try {
     const { username, email, password, fullName, isActive } = req.body;
     const updateData = { username, email, fullName, isActive };
 
-    if (password) {
-      const hashed = await bcrypt.hash(password, 10);
-      updateData.password = hashed;
-    }
+    if (password) updateData.password = await bcrypt.hash(password, 10);
 
     const user = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    await logActivity(req.params.id, 'User profile updated');
+    await logActivity(req.info.id, 'User profile updated');
 
     res.json({ success: true, data: user });
   } catch (err) {
@@ -70,7 +78,7 @@ router.delete('/user/:id', async (req, res) => {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    await logActivity(req.params.id, 'User account deleted');
+    await logActivity(req.info.id, 'User account deleted');
 
     res.json({ success: true, message: 'User deleted successfully' });
   } catch (err) {
@@ -85,7 +93,7 @@ router.get('/user/:id', async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    await logActivity(req.params.id, 'Fetched user profile');
+    await logActivity(req.info.id, 'Fetched user profile');
 
     res.status(200).json({ success: true, data: user });
   } catch (err) {
@@ -94,63 +102,27 @@ router.get('/user/:id', async (req, res) => {
   }
 });
 
-// ==================== CATEGORY & MOOD ROUTES ==================== //
-
-router.put('/category/:id', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const isActive = status === 'public';
-
-    const category = await Category.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
-    if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
-
-    await logActivity(req.info?.id || "Anonymous", `Category ${req.params.id} set to ${status}`);
-
-    res.json({ success: true, data: category });
-  } catch (err) {
-    console.error('Category update error:', err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-router.put('/mood/:id', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const isActive = status === 'public';
-
-    const mood = await Mood.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
-    if (!mood) return res.status(404).json({ success: false, message: 'Mood not found' });
-
-    await logActivity(req.info?.id || "Anonymous", `Mood ${req.params.id} set to ${status}`);
-
-    res.json({ success: true, data: mood });
-  } catch (err) {
-    console.error('Mood update error:', err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// ==================== PASSWORD RESET ==================== //
+// Reset password
 router.put("/user/reset-password/:id", async (req, res) => {
-  const { oldPassword, newPassword, confirmPassword } = req.body;
-  const userId = req.params.id;
-
-  if (!oldPassword || !newPassword || !confirmPassword) {
-    return res.status(400).json({ success: false, message: "All fields are required" });
-  }
-
-  if (newPassword !== confirmPassword) {
-    return res.status(400).json({ success: false, message: "New password and confirm password do not match" });
-  }
-
   try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const userId = req.params.id;
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: "New password and confirm password do not match" });
+    }
+
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     const match = await bcrypt.compare(oldPassword, user.password);
     if (!match) return res.status(400).json({ success: false, message: "Old password is incorrect" });
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password =newPassword;
     await user.save();
 
     await logActivity(userId, 'User reset password');
@@ -159,6 +131,47 @@ router.put("/user/reset-password/:id", async (req, res) => {
   } catch (err) {
     console.error('Reset password error:', err);
     res.status(500).json({ success: false, message: "Error updating password", error: err.message });
+  }
+});
+
+// ==================== CATEGORY & MOOD ROUTES ==================== //
+
+// Protect category & mood updates
+router.use(['/category/:id', '/mood/:id'], verifyToken);
+
+// Update category status
+router.put('/category/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const isActive = status === 'public';
+
+    const category = await Category.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
+    if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
+
+    await logActivity(req.info.id, `Category ${req.params.id} set to ${status}`);
+
+    res.json({ success: true, data: category });
+  } catch (err) {
+    console.error('Category update error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Update mood status
+router.put('/mood/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const isActive = status === 'public';
+
+    const mood = await Mood.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
+    if (!mood) return res.status(404).json({ success: false, message: 'Mood not found' });
+
+    await logActivity(req.info.id, `Mood ${req.params.id} set to ${status}`);
+
+    res.json({ success: true, data: mood });
+  } catch (err) {
+    console.error('Mood update error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

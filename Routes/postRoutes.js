@@ -6,7 +6,7 @@ const postController = require('../Controller/postController');
 router.post('/', auth, postController.createFromDiary);
 
 // list posts (public feed)
-router.get('/', postController.getAllPosts);
+router.get('/',auth, postController.getAllPosts);
 
 // like/unlike
 router.post('/:postId/like', auth, postController.toggleLike);

@@ -5,13 +5,14 @@ const { upload, validateImageDimensions } = require('../middleware/uploadImage')
 const Record=require("../Models/Record") // <-- import record model
 
 // Helper function to log activity
-const logActivity = async (userId, detail) => {
+async function logActivity(userId, detail) {
     try {
-        await Record.create({ userId, detail });
+        if (!userId) return; // skip if no user
+        await Record.create({ user: userId, detail, date: new Date() });
     } catch (err) {
-        console.error("Failed to log activity:", err);
+        console.error('[ActivityLog] Failed to log activity:', err.message);
     }
-};
+}
 
 
 // Promisify upload middleware
