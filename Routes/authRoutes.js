@@ -8,7 +8,7 @@ const verifyToken = require('../middleware/authMiddleware');
 const authValidator = require('../validators/userValidator');
 const limit = require('../utils/limiter.js');
 const { upload, processProfilePhoto } = require('../middleware/uploadImage');
-const { sendPasswordResetEmail } = require('../utils/sendAdminnotifications');
+const { sendPasswordResetEmail } = require('../utils/sendAdminNotifications');
 
 
 const router = express.Router();

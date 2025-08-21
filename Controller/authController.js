@@ -2,6 +2,17 @@ const User = require('../Models/User');
 const { sendSuccess, sendError } = require('../utils/responseFormatter');
 const generateToken = require('../utils/tokenGeneration');
 const { upload, validateImageDimensions } = require('../middleware/uploadImage');
+const Record=require("../Models/Record") // <-- import record model
+
+// Helper function to log activity
+const logActivity = async (userId, detail) => {
+    try {
+        await Record.create({ userId, detail });
+    } catch (err) {
+        console.error("Failed to log activity:", err);
+    }
+};
+
 
 // Promisify upload middleware
 const runUploadMiddleware = (req, res) => {
@@ -36,6 +47,7 @@ class UserController {
 
       const token = generateToken(user);
       const hasProfile = false;
+await logActivity(user._id, "User registered");
 
       return sendSuccess(res, "User registered successfully", {
         token,
@@ -111,6 +123,7 @@ class UserController {
     const token = generateToken(user);
     const hasProfile = Boolean(user.fullName && user.username);
     const isAdmin = user.email === process.env.ADMIN_EMAIL;
+await logActivity(user._id, "User logged in");
 
     return sendSuccess(res, "Login successful", {
       token,
@@ -130,9 +143,8 @@ class UserController {
   }
 }
 
-
-  // ---------------- Google Login ----------------
-  async googleLogin(req, res) {
+// ---------------- Google Login ----------------
+async googleLogin(req, res) {
   try {
     const googleProfile = req.user;
     const email = googleProfile.emails?.[0]?.value;
@@ -160,6 +172,9 @@ class UserController {
       return sendError(res, `Your account has been deactivated by admin. Contact support at ${process.env.SUPPORT_EMAIL}`, 403);
     }
 
+    // Add logging here
+    await logActivity(user._id, "User logged in via Google");
+
     const token = generateToken(user);
     const hasProfile = Boolean(user.fullName && user.username);
     const isAdmin = (user.email === process.env.ADMIN_EMAIL);
@@ -178,15 +193,13 @@ class UserController {
   }
 }
 
-
-  // ---------------- Facebook Login ----------------
-  async facebookLogin(req, res) {
+// ---------------- Facebook Login ----------------
+async facebookLogin(req, res) {
   try {
     const fbProfile = req.user;
     const email = fbProfile.emails?.[0]?.value || `${fbProfile.id}@facebook.com`;
 
     let user = await User.findOne({ facebookId: fbProfile.id });
-
     if (!user) {
       user = await User.findOne({ email });
       if (user) {
@@ -208,6 +221,9 @@ class UserController {
       return sendError(res, `Your account has been deactivated by admin. Contact support at ${process.env.SUPPORT_EMAIL}`, 403);
     }
 
+    // Add logging here
+    await logActivity(user._id, "User logged in via Facebook");
+
     const token = generateToken(user);
     const hasProfile = Boolean(user.fullName && user.username);
     const isAdmin = (user.email === process.env.ADMIN_EMAIL);
@@ -226,38 +242,40 @@ class UserController {
   }
 }
 
-
-  // ---------------- Update Profile ----------------
-// controller
+// ---------------- Update Profile ----------------
 async updateProfile(req, res) {
-    try {
-        const { fullName, username, bio, gender, age } = req.body;
-        const updateData = { fullName, username, bio, gender, age };
+  try {
+    const { fullName, username, bio, gender, age } = req.body;
+    const updateData = { fullName, username, bio, gender, age };
 
-        if (req.file) {
-            // sharp processing already done in processProfilePhoto if needed
-            updateData.profilePhoto = req.file.paths || {
-                original: `/uploads/profilePhotos/${req.file.filename}`
-            };
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
-        if (!updatedUser) return sendError(res, 'User not found', 404);
-
-        return sendSuccess(res, 'Profile updated successfully', updatedUser);
-    } catch (err) {
-        console.error("Profile update error:", err);
-        return sendError(res, err.message || 'Failed to update profile', 500);
+    if (req.file) {
+      updateData.profilePhoto = req.file.paths || {
+        original: `/uploads/profilePhotos/${req.file.filename}`
+      };
     }
+
+    const updatedUser = await User.findByIdAndUpdate(req.info.id, updateData, { new: true });
+    if (!updatedUser) return sendError(res, 'User not found', 404);
+
+    // Add logging here
+    await logActivity(req.info.id, "User updated profile");
+
+    return sendSuccess(res, 'Profile updated successfully', updatedUser);
+  } catch (err) {
+    console.error("Profile update error:", err);
+    return sendError(res, err.message || 'Failed to update profile', 500);
+  }
 }
- getUserById = async (req, res) => {
+
+// ---------------- Get User By Id ----------------
+getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
-    
     const user = await User.findById(userId).select('-password');
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Add logging here
+    await logActivity(req.info.id, `Viewed profile of user ${userId}`);
 
     res.json({ success: true, user });
   } catch (err) {
@@ -266,10 +284,14 @@ async updateProfile(req, res) {
   }
 };
 
+// ---------------- Get Own Profile ----------------
 getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.info.id).select('-password');
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Add logging here
+    await logActivity(req.info.id, "Viewed own profile");
 
     res.json({ success: true, user });
   } catch (err) {

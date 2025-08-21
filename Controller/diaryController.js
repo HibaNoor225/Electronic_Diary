@@ -1,37 +1,39 @@
 const Diary = require('../Models/Diary');
+const Record = require('../Models/Record'); // <-- logging model
 const { sendSuccess, sendError } = require('../utils/responseFormatter');
-  // Add event with media
-  const path = require('path');
-  const mongoose = require('mongoose');
+const path = require('path');
+const mongoose = require('mongoose');
 const fs = require('fs');
 const sharp = require('sharp');
-class DiaryController {
-async uploadChunk(req, res) {
+
+// Helper to log activity
+const logActivity = async (userId, detail) => {
   try {
-    // multer has already handled file and fields
-    const { fileId, chunkIndex, totalChunks, fileName } = req.body;
-
-    if (!fileId || !chunkIndex) {
-      return res.status(400).json({ error: "Missing fileId or chunkIndex" });
-    }
-
-    // multer already saved the chunk in uploads/chunks
-    res.json({
-      success: true,
-      message: `Chunk ${chunkIndex} of ${fileId} uploaded`,
-    });
+    await Record.create({ userId, detail });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Upload failed" });
+    console.error("Failed to log activity:", err);
+  }
+};
+
+class DiaryController {
+  async uploadChunk(req, res) {
+    try {
+      const { fileId, chunkIndex } = req.body;
+      if (!fileId || !chunkIndex) return res.status(400).json({ error: "Missing fileId or chunkIndex" });
+
+      await logActivity(req.info.id, `Uploaded chunk ${chunkIndex} for file ${fileId}`);
+
+      res.json({ success: true, message: `Chunk ${chunkIndex} of ${fileId} uploaded` });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Upload failed" });
+    }
   }
 
-}
   async mergeChunks(req, res) {
     try {
       const { fileId, fileName } = req.body;
-      if (!fileId || !fileName) {
-        return sendError(res, "fileId and fileName are required", 400);
-      }
+      if (!fileId || !fileName) return sendError(res, "fileId and fileName are required", 400);
 
       const chunkDir = path.join(__dirname, "../uploads/chunks", fileId);
       const files = fs.readdirSync(chunkDir).sort((a, b) => a - b);
@@ -46,8 +48,9 @@ async uploadChunk(req, res) {
         fs.unlinkSync(filePath);
       }
       writeStream.end();
-
       fs.rmdirSync(chunkDir);
+
+      await logActivity(req.info.id, `Merged file ${fileName} from chunks`);
 
       sendSuccess(res, "File merged", { url: `diary/${fileName}` });
     } catch (err) {
@@ -56,161 +59,160 @@ async uploadChunk(req, res) {
     }
   }
 
-  
+  async addEvent(req, res) {
+    try {
+      const { title, description, date, category, mood, customCategory, customMood, captions } = req.body;
+      if (!title || !date) return sendError(res, "Title and date are required", 400);
 
-async addEvent(req, res) {
-  try {
-    const { title, description, date, category, mood, customCategory, customMood, captions } = req.body;
-    if (!title || !date) return sendError(res, "Title and date are required", 400);
+      const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
 
-    const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
+      const mediaFiles = req.files
+        ? await Promise.all(
+            req.files.map(async (file, index) => {
+              let type = "image";
+              if (file.mimetype.startsWith("video")) type = "video";
+              else if (file.mimetype.startsWith("audio")) type = "audio";
 
-    const mediaFiles = req.files
-      ? await Promise.all(
-          req.files.map(async (file, index) => {
-            let type = "image";
-            if (file.mimetype.startsWith("video")) type = "video";
-            else if (file.mimetype.startsWith("audio")) type = "audio";
+              const caption = captionsArray[index] || "";
+              const uploadDir = path.join(__dirname, "../uploads/diary", req.info.id.toString());
+              const ext = path.extname(file.filename);
+              const baseName = path.basename(file.filename, ext);
 
-            const caption = captionsArray[index] || "";
-            const uploadDir = path.join(__dirname, "../uploads/diary", req.info.id.toString());
-            const ext = path.extname(file.filename);
-            const baseName = path.basename(file.filename, ext);
+              if (type === "image") {
+                const thumbPath = path.join(uploadDir, `${baseName}-thumb${ext}`);
+                const optimizedPath = path.join(uploadDir, `${baseName}-optimized${ext}`);
+                const compressedPath = path.join(uploadDir, `${baseName}-compressed${ext}`);
 
-            if (type === "image") {
-              const thumbPath = path.join(uploadDir, `${baseName}-thumb${ext}`);
-              const optimizedPath = path.join(uploadDir, `${baseName}-optimized${ext}`);
-              const compressedPath = path.join(uploadDir, `${baseName}-compressed${ext}`);
+                await sharp(file.path).resize(150, 150).toFile(thumbPath);
+                await sharp(file.path).resize(600, 600, { fit: "inside" }).toFile(optimizedPath);
+                await sharp(file.path).resize(1200, 1200, { fit: "inside" }).jpeg({ quality: 80 }).toFile(compressedPath);
 
-              await sharp(file.path).resize(150, 150).toFile(thumbPath);
-              await sharp(file.path).resize(600, 600, { fit: "inside" }).toFile(optimizedPath);
-              await sharp(file.path).resize(1200, 1200, { fit: "inside" }).jpeg({ quality: 80 }).toFile(compressedPath);
+                return {
+                  type,
+                  caption,
+                  url: {
+                    original: `diary/${req.info.id}/${file.filename}`,
+                    thumbnail: `diary/${req.info.id}/${baseName}-thumb${ext}`,
+                    optimized: `diary/${req.info.id}/${baseName}-optimized${ext}`,
+                    compressed: `diary/${req.info.id}/${baseName}-compressed${ext}`,
+                  },
+                };
+              }
+              return { type, caption, url: `diary/${req.info.id}/${file.filename}` };
+            })
+          )
+        : [];
 
-              return {
-                type,
-                caption,
-                url: {
-                  original: `diary/${req.info.id}/${file.filename}`,
-                  thumbnail: `diary/${req.info.id}/${baseName}-thumb${ext}`,
-                  optimized: `diary/${req.info.id}/${baseName}-optimized${ext}`,
-                  compressed: `diary/${req.info.id}/${baseName}-compressed${ext}`,
-                },
-              };
-            }
-            return { type, caption, url: `diary/${req.info.id}/${file.filename}` };
-          })
-        )
-      : [];
+      const newEvent = {
+        _id: new mongoose.Types.ObjectId(),
+        title,
+        description,
+        media: mediaFiles,
+        category: customCategory || category || "Other",
+        mood: customMood || mood || "Other",
+        customCategory: customCategory || "",
+        customMood: customMood || "",
+      };
 
-    const newEvent = {
-      _id: new mongoose.Types.ObjectId(),  // <-- Add this line
-      title,
-      description,
-      media: mediaFiles,
-      category: customCategory || category || "Other",
-      mood: customMood || mood || "Other",
-      customCategory: customCategory || "",
-      customMood: customMood || "",
-    };
+      let diary = await Diary.findOne({ user: req.info.id, date });
+      if (diary) diary.events.push(newEvent);
+      else diary = new Diary({ user: req.info.id, date, events: [newEvent] });
 
-    let diary = await Diary.findOne({ user: req.info.id, date });
-    if (diary) diary.events.push(newEvent);
-    else diary = new Diary({ user: req.info.id, date, events: [newEvent] });
+      await diary.save();
 
-    await diary.save();
-    sendSuccess(res, "Event added successfully", { diary, eventId: newEvent._id });  // return ObjectId
-  } catch (err) {
-    console.error(err);
-    sendError(res, "Failed to add event", 500);
-  }
-}
-async editEvent(req, res) {
-  try {
-    const { date, eventId } = req.params;
-    const { title, description, category, mood, customCategory, customMood, removedMedia, captions } = req.body;
+      await logActivity(req.info.id, `Added event "${title}" on ${date}`);
 
-    if (!eventId) return sendError(res, "Event ID is required", 400);
-
-    const diary = await Diary.findOne({ user: req.info.id, date });
-    if (!diary) return sendError(res, "Diary not found", 404);
-
-    const event = diary.events.id(eventId);
-    if (!event) return sendError(res, "Event not found", 404);
-
-    // Update basic fields
-    if (title) event.title = title;
-    if (description) event.description = description;
-    if (category) event.category = category;
-    if (mood) event.mood = mood;
-    if (customCategory) { event.category = customCategory; event.customCategory = customCategory; }
-    if (customMood) { event.mood = customMood; event.customMood = customMood; }
-
-    const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
-
-    // ---------------------------
-    // Process newly uploaded files (chunked)
-    // ---------------------------
-    const mediaFiles = req.files
-      ? await Promise.all(
-          req.files.map(async (file, index) => {
-            let type = "image";
-            if (file.mimetype.startsWith("video")) type = "video";
-            else if (file.mimetype.startsWith("audio")) type = "audio";
-
-            const caption = captionsArray[index] || "";
-            const uploadDir = path.join(__dirname, "../uploads/diary", req.info.id.toString());
-            const ext = path.extname(file.filename);
-            const baseName = path.basename(file.filename, ext);
-
-            if (type === "image") {
-              const thumbPath = path.join(uploadDir, `${baseName}-thumb${ext}`);
-              const optimizedPath = path.join(uploadDir, `${baseName}-optimized${ext}`);
-              const compressedPath = path.join(uploadDir, `${baseName}-compressed${ext}`);
-
-              await sharp(file.path).resize(150, 150).toFile(thumbPath);
-              await sharp(file.path).resize(600, 600, { fit: "inside" }).toFile(optimizedPath);
-              await sharp(file.path).resize(1200, 1200, { fit: "inside" }).jpeg({ quality: 80 }).toFile(compressedPath);
-
-              return {
-                type,
-                caption,
-                url: {
-                  original: `diary/${req.info.id}/${file.filename}`,
-                  thumbnail: `diary/${req.info.id}/${baseName}-thumb${ext}`,
-                  optimized: `diary/${req.info.id}/${baseName}-optimized${ext}`,
-                  compressed: `diary/${req.info.id}/${baseName}-compressed${ext}`,
-                },
-              };
-            }
-            return { type, caption, url: `diary/${req.info.id}/${file.filename}` };
-          })
-        )
-      : [];
-
-    if (mediaFiles.length) event.media.push(...mediaFiles);
-
-    // ---------------------------
-    // Remove unwanted media
-    // ---------------------------
-    const removed = removedMedia ? JSON.parse(removedMedia) : [];
-    if (removed.length) {
-      event.media = event.media.filter((m) => {
-        if (typeof m.url === "object") {
-          return !Object.values(m.url).some((u) => removed.includes(u));
-        }
-        return !removed.includes(m.url);
-      });
+      sendSuccess(res, "Event added successfully", { diary, eventId: newEvent._id });
+    } catch (err) {
+      console.error(err);
+      sendError(res, "Failed to add event", 500);
     }
-
-    await diary.save();
-    sendSuccess(res, "Event updated successfully", { diary, eventId });
-  } catch (err) {
-    console.error(err);
-    sendError(res, "Failed to update event", 500);
   }
-}
 
-  // Delete an event
+  async editEvent(req, res) {
+    try {
+      const { date, eventId } = req.params;
+      const { title, description, category, mood, customCategory, customMood, removedMedia, captions } = req.body;
+
+      if (!eventId) return sendError(res, "Event ID is required", 400);
+
+      const diary = await Diary.findOne({ user: req.info.id, date });
+      if (!diary) return sendError(res, "Diary not found", 404);
+
+      const event = diary.events.id(eventId);
+      if (!event) return sendError(res, "Event not found", 404);
+
+      if (title) event.title = title;
+      if (description) event.description = description;
+      if (category) event.category = category;
+      if (mood) event.mood = mood;
+      if (customCategory) { event.category = customCategory; event.customCategory = customCategory; }
+      if (customMood) { event.mood = customMood; event.customMood = customMood; }
+
+      const captionsArray = Array.isArray(captions) ? captions : (captions ? [captions] : []);
+
+      // Add new media
+      const mediaFiles = req.files
+        ? await Promise.all(
+            req.files.map(async (file, index) => {
+              let type = "image";
+              if (file.mimetype.startsWith("video")) type = "video";
+              else if (file.mimetype.startsWith("audio")) type = "audio";
+
+              const caption = captionsArray[index] || "";
+              const uploadDir = path.join(__dirname, "../uploads/diary", req.info.id.toString());
+              const ext = path.extname(file.filename);
+              const baseName = path.basename(file.filename, ext);
+
+              if (type === "image") {
+                const thumbPath = path.join(uploadDir, `${baseName}-thumb${ext}`);
+                const optimizedPath = path.join(uploadDir, `${baseName}-optimized${ext}`);
+                const compressedPath = path.join(uploadDir, `${baseName}-compressed${ext}`);
+
+                await sharp(file.path).resize(150, 150).toFile(thumbPath);
+                await sharp(file.path).resize(600, 600, { fit: "inside" }).toFile(optimizedPath);
+                await sharp(file.path).resize(1200, 1200, { fit: "inside" }).jpeg({ quality: 80 }).toFile(compressedPath);
+
+                return {
+                  type,
+                  caption,
+                  url: {
+                    original: `diary/${req.info.id}/${file.filename}`,
+                    thumbnail: `diary/${req.info.id}/${baseName}-thumb${ext}`,
+                    optimized: `diary/${req.info.id}/${baseName}-optimized${ext}`,
+                    compressed: `diary/${req.info.id}/${baseName}-compressed${ext}`,
+                  },
+                };
+              }
+              return { type, caption, url: `diary/${req.info.id}/${file.filename}` };
+            })
+          )
+        : [];
+
+      if (mediaFiles.length) event.media.push(...mediaFiles);
+
+      // Remove unwanted media
+      const removed = removedMedia ? JSON.parse(removedMedia) : [];
+      if (removed.length) {
+        event.media = event.media.filter((m) => {
+          if (typeof m.url === "object") {
+            return !Object.values(m.url).some((u) => removed.includes(u));
+          }
+          return !removed.includes(m.url);
+        });
+      }
+
+      await diary.save();
+
+      await logActivity(req.info.id, `Edited event "${event.title}" on ${date}`);
+
+      sendSuccess(res, "Event updated successfully", { diary, eventId });
+    } catch (err) {
+      console.error(err);
+      sendError(res, "Failed to update event", 500);
+    }
+  }
+
   async deleteEvent(req, res) {
     try {
       const { date, eventId } = req.params;
@@ -223,6 +225,8 @@ async editEvent(req, res) {
       diary.events.pull(eventId);
       await diary.save();
 
+      await logActivity(req.info.id, `Deleted event "${event.title}" on ${date}`);
+
       sendSuccess(res, "Event deleted successfully");
     } catch (err) {
       console.error(err);
@@ -230,12 +234,13 @@ async editEvent(req, res) {
     }
   }
 
-  // Get all events for a specific date
   async getEventsByDate(req, res) {
     try {
       const { date } = req.params;
       const diary = await Diary.findOne({ user: req.info.id, date });
       if (!diary) return sendError(res, "No events found for this date", 404);
+
+      await logActivity(req.info.id, `Fetched events for ${date}`);
 
       return sendSuccess(res, "Events fetched successfully", { events: diary.events });
     } catch (err) {
@@ -244,76 +249,7 @@ async editEvent(req, res) {
     }
   }
 
-  // Search events by name/title
-  async searchByName(req, res) {
-    try {
-      const { userId, q } = req.query;
-      if (!userId || !q) return res.status(400).json({ message: "userId and query required" });
-
-      const diaries = await Diary.find({ user: userId });
-      const matchedEvents = [];
-
-      diaries.forEach(diary => {
-        diary.events.forEach(event => {
-          if (event.title.toLowerCase().includes(q.toLowerCase())) {
-            matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
-          }
-        });
-      });
-
-      res.json({ results: matchedEvents });
-    } catch (err) {
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-
-  // Search events by mood
-  async searchByMood(req, res) {
-    try {
-      const { userId, mood } = req.query;
-      if (!userId || !mood) return res.status(400).json({ message: "userId and mood required" });
-
-      const diaries = await Diary.find({ user: userId });
-      const matchedEvents = [];
-
-      diaries.forEach(diary => {
-        diary.events.forEach(event => {
-          if (event.mood === mood) {
-            matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
-          }
-        });
-      });
-
-      res.json({ results: matchedEvents });
-    } catch (err) {
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-
-  // Search events by category
-  async searchByCategory(req, res) {
-    try {
-      const { userId, category } = req.query;
-      if (!userId || !category) return res.status(400).json({ message: "userId and category required" });
-
-      const diaries = await Diary.find({ user: userId });
-      const matchedEvents = [];
-
-      diaries.forEach(diary => {
-        diary.events.forEach(event => {
-          if (event.category === category) {
-            matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
-          }
-        });
-      });
-
-      res.json({ results: matchedEvents });
-    } catch (err) {
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-
-  // Search events with optional filters
+  // Search methods (by name, mood, category, filters)
   async searchEvents(req, res) {
     try {
       const { userId, q, mood, category } = req.query;
@@ -324,12 +260,9 @@ async editEvent(req, res) {
       if (mood) eventFilter.mood = mood;
       if (category) eventFilter.category = category;
 
-      const diaries = await Diary.find({
-        user: userId,
-        events: { $elemMatch: eventFilter }
-      });
-
+      const diaries = await Diary.find({ user: userId, events: { $elemMatch: eventFilter } });
       const matchedEvents = [];
+
       diaries.forEach(diary => {
         diary.events.forEach(event => {
           let match = true;
@@ -339,6 +272,8 @@ async editEvent(req, res) {
           if (match) matchedEvents.push({ diaryDate: diary.date, ...event.toObject() });
         });
       });
+
+      await logActivity(req.info.id, `Searched events with filters q:${q}, mood:${mood}, category:${category}`);
 
       res.json({ results: matchedEvents });
     } catch (err) {
