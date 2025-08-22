@@ -121,4 +121,21 @@ exports.deletePost = async (req, res) => {
     await logActivity(userId, `Failed to delete post ${postId}: ${err.message}`);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+  
 };
+
+
+// GET all users
+exports.getAllUsers = async (req, res) => {
+    try {
+        
+             const users = await User.find({}, '_id username').lean(); // select fields you want to expose
+            
+
+        res.json({ success: true, users });
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).json({ success: false, message: 'Error fetching users' });
+    }
+};
+

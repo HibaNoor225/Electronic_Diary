@@ -1,4 +1,5 @@
 const User = require('../Models/User');
+const Diary = require('../Models/Diary');
 const { sendSuccess, sendError } = require('../utils/responseFormatter');
 const generateToken = require('../utils/tokenGeneration');
 const { upload, validateImageDimensions } = require('../middleware/uploadImage');

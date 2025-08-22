@@ -9,5 +9,8 @@ router.get('/profile/:userId', authMiddleware,userController.getUserProfile);
 // Delete a post
 router.delete('/post/:postId', authMiddleware, userController.deletePost);
 
+router.get('/', userController.getAllUsers);
+
+
 
 module.exports = router;

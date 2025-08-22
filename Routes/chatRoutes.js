@@ -84,18 +84,64 @@ const upload = multer({
         }
     }
 });
-
 router.post('/upload', upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: 'No file uploaded' });
-        }
-
-        const fileUrl = `/uploads/${req.file.filename}`;
-        res.json({ success: true, fileUrl });
-    } catch (error) {
-        console.error('Error uploading file:', error);
-        res.status(500).json({ success: false, message: 'Error uploading file' });
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
+
+    const { senderId, recipientId } = req.body;
+    if (!senderId || !recipientId) {
+      return res.status(400).json({ success: false, message: 'Missing sender or recipient' });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileType = req.file.mimetype.startsWith("image")
+      ? "image"
+      : req.file.mimetype.startsWith("video")
+      ? "video"
+      : req.file.mimetype.startsWith("audio")
+      ? "audio"
+      : "file";
+
+    // ✅ find or create chat
+    let chat = await Chat.findOne({
+      $or: [
+        { senderId, recipientId },
+        { senderId: recipientId, recipientId: senderId }
+      ]
+    });
+
+    if (!chat) {
+      chat = new Chat({
+        senderId,
+        recipientId,
+        messages: []
+      });
+    }
+
+    // ✅ construct file message (no text message required)
+    const newMessage = {
+  sender: senderId,
+  message: "",  // still keep empty if file-only
+  fileUrl,
+  fileType,
+  timestamp: new Date()
+};
+
+chat.messages.push(newMessage);
+chat.lastMessage = fileType === "image" ? "Shared a beautiful moment" : "Shared a file";
+chat.updatedAt = new Date();
+await chat.save();
+
+res.json({ success: true, message: newMessage });
+
+
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).json({ success: false, message: 'Error uploading file' });
+  }
 });
+
+
 module.exports = router;

@@ -12,7 +12,6 @@ module.exports = (io) => {
         });
 socket.on('sendMessage', async ({ senderId, recipientId, message }) => {
     if (!senderId || !recipientId || !message) return;
-
     try {
         // Find existing chat between sender and recipient
         let chat = await Message.findOne({
@@ -65,5 +64,27 @@ socket.on('sendMessage', async ({ senderId, recipientId, message }) => {
                 if (id === socket.id) delete onlineUsers[userId];
             }
         });
+
+        socket.on("deleteMessageForEveryone", async ({ messageId }) => {
+    try {
+        // Delete from DB
+        await Message.findByIdAndDelete(messageId);
+
+        // Notify all users to remove this message
+        io.emit("messageDeletedForEveryone", { messageId });
+    } catch (err) {
+        console.error("Error deleting message:", err);
+    }
+});
+socket.on("deleteMessageForMe", async ({ messageId, userId }) => {
+    await Message.updateOne(
+        { "messages._id": messageId },
+        { $addToSet: { "messages.$.hiddenFor": userId } }
+    );
+});
+
+
     });
+
+    
 };

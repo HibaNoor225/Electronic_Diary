@@ -350,6 +350,99 @@ body {
     transform: translateY(-2px); 
 }
 
+/* Invitation Modal Styles */
+.invitation-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.invitation-modal-content {
+    background: #fdfbf7;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(139,69,19,0.2);
+    border: 2px solid #d4c5a9;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.invitation-header {
+    font-size: 1.5rem;
+    color: #5d4037;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #fff8f0;
+    border-radius: 8px;
+    border: 1px solid #e6d8c5;
+}
+
+.user-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.user-name {
+    font-size: 1rem;
+    color: #333;
+}
+
+.send-invitation-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    font-size: 1rem;
+    margin-top: 20px;
+}
+
+.send-invitation-btn:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+}
+
+.invitation-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #8d6e63;
+}
 </style>
 </head>
 <body>
@@ -357,6 +450,7 @@ body {
     <div class="top-buttons">
         <a href="dashboard.html" class="btn">← Back to Dashboard</a>
         <button id="make-public-btn" class="btn">🌍 Make Public</button>
+        <button id="send-invitation-btn" class="btn">📩 Send Invitation</button>
     </div>
 
     <div class="diary-header">
@@ -366,7 +460,6 @@ body {
     <div class="diary-content" id="diary-content"></div>
 </div>
 
-
 <!-- Modal for media viewing -->
 <div class="modal" id="mediaModal">
     <div class="modal-content">
@@ -375,11 +468,23 @@ body {
         <div class="modal-caption" id="modalCaption"></div>
     </div>
 </div>
+
+<!-- Modal for sending invitations -->
+<div class="modal invitation-modal" id="invitationModal">
+    <div class="invitation-modal-content">
+        <button class="invitation-close" onclick="closeInvitationModal()">&times;</button>
+        <div class="invitation-header">Select Users to Invite</div>
+        <div id="user-list-container" class="user-list"></div>
+        <button class="send-invitation-btn" id="send-invitations">Send Invitations</button>
+    </div>
+</div>
+
 <script>
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
 const urlParams = new URLSearchParams(window.location.search);
 let date = urlParams.get('date');
+const sharedBy = urlParams.get('sharedBy'); // For shared diaries
 
 if (date) {
     const parsed = new Date(date);
@@ -394,11 +499,9 @@ document.getElementById('diary-date').textContent = readableDate;
 const contentContainer = document.getElementById('diary-content');
 
 // Helper to get correct URL from file.paths
-// Helper to get correct URL from file.paths
 function getFileUrl(file) {
     if (!file.url) return '';
 
-    // For images, url might be an object with optimized/original paths
     let path = '';
     if (typeof file.url === 'object') {
         path = file.url.optimized || file.url.original;
@@ -408,10 +511,7 @@ function getFileUrl(file) {
 
     if (!path) return '';
 
-    // Ensure forward slashes for URL
     path = path.replace(/\\/g, '/');
-
-    // Frontend access to uploads folder
     return `http://localhost:3000/uploads/${path}`;
 }
 
@@ -453,7 +553,8 @@ function createMediaGallery(media, eventTitle) {
                 <span>${tab.text}</span>
                 <span class="tab-count">${tab.data.length}</span>
             `;
-            tabBtn.onclick = () => switchTab(tab.type, galleryContainer);
+            tabBtn.onclick = (e) => switchTab(tab.type, galleryContainer, e);
+
             tabsContainer.appendChild(tabBtn);
 
             if (!activeTab) {
@@ -521,10 +622,18 @@ function createMediaGallery(media, eventTitle) {
 }
 
 // Switch gallery tabs
-function switchTab(tabType, galleryContainer) {
+function switchTab(tabType, galleryContainer, event) {
+    // Remove active classes from all tabs and grids
     galleryContainer.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     galleryContainer.querySelectorAll('.media-grid').forEach(grid => grid.classList.remove('active'));
-    event.target.closest('.tab-btn').classList.add('active');
+
+    // Add active class to the clicked button
+    if (event) {
+        const btn = event.currentTarget;
+        if (btn) btn.classList.add('active');
+    }
+
+    // Show the correct grid
     const targetGrid = galleryContainer.querySelector(`#${tabType}-grid`);
     if (targetGrid) targetGrid.classList.add('active');
 }
@@ -570,7 +679,7 @@ function openModal(file, eventTitle) {
     document.body.style.overflow = 'hidden';
 }
 
-// Close modal
+// Close media modal
 function closeModal() {
     const modal = document.getElementById('mediaModal');
     modal.classList.remove('active');
@@ -579,22 +688,105 @@ function closeModal() {
     document.body.style.overflow = 'auto';
 }
 
-document.getElementById('mediaModal').onclick = e => { if(e.target===this) closeModal(); };
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+// Close invitation modal
+function closeInvitationModal() {
+    document.getElementById('invitationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+document.getElementById('mediaModal').onclick = e => { if (e.target === document.getElementById('mediaModal')) closeModal(); };
+document.getElementById('invitationModal').onclick = e => { if (e.target === document.getElementById('invitationModal')) closeInvitationModal(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeInvitationModal(); } });
+
+// Fetch all users for invitation
+async function fetchUsers() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            return data.users.filter(user => user._id !== localStorage.getItem('userId')); // Exclude self
+        }
+        return [];
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        return [];
+    }
+}
+
+// Open invitation modal
+document.getElementById('send-invitation-btn').addEventListener('click', async () => {
+    const modal = document.getElementById('invitationModal');
+    const userListContainer = document.getElementById('user-list-container');
+    userListContainer.innerHTML = '';
+
+    const users = await fetchUsers();
+    if (users.length === 0) {
+        userListContainer.innerHTML = '<p>No users available to invite.</p>';
+    } else {
+        users.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            userItem.innerHTML = `
+                <input type="checkbox" data-user-id="${user._id}">
+                <span class="user-name">${user.username || 'User'}</span>
+            `;
+            userListContainer.appendChild(userItem);
+        });
+    }
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+});
+
+// Send invitations
+document.getElementById('send-invitations').addEventListener('click', async () => {
+    const selectedUsers = Array.from(document.querySelectorAll('#user-list-container input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.dataset.userId);
+
+    if (selectedUsers.length === 0) {
+        alert('Please select at least one user');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/invitations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ recipientIds: selectedUsers, diaryDate: date })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            alert('Invitations sent successfully!');
+            closeInvitationModal();
+        } else {
+            alert(data.message || 'Failed to send invitations');
+        }
+    } catch (err) {
+        console.error('Error sending invitations:', err);
+        alert('Error sending invitations');
+    }
+});
 
 // Load diary events
 async function loadDiaryStory() {
     contentContainer.innerHTML = '';
     try {
-        const res = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+        const url = sharedBy ? `${API_BASE_URL}/diary/${encodeURIComponent(date)}?sharedBy=${sharedBy}` : `${API_BASE_URL}/diary/${encodeURIComponent(date)}`;
+        const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if(res.status === 404){
+        if (res.status === 404) {
             contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
             return;
         }
-        if(res.status === 401){
+        if (res.status === 401) {
             alert("Session expired. Please log in again.");
             localStorage.removeItem('token');
             window.location.href = 'register_login.html';
@@ -602,10 +794,10 @@ async function loadDiaryStory() {
         }
 
         const data = await res.json();
-        if(!res.ok) throw new Error(data.message);
+        if (!res.ok) throw new Error(data.message);
 
         const dayEvents = data.data?.events || [];
-        if(dayEvents.length === 0){
+        if (dayEvents.length === 0) {
             contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
             return;
         }
@@ -619,14 +811,14 @@ async function loadDiaryStory() {
             timeElement.textContent = `Chapter ${index + 1}`;
             storySection.appendChild(timeElement);
 
-            if(event.mood || event.category){
+            if (event.mood || event.category) {
                 const metaContainer = document.createElement('div');
                 metaContainer.className = 'meta-info';
                 let metaText = '';
-                if(event.mood) metaText += `Mood: ${event.mood}`;
+                if (event.mood) metaText += `Mood: ${event.mood}`;
                 metaContainer.textContent = metaText;
 
-                if(event.category){
+                if (event.category) {
                     const badge = document.createElement('span');
                     badge.className = 'category-badge';
                     badge.textContent = event.category;
@@ -640,7 +832,7 @@ async function loadDiaryStory() {
             storyParagraph.innerHTML = `<strong>${event.title}</strong> - ${event.description || 'A moment worth remembering.'}`;
             storySection.appendChild(storyParagraph);
 
-            if(event.media && event.media.length > 0){
+            if (event.media && event.media.length > 0) {
                 const gallery = createMediaGallery(event.media, event.title);
                 if (gallery) storySection.appendChild(gallery);
             }
@@ -657,7 +849,7 @@ async function loadDiaryStory() {
         closingThought.innerHTML = `<em>And so ended another day in my journey...</em>`;
         contentContainer.appendChild(closingThought);
 
-    } catch(err){
+    } catch (err) {
         console.error(err);
         contentContainer.innerHTML = `<div class="no-events"><p style="color:#c62828;">Unable to load diary entries.</p></div>`;
     }
@@ -665,6 +857,5 @@ async function loadDiaryStory() {
 
 loadDiaryStory();
 </script>
-
 </body>
 </html>

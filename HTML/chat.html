@@ -424,16 +424,43 @@
         }
 
         .message-actions {
-            position: absolute;
-            right: -50px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
-            background: #fdfbf7;
-            border-radius: 25px;
-            box-shadow: 0 4px 20px rgba(139,69,19,0.2);
-            padding: 8px;
-            border: 2px solid #d4c5a9;
+    position: absolute;
+    right: -100px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    background: #fdfbf7;
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(139,69,19,0.2);
+    padding: 5px;
+    border: 2px solid #d4c5a9;
+    z-index: 100;
+}
+.message-actions:hover {
+    display: flex;
+}
+
+/* Add a pseudo-element to create a hover bridge */
+.message-actions::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: -10px;
+    width: 20px;
+    height: calc(100% + 20px);
+    background: transparent;
+}
+
+/* For sent messages */
+.message-group.sent .message-actions::before {
+    left: auto;
+    right: -20px;
+}
+
+        /* For sent messages, position actions on the left side */
+        .message-group.sent .message-actions {
+            right: auto;
+            left: -100px; /* Position on left side for sent messages */
         }
 
         .message:hover .message-actions {
@@ -806,6 +833,49 @@
             box-shadow: 0 2px 8px rgba(139,69,19,0.2);
         }
 
+        /* Message Menu and Dropdown */
+        .message-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .message-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: #fdfbf7;
+            border: 2px solid #d4c5a9;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(139,69,19,0.3);
+            z-index: 1000;
+            min-width: 160px;
+            overflow: hidden;
+        }
+
+        .message-dropdown button {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            color: #5d4037;
+            font-family: 'Georgia', serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .message-dropdown button:hover {
+            background: #8b4513;
+            color: #fdfbf7;
+        }
+
+        .message-dropdown.show {
+            display: block;
+        }
+
         /* Drag and Drop */
         .drag-over {
             background: rgba(139,69,19,0.1) !important;
@@ -883,6 +953,14 @@
             .message-group {
                 max-width: 85%;
             }
+
+            .message-actions {
+                right: -100px;
+            }
+
+            .message-group.sent .message-actions {
+                left: -100px;
+            }
             
             .input-wrapper {
                 padding: 8px 15px;
@@ -922,6 +1000,19 @@
             border: 2px dashed #d4c5a9;
             margin: 20px 0;
         }
+        .message-deleted {
+    font-style: italic;
+    color: #8d6e63;
+    text-align: center;
+    padding: 8px 12px;
+    background-color: #f5f5f5;
+    border-radius: 12px;
+}
+
+.message.deleted {
+    opacity: 0.7;
+}
+
     </style>
 </head>
 <body>
@@ -1011,7 +1102,7 @@
                             <i class="fas fa-feather-alt"></i>
                         </button>
                     </div>
-                    <input type="file" id="fileInput" style="display:none;" accept="image/*,.pdf">
+                    <input type="file" id="fileInput" style="display:none;" >
                     <div id="emojiPicker" style="display:none;">
                         <span class="emoji" data-emoji="😀">😀</span>
                         <span class="emoji" data-emoji="😁">😁</span>
@@ -1183,6 +1274,23 @@
                     }
                 });
 
+                this.socket.on("messageDeletedForMe", ({ messageId, userId }) => {
+    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+    if (msgEl && userId === this.currentUserId) {
+        msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
+        msgEl.classList.add('deleted');
+    }
+});
+
+this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
+    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+    if (msgEl) {
+        msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
+        msgEl.classList.add('deleted');
+    }
+});
+
+
                 this.socket.on('userOnline', (userId) => {
                     this.onlineUsers.add(userId);
                     this.updateOnlineStatus();
@@ -1198,6 +1306,8 @@
                         this.showTypingIndicator();
                     }
                 });
+
+             
 
                 this.socket.on('stopTyping', (data) => {
                     if (data.senderId === this.currentChatUserId) {
@@ -1404,11 +1514,17 @@
 
                     this.chatMessages.innerHTML = '';
                     if (data.success && data.messages.length > 0) {
-                        data.messages.forEach(message => {
-                            this.appendMessage(message);
+                        data.messages.forEach(msg => {
+                            this.appendMessage({
+                                sender: msg.sender,
+                                message: msg.message,
+                                fileUrl: msg.fileUrl,
+                                fileType: msg.fileType,
+                                timestamp: msg.timestamp
+                            });
                         });
                     } else {
-                        this.chatMessages.innerHTML = '<p id="noMessages">Your conversation begins here... Write the first chapter of your story together.</p>';
+                        this.chatMessages.innerHTML = '<p id="noMessages">Your conversation begins here...</p>';
                     }
                     this.scrollToBottom();
                 } catch (error) {
@@ -1416,88 +1532,127 @@
                     this.showError('Failed to load messages. Please try again.');
                 }
             }
+sendMessage() {
+    const message = this.chatInput.value.trim();
+    if (!message || !this.currentChatUserId) return;
 
-            sendMessage() {
-                const message = this.chatInput.value.trim();
-                if (!message || !this.currentChatUserId) {
-                    console.warn('Cannot send message: Empty message or no conversation selected');
-                    return;
-                }
+    const messageData = {
+        senderId: this.currentUserId,
+        recipientId: this.currentChatUserId,
+        message: message,
+        timestamp: new Date()
+    };
 
-                const messageData = {
-                    senderId: this.currentUserId,
-                    recipientId: this.currentChatUserId,
-                    message: message,
-                    timestamp: new Date()
-                };
+    fetch("http://localhost:3000/chat/api/sendMessage", {  // POST to your backend
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(messageData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            this.appendMessage(data.message); // use server-generated _id
+            this.socket.emit('sendMessage', data.message);
+        } else {
+            console.error("Message not sent", data);
+        }
+    })
+    .catch(err => console.error(err));
 
-                this.socket.emit('sendMessage', messageData);
-                this.appendMessage({
-                    ...messageData,
-                    sender: this.currentUserId
-                });
+    this.chatInput.value = '';
+    this.autoResize();
+}
 
-                this.updateLastMessage(this.currentChatUserId, message);
-                this.chatInput.value = '';
-                this.autoResize();
-                this.chatInput.focus();
-                this.scrollToBottom();
 
-                // Remove no messages placeholder
-                this.chatMessages.querySelector('#noMessages')?.remove();
+            async handleFileUpload(event) {
+                const fileInput = document.getElementById("fileInput");
+                const file = fileInput.files[0];
 
-                // Reload chats to update sidebar
-                this.loadChats();
-            }
-
-            async handleFileUpload(file) {
-                if (!this.currentChatUserId) {
-                    console.warn('No conversation selected for file upload');
+                if (!file) {
+                    console.error("No file selected");
                     return;
                 }
 
                 const formData = new FormData();
-                formData.append('file', file);
-                formData.append('senderId', this.currentUserId);
-                formData.append('recipientId', this.currentChatUserId);
+                formData.append("file", file);
+                formData.append("senderId", this.currentUserId);
+                formData.append("recipientId", this.currentChatUserId);
 
                 try {
-                    const response = await fetch('/chat/api/upload', { method: 'POST', body: formData });
-                    const data = await response.json();
-                    console.log('File upload response:', data);
-                    if (data.success && data.fileUrl) {
-                        this.sendFileMessage(data.fileUrl, file.name);
+                    const res = await fetch("http://localhost:3000/chat/api/upload", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    console.log("Upload response:", data);
+
+                    if (data.success) {
+                        // ✅ show file immediately in chat
+                        this.appendMessage({
+                            sender: this.currentUserId,   // use `sender` not `senderId` for appendMessage
+                            recipient: this.currentChatUserId,
+                            fileUrl: data.message.fileUrl || data.fileUrl, // backend sends in `message` object
+                            fileType: data.message.fileType || "file",
+                            message: data.message.message || "", // empty for file-only
+                            timestamp: new Date()
+                        });
+
+                        // ✅ also emit via socket to recipient
+                        this.socket.emit("sendMessage", {
+                            senderId: this.currentUserId,
+                            recipientId: this.currentChatUserId,
+                            fileUrl: data.message.fileUrl || data.fileUrl,
+                            fileType: data.message.fileType || "file",
+                            message: data.message.message || "",
+                            timestamp: new Date()
+                        });
+
                     } else {
-                        this.showError('Failed to upload file.');
+                        console.error("Upload failed", data);
                     }
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    this.showError('Error uploading file. Please try again.');
+                } catch (err) {
+                    console.error("Upload error:", err);
                 }
             }
 
-            sendFileMessage(fileUrl, fileName) {
-                const messageData = {
+            sendFileMessage(fileUrl, fileType) {
+                const message = {
                     senderId: this.currentUserId,
-                    recipientId: this.currentChatUserId,
-                    message: fileUrl,
-                    timestamp: new Date()
+                    recipientId: this.currentChatUserId, // match text messages
+                    fileUrl,
+                    fileType,
+                    timestamp: new Date(),
                 };
 
-                this.socket.emit('sendMessage', messageData);
-                this.appendMessage({...messageData, sender: this.currentUserId});
+                // send via socket
+                this.socket.emit("sendMessage", message);
 
-                const ext = fileName.split('.').pop().toLowerCase();
-                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-                const display = isImage ? 'Shared a beautiful moment' : 'Shared a memory';
-                this.updateLastMessage(this.currentChatUserId, display);
+                // show in chat immediately
+                this.appendMessage({ ...message, sender: this.currentUserId });
+                this.updateLastMessage(this.currentChatUserId, fileType === "image" ? "Shared a beautiful moment" : "Shared a memory");
+
                 this.scrollToBottom();
-
-                // Remove no messages placeholder
                 this.chatMessages.querySelector('#noMessages')?.remove();
-
-                // Reload chats to update sidebar
                 this.loadChats();
+            }
+
+            // Helper function
+            getMimeTypeFromExtension(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const map = {
+                    jpg: 'image/jpeg',
+                    jpeg: 'image/jpeg',
+                    png: 'image/png',
+                    gif: 'image/gif',
+                    mp4: 'video/mp4',
+                    mp3: 'audio/mpeg',
+                    pdf: 'application/pdf',
+                    doc: 'application/msword',
+                    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    txt: 'text/plain'
+                };
+                return map[ext] || 'application/octet-stream';
             }
 
             appendMessage(message) {
@@ -1507,17 +1662,17 @@
 
                 const messageEl = document.createElement('div');
                 messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
+                messageEl.dataset.id = message._id || Date.now() + Math.random(); // Add message ID
 
-                const isFile = /^https?:\/\//.test(message.message);
-                let content = message.message;
-
-                if (isFile) {
-                    const fileName = decodeURIComponent(message.message.split('/').pop());
+                // ✅ Use fileUrl if it's a file, otherwise use text
+                let content = '';
+                if (message.fileUrl) {
+                    const fileName = decodeURIComponent(message.fileUrl.split('/').pop());
                     const ext = fileName.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
 
                     if (isImage) {
-                        content = `<img src="${message.message}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
+                        content = `<img src="${message.fileUrl}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
                     } else {
                         content = `
                             <div class="file-message">
@@ -1526,10 +1681,13 @@
                                     <div class="file-name">${fileName}</div>
                                     <div class="file-size">Click to download this memory</div>
                                 </div>
-                                <a href="${message.message}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
+                                <a href="${message.fileUrl}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
                             </div>
                         `;
                     }
+                } else if (message.message) {
+                    // Normal text message
+                    content = message.message;
                 }
 
                 messageEl.innerHTML = `
@@ -1541,9 +1699,15 @@
                         <button class="message-action-btn" title="React" onclick="addReaction(this.closest('.message'), '❤️')">
                             <i class="fas fa-heart"></i>
                         </button>
-                        <button class="message-action-btn" title="More">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </button>
+                        <div class="message-menu">
+                            <button class="message-action-btn" title="More" onclick="toggleMessageMenu(this)">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <div class="message-dropdown">
+                                <button onclick="deleteForMe(this.closest('.message'))">Delete for Me</button>
+                                <button onclick="deleteForEveryone(this.closest('.message'))">Delete for Everyone</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="message-time">
                         ${this.formatTime(message.timestamp)}
@@ -1564,17 +1728,15 @@
                     this.updateUnreadBadge(message.sender);
                 }
 
-                const isFile = /^https?:\/\//.test(message.message);
-                let display = message.message;
-                if (isFile) {
-                    const fileName = decodeURIComponent(message.message.split('/').pop());
-                    const ext = fileName.split('.').pop().toLowerCase();
-                    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-                    display = isImage ? 'Shared a beautiful moment' : 'Shared a memory';
+                let display;
+                if (message.fileUrl) {
+                    display = message.fileType === "image" ? "Shared a beautiful moment" : "Shared a memory";
+                } else {
+                    display = message.message;
                 }
-                
+
                 this.updateLastMessage(message.sender, display);
-                this.loadChats(); // Reload sidebar to reflect new message
+                this.loadChats();
             }
 
             updateLastMessage(userId, message) {
@@ -1699,27 +1861,34 @@
             }
         }
 
-        // Initialize the chat when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            new PersonalChat();
-        });
-
-        // Handle window resize for responsiveness
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) {
-                document.body.classList.add('mobile');
-            } else {
-                document.body.classList.remove('mobile');
+        // Global functions for message actions
+        function toggleMessageMenu(button) {
+            const dropdown = button.nextElementSibling;
+            const isVisible = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.message-dropdown.show').forEach(d => {
+                d.classList.remove('show');
+            });
+            
+            if (!isVisible) {
+                dropdown.classList.add('show');
+                
+                // Close dropdown when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', function handler(e) {
+                        if (!button.closest('.message-menu').contains(e.target)) {
+                            dropdown.classList.remove('show');
+                            document.removeEventListener('click', handler);
+                        }
+                    });
+                }, 0);
             }
-        });
-
-        // Add mobile toggle functionality
-        function toggleSidebar() {
-            const sidebar = document.getElementById('chatSidebar');
-            sidebar.classList.toggle('open');
         }
 
-        // Add message reaction functionality
+      
+
+
         function addReaction(messageElement, reaction) {
             let reactionsDiv = messageElement.querySelector('.message-reactions');
             if (!reactionsDiv) {
@@ -1734,7 +1903,6 @@
             reactionsDiv.appendChild(reactionSpan);
         }
 
-        // Add message reply functionality
         function replyToMessage(messageElement) {
             const messageText = messageElement.textContent.split('\n')[0]; // Get first line of message
             const replyPreview = document.createElement('div');
@@ -1761,6 +1929,62 @@
                 replyPreview.remove();
             }
         }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('chatSidebar');
+            sidebar.classList.toggle('open');
+        }
+        // Delete a message only for the current user
+// Delete a message only for the current user
+function deleteForMe(messageElement) {
+    if (!window.chatApp) return;
+
+    const messageId = messageElement.dataset.id;
+    const userId = window.chatApp.currentUserId;
+
+    // Replace message content with deleted placeholder
+    messageElement.innerHTML = `
+        <div class="message-deleted">This message was deleted for you</div>
+    `;
+    messageElement.classList.add('deleted');
+
+    // Emit socket event to server (optional)
+    window.chatApp.socket.emit("deleteMessageForMe", { messageId, userId });
+}
+
+// Delete a message for everyone
+function deleteForEveryone(messageElement) {
+    if (!window.chatApp) return;
+
+    const messageId = messageElement.dataset.id;
+
+    // Replace message content with deleted placeholder
+    messageElement.innerHTML = `
+        <div class="message-deleted">This message was deleted</div>
+    `;
+    messageElement.classList.add('deleted');
+
+    // Emit socket event to server to notify all users
+    window.chatApp.socket.emit("deleteMessageForEveryone", { messageId });
+}
+
+
+
+
+        // Initialize the chat when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+    window.chatApp = new PersonalChat(); // make it global
+});
+
+
+        // Handle window resize for responsiveness
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                document.body.classList.add('mobile');
+            } else {
+                document.body.classList.remove('mobile');
+            }
+        });
     </script>
 </body>
 </html>

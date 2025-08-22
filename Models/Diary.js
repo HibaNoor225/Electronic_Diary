@@ -34,6 +34,9 @@ eventSchema.pre('save', async function(next) {
 const diarySchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: String, required: true },  // e.g., "2025-08-15"
+  isPublic: { type: Boolean, default: false },
+   sharedWith: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] }],
+
   events: [eventSchema]
 }, { timestamps: true });
 
