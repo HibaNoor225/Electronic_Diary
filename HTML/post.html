@@ -618,23 +618,27 @@
         }
 
 function createPostHTML(post) {
-    const isLiked = currentUser && post.likes.includes(currentUser.id);
-    const likesCount = post.likes.length;
-    const commentsCount = post.comments.length;
+    // Safe user object
+    const user = post.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
 
-    // Avatar
-    const avatarHTML = post.userId.profilePhoto ? `
-      <img src="http://localhost:3000${post.userId.profilePhoto}" 
-           alt="${post.userId.username}"
+    // Like & comments info
+    const isLiked = currentUser && post.likes && post.likes.includes(currentUser.id);
+    const likesCount = post.likes ? post.likes.length : 0;
+    const commentsCount = post.comments ? post.comments.length : 0;
+
+    // Avatar HTML
+    const avatarHTML = user.profilePhoto ? `
+      <img src="http://localhost:3000${user.profilePhoto}" 
+           alt="${user.username}"
            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
       <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
                   align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
-        ${getUserInitials(post.userId.username)}
+        ${getUserInitials(user.username)}
       </div>
     ` : `
       <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
                   display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
-        ${getUserInitials(post.userId.username)}
+        ${getUserInitials(user.username)}
       </div>
     `;
 
@@ -643,59 +647,85 @@ function createPostHTML(post) {
     if (post.diaryEvents && post.diaryEvents.length > 0) {
         diaryContentHTML = `
           <div class="diary-content">
-            ${post.diaryEvents.map(entry => `
-              <div class="diary-entry">
-                <div class="diary-entry-title">${entry.title || 'A Beautiful Moment'}</div>
-                ${entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : ''}
+            ${post.diaryEvents.map(entry => {
+                const title = entry.title || 'A Beautiful Moment';
+                const description = entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : '';
+                const dateStr = entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '');
 
-                ${entry.media && entry.media.length > 0 ? 
-                  entry.media.map(m => {
-                    if (!m.paths) return '';
-                    if (m.type === 'image') {
-                      return `<img src="http://localhost:3000${m.paths.optimized}" 
-                                   alt="${entry.title || 'Diary moment'}"
-                                   class="diary-entry-photo"
-                                   style="max-width: 400px; max-height: 300px; object-fit: cover; cursor:pointer;"
-                                   onclick="openPhotoModal('http://localhost:3000${m.paths.original}')">`;
-                    } else if (m.type === 'video') {
-                      return `<video controls class="diary-entry-video" 
-                                   style="width: 100%; max-width: 400px; height: auto; max-height: 300px; display:block; margin-top:10px;">
-                                <source src="http://localhost:3000${m.paths.original}" type="video/mp4">
-                                Your browser does not support the video tag.
-                              </video>`;
-                    } else if (m.type === 'audio') {
-                      return `<audio controls class="diary-entry-audio" 
-                                     style="display:block; margin-top:10px; width:100%;">
-                                <source src="http://localhost:3000${m.paths.original}" type="audio/mpeg">
-                                Your browser does not support the audio tag.
-                              </audio>`;
-                    }
-                  }).join('') : ''
+                // Media HTML
+                let mediaHTML = '';
+                if (entry.media && entry.media.length > 0) {
+                    mediaHTML = entry.media.map(m => {
+                        if (!m || !m.url) return '';
+
+                        if (m.type === 'image') {
+                            const src = typeof m.url === 'object' ? (m.url.optimized || m.url.original) : m.url;
+                            const original = typeof m.url === 'object' ? m.url.original : m.url;
+                            return `<img src="http://localhost:3000${src}" 
+                                         alt="${title}"
+                                         class="diary-entry-photo"
+                                         style="max-width:400px; max-height:300px; object-fit:cover; cursor:pointer;"
+                                         onclick="openPhotoModal('http://localhost:3000${original}')">`;
+                        } else if (m.type === 'video') {
+                            const src = typeof m.url === 'object' ? m.url.original : m.url;
+                            return `<video controls class="diary-entry-video" style="width:100%; max-width:400px; height:auto; margin-top:10px;">
+                                        <source src="http://localhost:3000${src}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>`;
+                        } else if (m.type === 'audio') {
+                            const src = typeof m.url === 'object' ? m.url.original : m.url;
+                            return `<audio controls class="diary-entry-audio" style="display:block; margin-top:10px; width:100%;">
+                                        <source src="http://localhost:3000${src}" type="audio/mpeg">
+                                        Your browser does not support the audio tag.
+                                    </audio>`;
+                        }
+                        return '';
+                    }).join('');
                 }
 
-                <div class="diary-entry-date">
-                  Captured on ${entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '')}
-                </div>
-              </div>
-            `).join('')}
+                return `
+                  <div class="diary-entry">
+                    <div class="diary-entry-title">${title}</div>
+                    ${description}
+                    ${mediaHTML}
+                    <div class="diary-entry-date">Captured on ${dateStr}</div>
+                  </div>
+                `;
+            }).join('')}
           </div>
         `;
     }
 
+    // Comments HTML
+    const commentsHTML = post.comments && post.comments.length > 0
+        ? post.comments.map(comment => {
+            const commentUser = comment.userId || { _id: '', username: 'Unknown' };
+            return `
+                <div class="comment">
+                    <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">
+                        ${commentUser.username}
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                </div>
+            `;
+        }).join('')
+        : '';
+
+    // Final post card
     return `
       <div class="post-card">
           <div class="post-header">
-              <div class="user-avatar" onclick="viewUserProfile('${post.userId._id}')">
+              <div class="user-avatar" onclick="viewUserProfile('${user._id}')">
                   ${avatarHTML}
               </div>
               <div class="user-info">
-                  <h3 onclick="viewUserProfile('${post.userId._id}')">${post.userId.username}</h3>
+                  <h3 onclick="viewUserProfile('${user._id}')">${user.username}</h3>
                   <p>Shared on ${formatDate(post.createdAt)}</p>
               </div>
           </div>
 
           <div class="post-content">
-              ${post.content ? `<p style="text-indent: 30px; color: #2c2c2c; margin-bottom: 20px;">${post.content}</p>` : ''}
+              ${post.content ? `<p style="text-indent:30px; color:#2c2c2c; margin-bottom:20px;">${post.content}</p>` : ''}
               ${diaryContentHTML}
           </div>
 
@@ -710,19 +740,13 @@ function createPostHTML(post) {
               </button>
           </div>
 
-          <div id="comments-${post._id}" class="comments-section" style="display: none;">
+          <div id="comments-${post._id}" class="comments-section" style="display:none;">
               <div class="comment-form">
                   <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
                   <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
               </div>
-              
               <div class="comments-list">
-                  ${post.comments.map(comment => `
-                      <div class="comment">
-                          <div class="comment-user" onclick="viewUserProfile('${comment.userId._id}')">${comment.userId.username}</div>
-                          <div class="comment-text">${comment.text}</div>
-                      </div>
-                  `).join('')}
+                  ${commentsHTML}
               </div>
           </div>
       </div>
@@ -730,48 +754,50 @@ function createPostHTML(post) {
 }
 
 
-        async function loadPosts(page = 1) {
-            const loading = document.getElementById('loading');
-            const postsContainer = document.getElementById('posts-container');
-            const noPostsDiv = document.getElementById('no-posts');
-            const paginationDiv = document.getElementById('pagination');
+async function loadPosts(page = 1) {
+    const loading = document.getElementById('loading');
+    const postsContainer = document.getElementById('posts-container');
+    const noPostsDiv = document.getElementById('no-posts');
+    const paginationDiv = document.getElementById('pagination');
 
-            loading.style.display = 'block';
-            postsContainer.innerHTML = '';
-            noPostsDiv.style.display = 'none';
-            paginationDiv.style.display = 'none';
+    loading.style.display = 'block';
+    postsContainer.innerHTML = '';
+    noPostsDiv.style.display = 'none';
+    paginationDiv.style.display = 'none';
 
-          try {
-    const token = localStorage.getItem('token'); // get the saved token
-    const response = await fetch(`http://localhost:3000/api/posts?page=${page}&limit=${postsPerPage}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-                const data = await response.json();
-
-                loading.style.display = 'none';
-
-                if (data.success && data.posts.length > 0) {
-                    totalPosts = data.totalPosts || data.posts.length;
-                    const totalPages = Math.ceil(totalPosts / postsPerPage);
-
-                    postsContainer.innerHTML = data.posts.map(post => createPostHTML(post)).join('');
-
-                    if (totalPages > 1) {
-                        createPagination(page, totalPages);
-                        paginationDiv.style.display = 'flex';
-                    }
-                } else {
-                    noPostsDiv.style.display = 'block';
-                }
-            } catch (error) {
-                loading.style.display = 'none';
-                console.error('Error loading posts:', error);
-                postsContainer.innerHTML = '<div class="no-posts"><h3>📖 Error loading stories</h3><p>Please try again in a moment</p></div>';
+    try {
+        const token = localStorage.getItem('token'); // get the saved token
+        const response = await fetch(`http://localhost:3000/api/posts?page=${page}&limit=${postsPerPage}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
+        });
+
+        const data = await response.json();
+
+        loading.style.display = 'none';
+
+        if (data.success && data.posts.length > 0) {
+            // Use the totalPosts returned from backend
+            totalPosts = data.totalPosts;
+            const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+            postsContainer.innerHTML = data.posts.map(post => createPostHTML(post)).join('');
+
+            if (totalPages > 1) {
+                createPagination(page, totalPages);
+                paginationDiv.style.display = 'flex';
+            }
+        } else {
+            noPostsDiv.style.display = 'block';
         }
+    } catch (error) {
+        loading.style.display = 'none';
+        console.error('Error loading posts:', error);
+        postsContainer.innerHTML = '<div class="no-posts"><h3>📖 Error loading stories</h3><p>Please try again in a moment</p></div>';
+    }
+}
+
 
         function createPagination(currentPage, totalPages) {
             const paginationDiv = document.getElementById('pagination');

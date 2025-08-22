@@ -12,7 +12,7 @@ const postRoutes=require("./Routes/postRoutes");
 const userRoutes = require('./Routes/userRoutes');
 const CategoryMoodRoutes=require("./Routes/CategoryMoodRoutes.js")
 const suggestionRoutes=require("./Routes/suggestions.js")
-
+const chatRoutes = require('./Routes/chatRoutes'); // new
 
 
 
@@ -58,6 +58,9 @@ app.use('/api/users', userRoutes);
 app.use('/api', CategoryMoodRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/admin',adminRoutes)
+app.use('/chat/api', chatRoutes); // correct
+
+
 
 
 
