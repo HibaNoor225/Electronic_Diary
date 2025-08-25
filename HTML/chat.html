@@ -424,43 +424,41 @@
         }
 
         .message-actions {
-    position: absolute;
-    right: -100px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: none;
-    background: #fdfbf7;
-    border-radius: 25px;
-    box-shadow: 0 4px 20px rgba(139,69,19,0.2);
-    padding: 5px;
-    border: 2px solid #d4c5a9;
-    z-index: 100;
-}
-.message-actions:hover {
-    display: flex;
-}
+            position: absolute;
+            right: -100px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            background: #fdfbf7;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(139,69,19,0.2);
+            padding: 5px;
+            border: 2px solid #d4c5a9;
+            z-index: 100;
+        }
 
-/* Add a pseudo-element to create a hover bridge */
-.message-actions::before {
-    content: '';
-    position: absolute;
-    left: -20px;
-    top: -10px;
-    width: 20px;
-    height: calc(100% + 20px);
-    background: transparent;
-}
+        .message-actions:hover {
+            display: flex;
+        }
 
-/* For sent messages */
-.message-group.sent .message-actions::before {
-    left: auto;
-    right: -20px;
-}
+        .message-actions::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: -10px;
+            width: 20px;
+            height: calc(100% + 20px);
+            background: transparent;
+        }
 
-        /* For sent messages, position actions on the left side */
+        .message-group.sent .message-actions::before {
+            left: auto;
+            right: -20px;
+        }
+
         .message-group.sent .message-actions {
             right: auto;
-            left: -100px; /* Position on left side for sent messages */
+            left: -100px;
         }
 
         .message:hover .message-actions {
@@ -1000,19 +998,30 @@
             border: 2px dashed #d4c5a9;
             margin: 20px 0;
         }
+
         .message-deleted {
-    font-style: italic;
-    color: #8d6e63;
-    text-align: center;
-    padding: 8px 12px;
-    background-color: #f5f5f5;
-    border-radius: 12px;
-}
+            font-style: italic;
+            color: #8d6e63;
+            text-align: center;
+            padding: 8px 12px;
+            background-color: #f5f5f5;
+            border-radius: 12px;
+        }
 
-.message.deleted {
-    opacity: 0.7;
-}
+        .message.deleted {
+            opacity: 0.7;
+        }
 
+        .reply-ref {
+            font-size: 12px;
+            color: #8d6e63;
+            font-style: italic;
+            margin-bottom: 8px;
+            padding: 5px 10px;
+            background: rgba(212,197,169,0.1);
+            border-left: 3px solid #8b4513;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -1158,10 +1167,11 @@
                     return;
                 }
                 this.currentChatUserId = null;
+                this.currentChatId = null;
                 this.unreadCounts = {};
                 this.lastMessages = {};
                 this.onlineUsers = new Set();
-                
+                this.replyTo = null;
                 this.initializeElements();
                 this.setupEventListeners();
                 this.setupSocketListeners();
@@ -1203,7 +1213,6 @@
                     this.searchChats(e.target.value);
                 });
 
-                // File attach button
                 const attachBtn = document.querySelector('.input-action-btn[title="Attach File"]');
                 attachBtn.addEventListener('click', () => {
                     document.getElementById('fileInput').click();
@@ -1216,7 +1225,6 @@
                     fileInput.value = '';
                 });
 
-                // Emoji button
                 const emojiBtn = document.getElementById('emojiBtn');
                 emojiBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1224,7 +1232,6 @@
                     this.emojiPicker.style.display = isVisible ? 'none' : 'grid';
                 });
 
-                // Close emoji picker when clicking outside
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiBtn')) {
                         this.emojiPicker.style.display = 'none';
@@ -1242,7 +1249,6 @@
                     });
                 });
 
-                // Drag and drop for files
                 this.chatMessages.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     this.chatMessages.classList.add('drag-over');
@@ -1252,7 +1258,7 @@
                     e.preventDefault();
                     this.chatMessages.classList.remove('drag-over');
                 });
-                
+
                 this.chatMessages.addEventListener('drop', (e) => {
                     e.preventDefault();
                     this.chatMessages.classList.remove('drag-over');
@@ -1269,27 +1275,45 @@
 
                 this.socket.on('receiveMessage', (message) => {
                     this.handleReceivedMessage(message);
-                    if (this.currentChatUserId === message.sender) {
+                    if (this.currentChatId === message.chatId) {
                         this.chatMessages.querySelector('#noMessages')?.remove();
                     }
                 });
 
                 this.socket.on("messageDeletedForMe", ({ messageId, userId }) => {
-    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-    if (msgEl && userId === this.currentUserId) {
-        msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
-        msgEl.classList.add('deleted');
-    }
-});
+                    if (userId === this.currentUserId) {
+                        const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+                        if (msgEl) {
+                            msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
+                            msgEl.classList.add('deleted');
+                        }
+                    }
+                });
 
-this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
-    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-    if (msgEl) {
-        msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
-        msgEl.classList.add('deleted');
-    }
-});
+                this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
+                    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+                    if (msgEl) {
+                        msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
+                        msgEl.classList.add('deleted');
+                        this.updateLastMessage(this.currentChatUserId, "Message deleted");
+                    }
+                });
 
+                this.socket.on("messageReacted", ({ messageId, reaction }) => {
+                    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+                    if (msgEl) {
+                        let reactionsDiv = msgEl.querySelector(".message-reactions");
+                        if (!reactionsDiv) {
+                            reactionsDiv = document.createElement("div");
+                            reactionsDiv.className = "message-reactions";
+                            msgEl.appendChild(reactionsDiv);
+                        }
+                        const reactionEl = document.createElement("span");
+                        reactionEl.className = "reaction";
+                        reactionEl.textContent = reaction;
+                        reactionsDiv.appendChild(reactionEl);
+                    }
+                });
 
                 this.socket.on('userOnline', (userId) => {
                     this.onlineUsers.add(userId);
@@ -1306,8 +1330,6 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
                         this.showTypingIndicator();
                     }
                 });
-
-             
 
                 this.socket.on('stopTyping', (data) => {
                     if (data.senderId === this.currentChatUserId) {
@@ -1340,13 +1362,11 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
 
                     this.chatList.innerHTML = '';
                     if (data.success && data.chats.length > 0) {
-                        // Sort chats by last message time (latest first)
                         data.chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
                         data.chats.forEach(chat => {
                             this.addChatToSidebar(chat);
                         });
 
-                        // Auto-open the latest chat if no specific chat is selected
                         if (!this.currentChatUserId) {
                             const latestChat = data.chats[0];
                             this.openChat(latestChat.userId, latestChat.username, latestChat.profilePhoto);
@@ -1434,7 +1454,18 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
                 console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
                 this.currentChatUserId = userId;
 
-                // Add to sidebar if not exists (for new chats from profile)
+                try {
+                    const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        this.currentChatId = data.chatId;
+                    }
+                } catch (error) {
+                    console.error('Error fetching chat ID:', error);
+                    this.showError('Failed to load chat. Please try again.');
+                    return;
+                }
+
                 let chatItem = document.querySelector(`[data-user-id="${userId}"]`);
                 if (!chatItem) {
                     this.addChatToSidebar({
@@ -1445,17 +1476,14 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
                         lastMessageTime: new Date()
                     });
                     chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-                    await this.loadChats(); // Reload sidebar to include new chat
+                    await this.loadChats();
                 }
 
-                // Ensure chat area is visible
                 this.emptyState.style.display = 'none';
                 this.chatArea.style.display = 'flex';
 
-                // Set header info
                 this.chatHeaderName.textContent = username || 'Unknown Friend';
                 
-                // Handle profile photo/initials in header
                 if (profilePhoto && profilePhoto !== 'undefined' && profilePhoto !== '/default-avatar.png') {
                     this.chatHeaderPic.src = profilePhoto;
                     this.chatHeaderPic.style.display = 'block';
@@ -1466,31 +1494,24 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
                     this.chatHeaderInitials.textContent = this.getUserInitials(username);
                 }
 
-                // Highlight active chat
                 document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
                 if (chatItem) {
                     chatItem.classList.add('active');
                     console.log(`Highlighted conversation item for userId: ${userId}`);
                 }
 
-                // Reset unread count
                 this.unreadCounts[userId] = 0;
                 this.updateUnreadBadge(userId);
 
-                // Load messages for this chat
                 await this.loadMessages(userId);
 
-                // Update online status
                 this.updateOnlineStatus();
 
-                // Ensure input box is visible and focused
                 this.chatInput.style.display = 'block';
                 this.chatInput.focus();
 
-                // Ensure emoji picker is hidden
                 this.emojiPicker.style.display = 'none';
 
-                // Close sidebar on mobile
                 if (window.innerWidth <= 768) {
                     document.getElementById('chatSidebar').classList.remove('open');
                 }
@@ -1516,11 +1537,16 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
                     if (data.success && data.messages.length > 0) {
                         data.messages.forEach(msg => {
                             this.appendMessage({
+                                _id: msg._id,
                                 sender: msg.sender,
                                 message: msg.message,
                                 fileUrl: msg.fileUrl,
                                 fileType: msg.fileType,
-                                timestamp: msg.timestamp
+                                timestamp: msg.timestamp,
+                                replyTo: msg.replyTo,
+                                hiddenFor: msg.hiddenFor,
+                                reactions: msg.reactions,
+                                deletedForEveryone: msg.deletedForEveryone
                             });
                         });
                     } else {
@@ -1532,46 +1558,84 @@ this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
                     this.showError('Failed to load messages. Please try again.');
                 }
             }
-sendMessage() {
-    const message = this.chatInput.value.trim();
-    if (!message || !this.currentChatUserId) return;
 
-    const messageData = {
-        senderId: this.currentUserId,
-        recipientId: this.currentChatUserId,
-        message: message,
-        timestamp: new Date()
-    };
+            sendMessage() {
+                const message = this.chatInput.value.trim();
+                if (!message || !this.currentChatUserId) return;
 
-    fetch("http://localhost:3000/chat/api/sendMessage", {  // POST to your backend
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(messageData)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            this.appendMessage(data.message); // use server-generated _id
-            this.socket.emit('sendMessage', data.message);
-        } else {
-            console.error("Message not sent", data);
-        }
-    })
-    .catch(err => console.error(err));
+                const messageData = {
+                    senderId: this.currentUserId,
+                    recipientId: this.currentChatUserId,
+                    message: message,
+                    timestamp: new Date(),
+                    replyTo: this.replyTo ? this.replyTo.id : null
+                };
 
-    this.chatInput.value = '';
-    this.autoResize();
-}
+                this.socket.emit("sendMessage", messageData);
+                this.appendMessage({ ...messageData, sender: this.currentUserId, _id: Date.now() + Math.random() });
+                this.cancelReply();
+                this.chatInput.value = "";
+                this.autoResize();
+            }
 
+            replyToMessage(messageEl) {
+                const msgId = messageEl.dataset.id;
+                const originalText = messageEl.querySelector(".message-text")?.innerText || "Attachment";
 
-            async handleFileUpload(event) {
-                const fileInput = document.getElementById("fileInput");
-                const file = fileInput.files[0];
+                this.replyTo = { id: msgId, text: originalText };
 
-                if (!file) {
-                    console.error("No file selected");
-                    return;
+                let replyBox = document.getElementById("replyBox");
+                if (!replyBox) {
+                    replyBox = document.createElement("div");
+                    replyBox.id = "replyBox";
+                    replyBox.className = "reply-preview";
+                    this.chatInput.parentNode.insertBefore(replyBox, this.chatInput.parentNode.firstChild);
                 }
+                replyBox.innerHTML = `
+                    <div class="reply-content">
+                        <span class="reply-text">Replying to: ${originalText.substring(0, 50)}${originalText.length > 50 ? '...' : ''}</span>
+                        <button class="close-reply" onclick="window.chatApp.cancelReply()">×</button>
+                    </div>
+                `;
+                this.chatInput.focus();
+            }
+
+            cancelReply() {
+                this.replyTo = null;
+                const replyBox = document.getElementById("replyBox");
+                if (replyBox) replyBox.remove();
+            }
+
+            addReaction(messageEl, emoji) {
+                const msgId = messageEl.dataset.id;
+                this.socket.emit("reactMessage", {
+                    chatId: this.currentChatId,
+                    messageId: msgId,
+                    userId: this.currentUserId,
+                    reaction: emoji
+                });
+            }
+
+            deleteForMe(messageEl) {
+                const msgId = messageEl.dataset.id;
+                this.socket.emit("deleteMessageForMe", {
+                    chatId: this.currentChatId,
+                    messageId: msgId,
+                    userId: this.currentUserId
+                });
+            }
+
+            deleteForEveryone(messageEl) {
+                const msgId = messageEl.dataset.id;
+                this.socket.emit("deleteMessageForEveryone", {
+                    chatId: this.currentChatId,
+                    messageId: msgId,
+                    userId: this.currentUserId
+                });
+            }
+
+            async handleFileUpload(file) {
+                if (!file || !this.currentChatUserId) return;
 
                 const formData = new FormData();
                 formData.append("file", file);
@@ -1588,85 +1652,49 @@ sendMessage() {
                     console.log("Upload response:", data);
 
                     if (data.success) {
-                        // ✅ show file immediately in chat
                         this.appendMessage({
-                            sender: this.currentUserId,   // use `sender` not `senderId` for appendMessage
+                            sender: this.currentUserId,
                             recipient: this.currentChatUserId,
-                            fileUrl: data.message.fileUrl || data.fileUrl, // backend sends in `message` object
-                            fileType: data.message.fileType || "file",
-                            message: data.message.message || "", // empty for file-only
-                            timestamp: new Date()
+                            fileUrl: data.message.fileUrl,
+                            fileType: data.message.fileType,
+                            message: data.message.message,
+                            timestamp: new Date(),
+                            _id: Date.now() + Math.random()
                         });
 
-                        // ✅ also emit via socket to recipient
                         this.socket.emit("sendMessage", {
                             senderId: this.currentUserId,
                             recipientId: this.currentChatUserId,
-                            fileUrl: data.message.fileUrl || data.fileUrl,
-                            fileType: data.message.fileType || "file",
-                            message: data.message.message || "",
+                            fileUrl: data.message.fileUrl,
+                            fileType: data.message.fileType,
+                            message: data.message.message,
                             timestamp: new Date()
                         });
-
                     } else {
                         console.error("Upload failed", data);
+                        this.showError("Failed to upload file.");
                     }
                 } catch (err) {
                     console.error("Upload error:", err);
+                    this.showError("Error uploading file. Please try again.");
                 }
-            }
-
-            sendFileMessage(fileUrl, fileType) {
-                const message = {
-                    senderId: this.currentUserId,
-                    recipientId: this.currentChatUserId, // match text messages
-                    fileUrl,
-                    fileType,
-                    timestamp: new Date(),
-                };
-
-                // send via socket
-                this.socket.emit("sendMessage", message);
-
-                // show in chat immediately
-                this.appendMessage({ ...message, sender: this.currentUserId });
-                this.updateLastMessage(this.currentChatUserId, fileType === "image" ? "Shared a beautiful moment" : "Shared a memory");
-
-                this.scrollToBottom();
-                this.chatMessages.querySelector('#noMessages')?.remove();
-                this.loadChats();
-            }
-
-            // Helper function
-            getMimeTypeFromExtension(filename) {
-                const ext = filename.split('.').pop().toLowerCase();
-                const map = {
-                    jpg: 'image/jpeg',
-                    jpeg: 'image/jpeg',
-                    png: 'image/png',
-                    gif: 'image/gif',
-                    mp4: 'video/mp4',
-                    mp3: 'audio/mpeg',
-                    pdf: 'application/pdf',
-                    doc: 'application/msword',
-                    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    txt: 'text/plain'
-                };
-                return map[ext] || 'application/octet-stream';
             }
 
             appendMessage(message) {
                 const isSent = message.sender === this.currentUserId;
+                const isHidden = message.hiddenFor && message.hiddenFor.includes(this.currentUserId);
+                const isDeleted = message.deletedForEveryone;
                 const messageGroup = document.createElement('div');
                 messageGroup.className = `message-group ${isSent ? 'sent' : 'received'}`;
 
                 const messageEl = document.createElement('div');
-                messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
-                messageEl.dataset.id = message._id || Date.now() + Math.random(); // Add message ID
+                messageEl.className = `message ${isSent ? 'sent' : 'received'} ${isHidden || isDeleted ? 'deleted' : ''}`;
+                messageEl.dataset.id = message._id;
 
-                // ✅ Use fileUrl if it's a file, otherwise use text
                 let content = '';
-                if (message.fileUrl) {
+                if (isHidden || isDeleted) {
+                    content = `<div class="message-deleted">${isHidden ? 'This message was deleted for you' : 'This message was deleted'}</div>`;
+                } else if (message.fileUrl) {
                     const fileName = decodeURIComponent(message.fileUrl.split('/').pop());
                     const ext = fileName.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
@@ -1685,18 +1713,31 @@ sendMessage() {
                             </div>
                         `;
                     }
-                } else if (message.message) {
-                    // Normal text message
+                } else {
                     content = message.message;
                 }
 
+                let replyContent = '';
+                if (message.replyTo) {
+                    const repliedMsg = document.querySelector(`[data-id="${message.replyTo}"]`);
+                    const repliedText = repliedMsg ? repliedMsg.querySelector(".message-text")?.innerText || "Attachment" : "Original message not found";
+                    replyContent = `<div class="reply-ref">Replying to: ${repliedText}</div>`;
+                }
+
+                let reactionsContent = '';
+                if (message.reactions && message.reactions.length > 0) {
+                    reactionsContent = `<div class="message-reactions">${message.reactions.map(r => `<span class="reaction">${r.emoji}</span>`).join('')}</div>`;
+                }
+
                 messageEl.innerHTML = `
-                    ${content}
+                    ${replyContent}
+                    <div class="message-text">${content}</div>
+                    ${reactionsContent}
                     <div class="message-actions">
-                        <button class="message-action-btn" title="Reply" onclick="replyToMessage(this.closest('.message'))">
+                        <button class="message-action-btn" title="Reply" onclick="window.chatApp.replyToMessage(this.closest('.message'))">
                             <i class="fas fa-reply"></i>
                         </button>
-                        <button class="message-action-btn" title="React" onclick="addReaction(this.closest('.message'), '❤️')">
+                        <button class="message-action-btn" title="React" onclick="window.chatApp.addReaction(this.closest('.message'), '❤️')">
                             <i class="fas fa-heart"></i>
                         </button>
                         <div class="message-menu">
@@ -1704,8 +1745,8 @@ sendMessage() {
                                 <i class="fas fa-ellipsis-h"></i>
                             </button>
                             <div class="message-dropdown">
-                                <button onclick="deleteForMe(this.closest('.message'))">Delete for Me</button>
-                                <button onclick="deleteForEveryone(this.closest('.message'))">Delete for Everyone</button>
+                                <button onclick="window.chatApp.deleteForMe(this.closest('.message'))">Delete for Me</button>
+                                ${isSent ? `<button onclick="window.chatApp.deleteForEveryone(this.closest('.message'))">Delete for Everyone</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1721,7 +1762,7 @@ sendMessage() {
             }
 
             handleReceivedMessage(message) {
-                if (message.sender === this.currentChatUserId) {
+                if (message.chatId === this.currentChatId) {
                     this.appendMessage(message);
                 } else {
                     this.unreadCounts[message.sender] = (this.unreadCounts[message.sender] || 0) + 1;
@@ -1731,6 +1772,8 @@ sendMessage() {
                 let display;
                 if (message.fileUrl) {
                     display = message.fileType === "image" ? "Shared a beautiful moment" : "Shared a memory";
+                } else if (message.deletedForEveryone) {
+                    display = "Message deleted";
                 } else {
                     display = message.message;
                 }
@@ -1861,12 +1904,10 @@ sendMessage() {
             }
         }
 
-        // Global functions for message actions
         function toggleMessageMenu(button) {
             const dropdown = button.nextElementSibling;
             const isVisible = dropdown.classList.contains('show');
             
-            // Close all other dropdowns
             document.querySelectorAll('.message-dropdown.show').forEach(d => {
                 d.classList.remove('show');
             });
@@ -1874,7 +1915,6 @@ sendMessage() {
             if (!isVisible) {
                 dropdown.classList.add('show');
                 
-                // Close dropdown when clicking outside
                 setTimeout(() => {
                     document.addEventListener('click', function handler(e) {
                         if (!button.closest('.message-menu').contains(e.target)) {
@@ -1886,98 +1926,15 @@ sendMessage() {
             }
         }
 
-      
-
-
-        function addReaction(messageElement, reaction) {
-            let reactionsDiv = messageElement.querySelector('.message-reactions');
-            if (!reactionsDiv) {
-                reactionsDiv = document.createElement('div');
-                reactionsDiv.className = 'message-reactions';
-                messageElement.appendChild(reactionsDiv);
-            }
-            
-            const reactionSpan = document.createElement('span');
-            reactionSpan.className = 'reaction';
-            reactionSpan.textContent = reaction;
-            reactionsDiv.appendChild(reactionSpan);
-        }
-
-        function replyToMessage(messageElement) {
-            const messageText = messageElement.textContent.split('\n')[0]; // Get first line of message
-            const replyPreview = document.createElement('div');
-            replyPreview.className = 'reply-preview';
-            replyPreview.innerHTML = `
-                <div class="reply-content">
-                    <div class="reply-text">Replying to: "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"</div>
-                    <button class="close-reply" onclick="closeReply()">×</button>
-                </div>
-            `;
-            
-            const inputContainer = document.querySelector('.chat-input-container');
-            const existingReply = inputContainer.querySelector('.reply-preview');
-            if (existingReply) existingReply.remove();
-            
-            inputContainer.insertBefore(replyPreview, inputContainer.firstChild);
-            
-            document.getElementById('chatInput').focus();
-        }
-
-        function closeReply() {
-            const replyPreview = document.querySelector('.reply-preview');
-            if (replyPreview) {
-                replyPreview.remove();
-            }
-        }
-
         function toggleSidebar() {
             const sidebar = document.getElementById('chatSidebar');
             sidebar.classList.toggle('open');
         }
-        // Delete a message only for the current user
-// Delete a message only for the current user
-function deleteForMe(messageElement) {
-    if (!window.chatApp) return;
 
-    const messageId = messageElement.dataset.id;
-    const userId = window.chatApp.currentUserId;
+        document.addEventListener('DOMContentLoaded', () => {
+            window.chatApp = new PersonalChat();
+        });
 
-    // Replace message content with deleted placeholder
-    messageElement.innerHTML = `
-        <div class="message-deleted">This message was deleted for you</div>
-    `;
-    messageElement.classList.add('deleted');
-
-    // Emit socket event to server (optional)
-    window.chatApp.socket.emit("deleteMessageForMe", { messageId, userId });
-}
-
-// Delete a message for everyone
-function deleteForEveryone(messageElement) {
-    if (!window.chatApp) return;
-
-    const messageId = messageElement.dataset.id;
-
-    // Replace message content with deleted placeholder
-    messageElement.innerHTML = `
-        <div class="message-deleted">This message was deleted</div>
-    `;
-    messageElement.classList.add('deleted');
-
-    // Emit socket event to server to notify all users
-    window.chatApp.socket.emit("deleteMessageForEveryone", { messageId });
-}
-
-
-
-
-        // Initialize the chat when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-    window.chatApp = new PersonalChat(); // make it global
-});
-
-
-        // Handle window resize for responsiveness
         window.addEventListener('resize', () => {
             if (window.innerWidth <= 768) {
                 document.body.classList.add('mobile');

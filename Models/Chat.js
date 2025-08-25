@@ -9,9 +9,17 @@ const chatSchema = new mongoose.Schema({
         fileUrl: { type: String, default: null }, // File path
         fileType: { type: String, default: null }, // "image", "video", "audio", "file"
         timestamp: { type: Date, default: Date.now },
-        deleted: { type: Boolean, default: false }, // For deleteForEveryone
+        deletedForEveryone: { type: Boolean, default: false }, // For deleteForEveryone
         hiddenFor: [{ type: String }], // For deleteForMe
-        reactions: [{ emoji: String, users: [String] }] // Reactions
+        reactions: [{
+            emoji: String,
+            userId: { type: String }
+        }],
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Chat.messages',
+            default: null
+        }
     }],
     lastMessage: { type: String, default: '' },
     updatedAt: { type: Date, default: Date.now }

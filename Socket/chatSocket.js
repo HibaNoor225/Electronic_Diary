@@ -1,90 +1,183 @@
-const Message = require('../Models/Chat');
+const Chat = require("../Models/Chat");
+
+const onlineUsers = {};
 
 module.exports = (io) => {
-    const onlineUsers = {};
+    io.on("connection", (socket) => {
+        console.log("New client connected:", socket.id);
 
-    io.on('connection', (socket) => {
-        console.log('New client connected:', socket.id);
-
-        // Add user to online list
-        socket.on('userOnline', (userId) => {
+        socket.on("userOnline", (userId) => {
+            socket.userId = userId;
             onlineUsers[userId] = socket.id;
-        });
-socket.on('sendMessage', async ({ senderId, recipientId, message }) => {
-    if (!senderId || !recipientId || !message) return;
-    try {
-        // Find existing chat between sender and recipient
-        let chat = await Message.findOne({
-            $or: [
-                { senderId, recipientId },
-                { senderId: recipientId, recipientId: senderId }
-            ]
+            console.log(`User ${userId} is online with socket ${socket.id}`);
+            io.emit("userOnline", userId);
         });
 
-        if (!chat) {
-            // Create new chat if it doesn't exist
-            chat = new Message({
-                senderId,
-                recipientId,
-                messages: [],
-                lastMessage: ''
-            });
-        }
+        socket.on("sendMessage", async ({ senderId, recipientId, message, fileUrl, fileType, replyTo }) => {
+            if (!senderId || !recipientId) return;
+            try {
+                let chat = await Chat.findOne({
+                    $or: [
+                        { senderId, recipientId },
+                        { senderId: recipientId, recipientId: senderId }
+                    ]
+                });
 
-        // Push new message
-        chat.messages.push({
-            sender: senderId,
-            message,
-            timestamp: new Date()
-        });
-        chat.lastMessage = message;
-        chat.updatedAt = new Date();
+                if (!chat) {
+                    chat = new Chat({ senderId, recipientId, messages: [], lastMessage: "" });
+                }
 
-        await chat.save();
+                const newMsg = {
+                    sender: senderId,
+                    message: message || "",
+                    fileUrl,
+                    fileType,
+                    timestamp: new Date(),
+                    replyTo: replyTo || null,
+                    hiddenFor: [],
+                    reactions: [],
+                    deletedForEveryone: false
+                };
 
-        // Emit message to recipient if online
-        const recipientSocket = onlineUsers[recipientId];
-        if (recipientSocket) {
-            io.to(recipientSocket).emit('receiveMessage', {
-                sender: senderId,
-                message,
-                timestamp: new Date()
-            });
-        }
+                chat.messages.push(newMsg);
+                chat.lastMessage = fileUrl
+                    ? (fileType === "image" ? "Shared a beautiful moment" : "Shared a file")
+                    : message || "Message deleted";
+                chat.updatedAt = new Date();
+                await chat.save();
 
-    } catch (err) {
-        console.error('Error saving message:', err);
-    }
-});
+                const recipientSocket = onlineUsers[recipientId];
+                if (recipientSocket) {
+                    io.to(recipientSocket).emit("receiveMessage", { chatId: chat._id, ...newMsg });
+                }
 
-
-        // Handle disconnect
-        socket.on('disconnect', () => {
-            for (let [userId, id] of Object.entries(onlineUsers)) {
-                if (id === socket.id) delete onlineUsers[userId];
+                const senderSocket = onlineUsers[senderId];
+                if (senderSocket) {
+                    io.to(senderSocket).emit("receiveMessage", { chatId: chat._id, ...newMsg });
+                }
+            } catch (err) {
+                console.error("Error saving message:", err);
             }
         });
 
-        socket.on("deleteMessageForEveryone", async ({ messageId }) => {
-    try {
-        // Delete from DB
-        await Message.findByIdAndDelete(messageId);
+        socket.on("deleteMessageForMe", async ({ chatId, messageId, userId }) => {
+            try {
+                const chat = await Chat.findOne({ _id: chatId });
+                if (!chat) {
+                    console.error("Chat not found for ID:", chatId);
+                    return;
+                }
 
-        // Notify all users to remove this message
-        io.emit("messageDeletedForEveryone", { messageId });
-    } catch (err) {
-        console.error("Error deleting message:", err);
-    }
-});
-socket.on("deleteMessageForMe", async ({ messageId, userId }) => {
-    await Message.updateOne(
-        { "messages._id": messageId },
-        { $addToSet: { "messages.$.hiddenFor": userId } }
-    );
-});
+                const message = chat.messages.id(messageId);
+                if (!message) {
+                    console.error("Message not found for ID:", messageId);
+                    return;
+                }
 
+                if (!message.hiddenFor.includes(userId)) {
+                    message.hiddenFor.push(userId);
+                    await chat.save();
+                }
 
+                const userSocket = onlineUsers[userId];
+                if (userSocket) {
+                    io.to(userSocket).emit("messageDeletedForMe", { messageId, userId });
+                }
+            } catch (err) {
+                console.error("Error deleting message for me:", err);
+            }
+        });
+
+        socket.on("deleteMessageForEveryone", async ({ chatId, messageId, userId }) => {
+            try {
+                const chat = await Chat.findOne({ _id: chatId });
+                if (!chat) {
+                    console.error("Chat not found for ID:", chatId);
+                    return;
+                }
+
+                const message = chat.messages.id(messageId);
+                if (!message) {
+                    console.error("Message not found for ID:", messageId);
+                    return;
+                }
+
+                if (message.sender !== userId) {
+                    console.error("User not authorized to delete message");
+                    return;
+                }
+
+                message.message = "🚫 This message was deleted";
+                message.deletedForEveryone = true;
+                chat.lastMessage = "Message deleted";
+                await chat.save();
+
+                const recipientSocket = onlineUsers[chat.recipientId];
+                const senderSocket = onlineUsers[chat.senderId];
+                if (recipientSocket) {
+                    io.to(recipientSocket).emit("messageDeletedForEveryone", { messageId });
+                }
+                if (senderSocket) {
+                    io.to(senderSocket).emit("messageDeletedForEveryone", { messageId });
+                }
+            } catch (err) {
+                console.error("Error deleting message for everyone:", err);
+            }
+        });
+
+        socket.on("reactMessage", async ({ chatId, messageId, userId, reaction }) => {
+            try {
+                const chat = await Chat.findOne({ _id: chatId });
+                if (!chat) return;
+
+                const msg = chat.messages.id(messageId);
+                if (!msg) return;
+
+                if (!msg.reactions) msg.reactions = [];
+
+                const existing = msg.reactions.find(r => r.userId === userId && r.emoji === reaction);
+                if (existing) {
+                    msg.reactions = msg.reactions.filter(r => !(r.userId === userId && r.emoji === reaction));
+                } else {
+                    msg.reactions.push({ userId, emoji: reaction });
+                }
+
+                await chat.save();
+
+                const recipientSocket = onlineUsers[chat.recipientId];
+                const senderSocket = onlineUsers[chat.senderId];
+                if (recipientSocket) {
+                    io.to(recipientSocket).emit("messageReacted", { messageId, reaction });
+                }
+                if (senderSocket) {
+                    io.to(senderSocket).emit("messageReacted", { messageId, reaction });
+                }
+            } catch (err) {
+                console.error("Error reacting to message:", err);
+            }
+        });
+
+        socket.on("typing", ({ senderId, recipientId }) => {
+            const recipientSocket = onlineUsers[recipientId];
+            if (recipientSocket) {
+                io.to(recipientSocket).emit("typing", { senderId });
+            }
+        });
+
+        socket.on("stopTyping", ({ senderId, recipientId }) => {
+            const recipientSocket = onlineUsers[recipientId];
+            if (recipientSocket) {
+                io.to(recipientSocket).emit("stopTyping", { senderId });
+            }
+        });
+
+        socket.on("disconnect", () => {
+            const userId = Object.keys(onlineUsers).find(key => onlineUsers[key] === socket.id);
+            if (userId) {
+                delete onlineUsers[userId];
+                io.emit("userOffline", userId);
+                console.log(`User ${userId} disconnected`);
+            }
+        });
     });
-
-    
 };
