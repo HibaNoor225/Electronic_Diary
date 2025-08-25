@@ -12,53 +12,59 @@ module.exports = (io) => {
             console.log(`User ${userId} is online with socket ${socket.id}`);
             io.emit("userOnline", userId);
         });
-
-        socket.on("sendMessage", async ({ senderId, recipientId, message, fileUrl, fileType, replyTo }) => {
-            if (!senderId || !recipientId) return;
-            try {
-                let chat = await Chat.findOne({
-                    $or: [
-                        { senderId, recipientId },
-                        { senderId: recipientId, recipientId: senderId }
-                    ]
-                });
-
-                if (!chat) {
-                    chat = new Chat({ senderId, recipientId, messages: [], lastMessage: "" });
-                }
-
-                const newMsg = {
-                    sender: senderId,
-                    message: message || "",
-                    fileUrl,
-                    fileType,
-                    timestamp: new Date(),
-                    replyTo: replyTo || null,
-                    hiddenFor: [],
-                    reactions: [],
-                    deletedForEveryone: false
-                };
-
-                chat.messages.push(newMsg);
-                chat.lastMessage = fileUrl
-                    ? (fileType === "image" ? "Shared a beautiful moment" : "Shared a file")
-                    : message || "Message deleted";
-                chat.updatedAt = new Date();
-                await chat.save();
-
-                const recipientSocket = onlineUsers[recipientId];
-                if (recipientSocket) {
-                    io.to(recipientSocket).emit("receiveMessage", { chatId: chat._id, ...newMsg });
-                }
-
-                const senderSocket = onlineUsers[senderId];
-                if (senderSocket) {
-                    io.to(senderSocket).emit("receiveMessage", { chatId: chat._id, ...newMsg });
-                }
-            } catch (err) {
-                console.error("Error saving message:", err);
-            }
+socket.on('sendMessage', async ({ senderId, recipientId, message, fileUrl, fileType, replyTo, tempId, duration }) => {
+    if (!senderId || !recipientId) return;
+    try {
+        let chat = await Chat.findOne({
+            $or: [
+                { senderId, recipientId },
+                { senderId: recipientId, recipientId: senderId }
+            ]
         });
+
+        if (!chat) {
+            chat = new Chat({ senderId, recipientId, messages: [], lastMessage: '' });
+        }
+
+        const newMsg = {
+            sender: senderId,
+            message: message || '',
+            fileUrl,
+            fileType,
+            timestamp: new Date(),
+            replyTo: replyTo || null,
+            hiddenFor: [],
+            reactions: [],
+            deletedForEveryone: false,
+            duration: duration ? parseInt(duration) : null
+        };
+
+        chat.messages.push(newMsg);
+        chat.lastMessage = fileUrl
+            ? (fileType === 'image' ? 'Shared a beautiful moment' : fileType === 'audio' ? 'Shared a voice message' : 'Shared a file')
+            : message || 'Message deleted';
+        chat.updatedAt = new Date();
+        await chat.save();
+
+        // Only send to recipient, not sender
+        const recipientSocket = onlineUsers[recipientId];
+        if (recipientSocket) {
+            io.to(recipientSocket).emit('receiveMessage', { chatId: chat._id, ...newMsg, tempId });
+        }
+
+        // Send confirmation to sender with the saved message ID
+        const senderSocket = onlineUsers[senderId];
+        if (senderSocket) {
+            io.to(senderSocket).emit('messageConfirmed', {
+                chatId: chat._id,
+                tempId,
+                messageId: newMsg._id
+            });
+        }
+    } catch (err) {
+        console.error('Error saving message:', err);
+    }
+});
 
         socket.on("deleteMessageForMe", async ({ chatId, messageId, userId }) => {
             try {

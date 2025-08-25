@@ -423,6 +423,10 @@
             box-shadow: 0 8px 25px rgba(139,69,19,0.2);
         }
 
+        .message.temp {
+            opacity: 0.7;
+        }
+
         .message-actions {
             position: absolute;
             right: -100px;
@@ -547,6 +551,11 @@
             color: #8b4513;
             background: rgba(139,69,19,0.1);
             transform: scale(1.1);
+        }
+
+        .input-action-btn.recording {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
         }
 
         .chat-input {
@@ -732,6 +741,109 @@
         .download-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 18px rgba(139,69,19,0.4);
+        }
+
+        /* Voice Message Styles */
+        .voice-message {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #fff8f0;
+            border-radius: 15px;
+            margin: 8px 0;
+            border: 2px solid #e6d8c5;
+        }
+
+        .voice-message audio {
+            max-width: 300px;
+            outline: none;
+        }
+
+        .voice-message .play-btn {
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+            color: #fdfbf7;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .voice-message .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+        }
+
+        .voice-message .voice-duration {
+            font-size: 12px;
+            color: #8d6e63;
+            font-style: italic;
+            margin-left: 10px;
+        }
+
+        /* Recording Indicator */
+        .recording-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 15px;
+            margin: 10px 30px;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .recording-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .recording-dot {
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 50%;
+            animation: recordingPulse 1.6s infinite;
+        }
+
+        .recording-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .recording-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes recordingPulse {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        .recording-indicator .cancel-btn {
+            background: #e74c3c;
+            color: #fdfbf7;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .recording-indicator .cancel-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
         }
 
         /* Emoji Picker */
@@ -1100,6 +1212,9 @@
                             <button class="input-action-btn" id="emojiBtn" title="Add Expression">
                                 <i class="fas fa-smile"></i>
                             </button>
+                            <button class="input-action-btn" id="recordBtn" title="Record Voice Message">
+                                <i class="fas fa-microphone"></i>
+                            </button>
                         </div>
                         <textarea 
                             class="chat-input" 
@@ -1111,7 +1226,16 @@
                             <i class="fas fa-feather-alt"></i>
                         </button>
                     </div>
-                    <input type="file" id="fileInput" style="display:none;" >
+                    <div id="recordingIndicator" class="recording-indicator" style="display: none;">
+                        <span id="recordingTimer">00:00</span>
+                        <div class="recording-dots">
+                            <div class="recording-dot"></div>
+                            <div class="recording-dot"></div>
+                            <div class="recording-dot"></div>
+                        </div>
+                        <button class="cancel-btn" onclick="window.chatApp.cancelRecording()">Cancel</button>
+                    </div>
+                    <input type="file" id="fileInput" style="display:none;" accept="image/*,application/pdf">
                     <div id="emojiPicker" style="display:none;">
                         <span class="emoji" data-emoji="😀">😀</span>
                         <span class="emoji" data-emoji="😁">😁</span>
@@ -1155,793 +1279,969 @@
             </div>
         </div>
     </div>
+<script>
+    class PersonalChat {
+        constructor() {
+            this.socket = io("http://localhost:3000");
+            this.currentUserId = localStorage.getItem('userId'); 
+            this.currentChatUserId = null;
+            this.currentChatId = null;
+            this.unreadCounts = {};
+            this.lastMessages = {};
+            this.onlineUsers = new Set();
+            this.replyTo = null;
+            this.mediaRecorder = null;
+            this.audioChunks = [];
+            this.recordingStartTime = null;
+            this.timerInterval = null;
+            this.isSendingMessage = false; // Prevent duplicate messages
+            this.isRecordingCanceled = false;  // New flag for canceled recordings
 
-    <script>
-        class PersonalChat {
-            constructor() {
-                this.socket = io("http://localhost:3000");
-                this.currentUserId = localStorage.getItem('userId'); 
-                if (!this.currentUserId) {
-                    console.error("User ID not found in localStorage");
-                    this.showError("Please log in to access your conversations.");
-                    return;
-                }
-                this.currentChatUserId = null;
-                this.currentChatId = null;
-                this.unreadCounts = {};
-                this.lastMessages = {};
-                this.onlineUsers = new Set();
-                this.replyTo = null;
-                this.initializeElements();
-                this.setupEventListeners();
-                this.setupSocketListeners();
-                this.checkURLParams();
-                this.loadChats();
+            if (!this.currentUserId) {
+                console.error("User ID not found in localStorage");
+                this.showError("Please log in to access your conversations.");
+                return;
             }
 
-            initializeElements() {
-                this.chatList = document.getElementById('chatList');
-                this.chatMessages = document.getElementById('chatMessages');
-                this.chatInput = document.getElementById('chatInput');
-                this.sendBtn = document.getElementById('sendBtn');
-                this.chatHeaderName = document.getElementById('chatHeaderName');
-                this.chatHeaderPic = document.getElementById('chatHeaderPic');
-                this.chatHeaderInitials = document.getElementById('chatHeaderInitials');
-                this.onlineStatus = document.getElementById('onlineStatus');
-                this.searchBox = document.getElementById('searchBox');
-                this.emptyState = document.getElementById('emptyState');
-                this.chatArea = document.getElementById('chatArea');
-                this.typingIndicator = document.getElementById('typingIndicator');
-                this.emojiPicker = document.getElementById('emojiPicker');
-            }
-
-            setupEventListeners() {
-                this.sendBtn.addEventListener('click', () => this.sendMessage());
-                this.chatInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-
-                this.chatInput.addEventListener('input', () => {
-                    this.autoResize();
-                    this.handleTyping();
-                });
-
-                this.searchBox.addEventListener('input', (e) => {
-                    this.searchChats(e.target.value);
-                });
-
-                const attachBtn = document.querySelector('.input-action-btn[title="Attach File"]');
-                attachBtn.addEventListener('click', () => {
-                    document.getElementById('fileInput').click();
-                });
-
-                const fileInput = document.getElementById('fileInput');
-                fileInput.addEventListener('change', (e) => {
-                    const files = Array.from(e.target.files);
-                    files.forEach(file => this.handleFileUpload(file));
-                    fileInput.value = '';
-                });
-
-                const emojiBtn = document.getElementById('emojiBtn');
-                emojiBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const isVisible = this.emojiPicker.style.display === 'grid';
-                    this.emojiPicker.style.display = isVisible ? 'none' : 'grid';
-                });
-
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiBtn')) {
-                        this.emojiPicker.style.display = 'none';
-                    }
-                });
-
-                const emojis = document.querySelectorAll('.emoji');
-                emojis.forEach(emoji => {
-                    emoji.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        this.chatInput.value += emoji.dataset.emoji;
-                        this.chatInput.focus();
-                        this.autoResize();
-                        this.emojiPicker.style.display = 'none';
-                    });
-                });
-
-                this.chatMessages.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    this.chatMessages.classList.add('drag-over');
-                });
-                
-                this.chatMessages.addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    this.chatMessages.classList.remove('drag-over');
-                });
-
-                this.chatMessages.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    this.chatMessages.classList.remove('drag-over');
-                    const files = Array.from(e.dataTransfer.files);
-                    files.forEach(file => this.handleFileUpload(file));
-                });
-            }
-
-            setupSocketListeners() {
-                this.socket.on('connect_error', (error) => {
-                    console.error('Socket connection error:', error);
-                    this.showError('Failed to connect to the conversation server.');
-                });
-
-                this.socket.on('receiveMessage', (message) => {
-                    this.handleReceivedMessage(message);
-                    if (this.currentChatId === message.chatId) {
-                        this.chatMessages.querySelector('#noMessages')?.remove();
-                    }
-                });
-
-                this.socket.on("messageDeletedForMe", ({ messageId, userId }) => {
-                    if (userId === this.currentUserId) {
-                        const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-                        if (msgEl) {
-                            msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
-                            msgEl.classList.add('deleted');
-                        }
-                    }
-                });
-
-                this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
-                    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-                    if (msgEl) {
-                        msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
-                        msgEl.classList.add('deleted');
-                        this.updateLastMessage(this.currentChatUserId, "Message deleted");
-                    }
-                });
-
-                this.socket.on("messageReacted", ({ messageId, reaction }) => {
-                    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-                    if (msgEl) {
-                        let reactionsDiv = msgEl.querySelector(".message-reactions");
-                        if (!reactionsDiv) {
-                            reactionsDiv = document.createElement("div");
-                            reactionsDiv.className = "message-reactions";
-                            msgEl.appendChild(reactionsDiv);
-                        }
-                        const reactionEl = document.createElement("span");
-                        reactionEl.className = "reaction";
-                        reactionEl.textContent = reaction;
-                        reactionsDiv.appendChild(reactionEl);
-                    }
-                });
-
-                this.socket.on('userOnline', (userId) => {
-                    this.onlineUsers.add(userId);
-                    this.updateOnlineStatus();
-                });
-
-                this.socket.on('userOffline', (userId) => {
-                    this.onlineUsers.delete(userId);
-                    this.updateOnlineStatus();
-                });
-
-                this.socket.on('typing', (data) => {
-                    if (data.senderId === this.currentChatUserId) {
-                        this.showTypingIndicator();
-                    }
-                });
-
-                this.socket.on('stopTyping', (data) => {
-                    if (data.senderId === this.currentChatUserId) {
-                        this.hideTypingIndicator();
-                    }
-                });
-
-                this.socket.emit('userOnline', this.currentUserId);
-            }
-
-            checkURLParams() {
-                const params = new URLSearchParams(window.location.search);
-                const userId = params.get('userId');
-                const username = decodeURIComponent(params.get('username') || '');
-                const profilePhoto = decodeURIComponent(params.get('profilePhoto') || '/default-avatar.png');
-
-                if (userId && username) {
-                    console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
-                    this.openChat(userId, username, profilePhoto);
-                } else {
-                    console.log('No URL parameters, loading from dashboard');
-                }
-            }
-
-            async loadChats() {
-                try {
-                    const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}`);
-                    const data = await response.json();
-                    console.log('Conversations loaded:', data);
-
-                    this.chatList.innerHTML = '';
-                    if (data.success && data.chats.length > 0) {
-                        data.chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-                        data.chats.forEach(chat => {
-                            this.addChatToSidebar(chat);
-                        });
-
-                        if (!this.currentChatUserId) {
-                            const latestChat = data.chats[0];
-                            this.openChat(latestChat.userId, latestChat.username, latestChat.profilePhoto);
-                        }
-                    } else {
-                        this.chatList.innerHTML = '<p style="text-align: center; color: #8d6e63; font-style: italic; padding: 30px;">No conversations yet</p>';
-                        if (!this.currentChatUserId) {
-                            this.emptyState.style.display = 'flex';
-                            this.chatArea.style.display = 'none';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error loading conversations:', error);
-                    this.chatList.innerHTML = '<p style="text-align: center; color: #c62828; padding: 30px;">Error loading conversations</p>';
-                    this.showError('Failed to load conversations. Please try again.');
-                }
-            }
-
-            getUserInitials(username) {
-                if (!username || username === 'undefined') return 'U';
-                const words = username.split(' ').filter(word => word.length > 0);
-                if (words.length === 0) return 'U';
-                if (words.length === 1) return words[0].charAt(0).toUpperCase();
-                return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
-            }
-
-            addChatToSidebar(chat) {
-                const existingChat = document.querySelector(`[data-user-id="${chat.userId}"]`);
-                if (existingChat) {
-                    this.updateChatItem(existingChat, chat);
-                    return;
-                }
-
-                const username = chat.username && chat.username !== 'undefined' ? chat.username : 'Unknown Friend';
-                const profilePhoto = chat.profilePhoto && chat.profilePhoto !== 'undefined'
-                    ? (chat.profilePhoto.startsWith('http') ? chat.profilePhoto : `/uploads/${chat.profilePhoto}`)
-                    : null;
-
-                const isOnline = this.onlineUsers.has(chat.userId);
-                const unreadCount = this.unreadCounts[chat.userId] || 0;
-                const userInitials = this.getUserInitials(username);
-
-                const chatItem = document.createElement('div');
-                chatItem.className = 'chat-item';
-                chatItem.dataset.userId = chat.userId;
-
-                let profileElement = '';
-                if (profilePhoto) {
-                    profileElement = `
-                        <div style="position: relative;">
-                            <img src="${profilePhoto}" alt="${username}" class="profile-pic">
-                            ${isOnline ? '<div class="online-indicator"></div>' : ''}
-                        </div>
-                    `;
-                } else {
-                    profileElement = `
-                        <div style="position: relative;">
-                            <div class="profile-initials">${userInitials}</div>
-                            ${isOnline ? '<div class="online-indicator"></div>' : ''}
-                        </div>
-                    `;
-                }
-
-                chatItem.innerHTML = `
-                    ${profileElement}
-                    <div class="chat-info">
-                        <div class="chat-name">${username}</div>
-                        <div class="last-message">${chat.lastMessage || 'Begin your conversation...'}</div>
-                    </div>
-                    <div class="chat-meta">
-                        <div class="message-time">${this.formatTime(chat.lastMessageTime)}</div>
-                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                    </div>
-                `;
-
-                chatItem.addEventListener('click', () => {
-                    this.openChat(chat.userId, username, profilePhoto);
-                });
-
-                this.chatList.appendChild(chatItem);
-                console.log(`Added conversation to sidebar: ${username}`);
-            }
-
-            async openChat(userId, username, profilePhoto) {
-                console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
-                this.currentChatUserId = userId;
-
-                try {
-                    const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
-                    const data = await response.json();
-                    if (data.success) {
-                        this.currentChatId = data.chatId;
-                    }
-                } catch (error) {
-                    console.error('Error fetching chat ID:', error);
-                    this.showError('Failed to load chat. Please try again.');
-                    return;
-                }
-
-                let chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-                if (!chatItem) {
-                    this.addChatToSidebar({
-                        userId,
-                        username,
-                        profilePhoto,
-                        lastMessage: '',
-                        lastMessageTime: new Date()
-                    });
-                    chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-                    await this.loadChats();
-                }
-
-                this.emptyState.style.display = 'none';
-                this.chatArea.style.display = 'flex';
-
-                this.chatHeaderName.textContent = username || 'Unknown Friend';
-                
-                if (profilePhoto && profilePhoto !== 'undefined' && profilePhoto !== '/default-avatar.png') {
-                    this.chatHeaderPic.src = profilePhoto;
-                    this.chatHeaderPic.style.display = 'block';
-                    this.chatHeaderInitials.style.display = 'none';
-                } else {
-                    this.chatHeaderPic.style.display = 'none';
-                    this.chatHeaderInitials.style.display = 'flex';
-                    this.chatHeaderInitials.textContent = this.getUserInitials(username);
-                }
-
-                document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
-                if (chatItem) {
-                    chatItem.classList.add('active');
-                    console.log(`Highlighted conversation item for userId: ${userId}`);
-                }
-
-                this.unreadCounts[userId] = 0;
-                this.updateUnreadBadge(userId);
-
-                await this.loadMessages(userId);
-
-                this.updateOnlineStatus();
-
-                this.chatInput.style.display = 'block';
-                this.chatInput.focus();
-
-                this.emojiPicker.style.display = 'none';
-
-                if (window.innerWidth <= 768) {
-                    document.getElementById('chatSidebar').classList.remove('open');
-                }
-            }
-
-            updateChatItem(chatItem, chat) {
-                const nameEl = chatItem.querySelector('.chat-name');
-                const messageEl = chatItem.querySelector('.last-message');
-                const timeEl = chatItem.querySelector('.message-time');
-                
-                if (nameEl) nameEl.textContent = chat.username;
-                if (messageEl) messageEl.textContent = chat.lastMessage || 'Begin your conversation...';
-                if (timeEl) timeEl.textContent = this.formatTime(chat.lastMessageTime);
-            }
-
-            async loadMessages(userId) {
-                try {
-                    const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
-                    const data = await response.json();
-                    console.log('Messages loaded:', data);
-
-                    this.chatMessages.innerHTML = '';
-                    if (data.success && data.messages.length > 0) {
-                        data.messages.forEach(msg => {
-                            this.appendMessage({
-                                _id: msg._id,
-                                sender: msg.sender,
-                                message: msg.message,
-                                fileUrl: msg.fileUrl,
-                                fileType: msg.fileType,
-                                timestamp: msg.timestamp,
-                                replyTo: msg.replyTo,
-                                hiddenFor: msg.hiddenFor,
-                                reactions: msg.reactions,
-                                deletedForEveryone: msg.deletedForEveryone
-                            });
-                        });
-                    } else {
-                        this.chatMessages.innerHTML = '<p id="noMessages">Your conversation begins here...</p>';
-                    }
-                    this.scrollToBottom();
-                } catch (error) {
-                    console.error('Error loading messages:', error);
-                    this.showError('Failed to load messages. Please try again.');
-                }
-            }
-
-            sendMessage() {
-                const message = this.chatInput.value.trim();
-                if (!message || !this.currentChatUserId) return;
-
-                const messageData = {
-                    senderId: this.currentUserId,
-                    recipientId: this.currentChatUserId,
-                    message: message,
-                    timestamp: new Date(),
-                    replyTo: this.replyTo ? this.replyTo.id : null
-                };
-
-                this.socket.emit("sendMessage", messageData);
-                this.appendMessage({ ...messageData, sender: this.currentUserId, _id: Date.now() + Math.random() });
-                this.cancelReply();
-                this.chatInput.value = "";
-                this.autoResize();
-            }
-
-            replyToMessage(messageEl) {
-                const msgId = messageEl.dataset.id;
-                const originalText = messageEl.querySelector(".message-text")?.innerText || "Attachment";
-
-                this.replyTo = { id: msgId, text: originalText };
-
-                let replyBox = document.getElementById("replyBox");
-                if (!replyBox) {
-                    replyBox = document.createElement("div");
-                    replyBox.id = "replyBox";
-                    replyBox.className = "reply-preview";
-                    this.chatInput.parentNode.insertBefore(replyBox, this.chatInput.parentNode.firstChild);
-                }
-                replyBox.innerHTML = `
-                    <div class="reply-content">
-                        <span class="reply-text">Replying to: ${originalText.substring(0, 50)}${originalText.length > 50 ? '...' : ''}</span>
-                        <button class="close-reply" onclick="window.chatApp.cancelReply()">×</button>
-                    </div>
-                `;
-                this.chatInput.focus();
-            }
-
-            cancelReply() {
-                this.replyTo = null;
-                const replyBox = document.getElementById("replyBox");
-                if (replyBox) replyBox.remove();
-            }
-
-            addReaction(messageEl, emoji) {
-                const msgId = messageEl.dataset.id;
-                this.socket.emit("reactMessage", {
-                    chatId: this.currentChatId,
-                    messageId: msgId,
-                    userId: this.currentUserId,
-                    reaction: emoji
-                });
-            }
-
-            deleteForMe(messageEl) {
-                const msgId = messageEl.dataset.id;
-                this.socket.emit("deleteMessageForMe", {
-                    chatId: this.currentChatId,
-                    messageId: msgId,
-                    userId: this.currentUserId
-                });
-            }
-
-            deleteForEveryone(messageEl) {
-                const msgId = messageEl.dataset.id;
-                this.socket.emit("deleteMessageForEveryone", {
-                    chatId: this.currentChatId,
-                    messageId: msgId,
-                    userId: this.currentUserId
-                });
-            }
-
-            async handleFileUpload(file) {
-                if (!file || !this.currentChatUserId) return;
-
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("senderId", this.currentUserId);
-                formData.append("recipientId", this.currentChatUserId);
-
-                try {
-                    const res = await fetch("http://localhost:3000/chat/api/upload", {
-                        method: "POST",
-                        body: formData
-                    });
-
-                    const data = await res.json();
-                    console.log("Upload response:", data);
-
-                    if (data.success) {
-                        this.appendMessage({
-                            sender: this.currentUserId,
-                            recipient: this.currentChatUserId,
-                            fileUrl: data.message.fileUrl,
-                            fileType: data.message.fileType,
-                            message: data.message.message,
-                            timestamp: new Date(),
-                            _id: Date.now() + Math.random()
-                        });
-
-                        this.socket.emit("sendMessage", {
-                            senderId: this.currentUserId,
-                            recipientId: this.currentChatUserId,
-                            fileUrl: data.message.fileUrl,
-                            fileType: data.message.fileType,
-                            message: data.message.message,
-                            timestamp: new Date()
-                        });
-                    } else {
-                        console.error("Upload failed", data);
-                        this.showError("Failed to upload file.");
-                    }
-                } catch (err) {
-                    console.error("Upload error:", err);
-                    this.showError("Error uploading file. Please try again.");
-                }
-            }
-
-            appendMessage(message) {
-                const isSent = message.sender === this.currentUserId;
-                const isHidden = message.hiddenFor && message.hiddenFor.includes(this.currentUserId);
-                const isDeleted = message.deletedForEveryone;
-                const messageGroup = document.createElement('div');
-                messageGroup.className = `message-group ${isSent ? 'sent' : 'received'}`;
-
-                const messageEl = document.createElement('div');
-                messageEl.className = `message ${isSent ? 'sent' : 'received'} ${isHidden || isDeleted ? 'deleted' : ''}`;
-                messageEl.dataset.id = message._id;
-
-                let content = '';
-                if (isHidden || isDeleted) {
-                    content = `<div class="message-deleted">${isHidden ? 'This message was deleted for you' : 'This message was deleted'}</div>`;
-                } else if (message.fileUrl) {
-                    const fileName = decodeURIComponent(message.fileUrl.split('/').pop());
-                    const ext = fileName.split('.').pop().toLowerCase();
-                    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-
-                    if (isImage) {
-                        content = `<img src="${message.fileUrl}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
-                    } else {
-                        content = `
-                            <div class="file-message">
-                                <div class="file-icon"><i class="fas fa-file-alt"></i></div>
-                                <div class="file-info">
-                                    <div class="file-name">${fileName}</div>
-                                    <div class="file-size">Click to download this memory</div>
-                                </div>
-                                <a href="${message.fileUrl}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
-                            </div>
-                        `;
-                    }
-                } else {
-                    content = message.message;
-                }
-
-                let replyContent = '';
-                if (message.replyTo) {
-                    const repliedMsg = document.querySelector(`[data-id="${message.replyTo}"]`);
-                    const repliedText = repliedMsg ? repliedMsg.querySelector(".message-text")?.innerText || "Attachment" : "Original message not found";
-                    replyContent = `<div class="reply-ref">Replying to: ${repliedText}</div>`;
-                }
-
-                let reactionsContent = '';
-                if (message.reactions && message.reactions.length > 0) {
-                    reactionsContent = `<div class="message-reactions">${message.reactions.map(r => `<span class="reaction">${r.emoji}</span>`).join('')}</div>`;
-                }
-
-                messageEl.innerHTML = `
-                    ${replyContent}
-                    <div class="message-text">${content}</div>
-                    ${reactionsContent}
-                    <div class="message-actions">
-                        <button class="message-action-btn" title="Reply" onclick="window.chatApp.replyToMessage(this.closest('.message'))">
-                            <i class="fas fa-reply"></i>
-                        </button>
-                        <button class="message-action-btn" title="React" onclick="window.chatApp.addReaction(this.closest('.message'), '❤️')">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                        <div class="message-menu">
-                            <button class="message-action-btn" title="More" onclick="toggleMessageMenu(this)">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                            <div class="message-dropdown">
-                                <button onclick="window.chatApp.deleteForMe(this.closest('.message'))">Delete for Me</button>
-                                ${isSent ? `<button onclick="window.chatApp.deleteForEveryone(this.closest('.message'))">Delete for Everyone</button>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="message-time">
-                        ${this.formatTime(message.timestamp)}
-                        ${isSent ? '<span class="message-status"><i class="fas fa-feather-alt"></i></span>' : ''}
-                    </div>
-                `;
-
-                messageGroup.appendChild(messageEl);
-                this.chatMessages.appendChild(messageGroup);
-                this.scrollToBottom();
-            }
-
-            handleReceivedMessage(message) {
-                if (message.chatId === this.currentChatId) {
-                    this.appendMessage(message);
-                } else {
-                    this.unreadCounts[message.sender] = (this.unreadCounts[message.sender] || 0) + 1;
-                    this.updateUnreadBadge(message.sender);
-                }
-
-                let display;
-                if (message.fileUrl) {
-                    display = message.fileType === "image" ? "Shared a beautiful moment" : "Shared a memory";
-                } else if (message.deletedForEveryone) {
-                    display = "Message deleted";
-                } else {
-                    display = message.message;
-                }
-
-                this.updateLastMessage(message.sender, display);
-                this.loadChats();
-            }
-
-            updateLastMessage(userId, message) {
-                const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-                if (chatItem) {
-                    const lastMessageEl = chatItem.querySelector('.last-message');
-                    const timeEl = chatItem.querySelector('.message-time');
-                    
-                    if (lastMessageEl) lastMessageEl.textContent = message;
-                    if (timeEl) timeEl.textContent = this.formatTime(new Date());
-                }
-            }
-
-            updateUnreadBadge(userId) {
-                const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-                if (!chatItem) return;
-
-                const existingBadge = chatItem.querySelector('.unread-badge');
-                const unreadCount = this.unreadCounts[userId] || 0;
-
-                if (unreadCount > 0) {
-                    if (existingBadge) {
-                        existingBadge.textContent = unreadCount;
-                    } else {
-                        const metaEl = chatItem.querySelector('.chat-meta');
-                        const badge = document.createElement('div');
-                        badge.className = 'unread-badge';
-                        badge.textContent = unreadCount;
-                        metaEl.appendChild(badge);
-                    }
-                } else if (existingBadge) {
-                    existingBadge.remove();
-                }
-            }
-
-            updateOnlineStatus() {
-                if (this.currentChatUserId) {
-                    const isOnline = this.onlineUsers.has(this.currentChatUserId);
-                    this.onlineStatus.textContent = isOnline ? 'Currently writing' : 'Away from their journal';
-                    this.onlineStatus.style.color = isOnline ? '#4caf50' : '#8d6e63';
-                }
-            }
-
-            autoResize() {
-                this.chatInput.style.height = 'auto';
-                this.chatInput.style.height = Math.min(this.chatInput.scrollHeight, 120) + 'px';
-            }
-
-            handleTyping() {
-                if (this.currentChatUserId) {
-                    this.socket.emit('typing', {
-                        senderId: this.currentUserId,
-                        recipientId: this.currentChatUserId
-                    });
-
-                    clearTimeout(this.typingTimer);
-                    this.typingTimer = setTimeout(() => {
-                        this.socket.emit('stopTyping', {
-                            senderId: this.currentUserId,
-                            recipientId: this.currentChatUserId
-                        });
-                    }, 1000);
-                }
-            }
-
-            showTypingIndicator() {
-                this.typingIndicator.style.display = 'flex';
-                this.scrollToBottom();
-            }
-
-            hideTypingIndicator() {
-                this.typingIndicator.style.display = 'none';
-            }
-
-            searchChats(query) {
-                const chatItems = document.querySelectorAll('.chat-item');
-                chatItems.forEach(item => {
-                    const username = item.querySelector('.chat-name').textContent.toLowerCase();
-                    const lastMessage = item.querySelector('.last-message').textContent.toLowerCase();
-                    
-                    if (username.includes(query.toLowerCase()) || lastMessage.includes(query.toLowerCase())) {
-                        item.style.display = 'flex';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-            }
-
-            scrollToBottom() {
-                setTimeout(() => {
-                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-                }, 100);
-            }
-
-            formatTime(timestamp) {
-                if (!timestamp) return '';
-                
-                const date = new Date(timestamp);
-                const now = new Date();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-                
-                if (date >= today) {
-                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                } else if (date >= yesterday) {
-                    return 'Yesterday';
-                } else if (date.getFullYear() === now.getFullYear()) {
-                    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                } else {
-                    return date.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
-                }
-            }
-
-            showError(message) {
-                this.emptyState.style.display = 'flex';
-                this.emptyState.innerHTML = `
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Something went wrong</h3>
-                    <p class="error-message">${message}</p>
-                `;
-                this.chatArea.style.display = 'none';
-            }
+            this.initializeElements();
+            this.setupEventListeners();
+            this.setupSocketListeners();
+            this.checkURLParams();
+            this.loadChats();
         }
 
-        function toggleMessageMenu(button) {
-            const dropdown = button.nextElementSibling;
-            const isVisible = dropdown.classList.contains('show');
-            
-            document.querySelectorAll('.message-dropdown.show').forEach(d => {
-                d.classList.remove('show');
+        initializeElements() {
+            this.chatList = document.getElementById('chatList');
+            this.chatMessages = document.getElementById('chatMessages');
+            this.chatInput = document.getElementById('chatInput');
+            this.sendBtn = document.getElementById('sendBtn');
+            this.chatHeaderName = document.getElementById('chatHeaderName');
+            this.chatHeaderPic = document.getElementById('chatHeaderPic');
+            this.chatHeaderInitials = document.getElementById('chatHeaderInitials');
+            this.onlineStatus = document.getElementById('onlineStatus');
+            this.searchBox = document.getElementById('searchBox');
+            this.emptyState = document.getElementById('emptyState');
+            this.chatArea = document.getElementById('chatArea');
+            this.typingIndicator = document.getElementById('typingIndicator');
+            this.emojiPicker = document.getElementById('emojiPicker');
+            this.recordBtn = document.getElementById('recordBtn');
+            this.recordingIndicator = document.getElementById('recordingIndicator');
+            this.recordingTimer = document.getElementById('recordingTimer');
+        }
+
+        setupEventListeners() {
+            this.sendBtn.addEventListener('click', () => this.sendMessage());
+            this.chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+
+            this.chatInput.addEventListener('input', () => {
+                this.autoResize();
+                this.handleTyping();
+            });
+
+            this.searchBox.addEventListener('input', (e) => {
+                this.searchChats(e.target.value);
+            });
+
+            this.recordBtn.addEventListener('click', () => this.toggleRecording());
+            const attachBtn = document.querySelector('.input-action-btn[title="Attach File"]');
+            attachBtn.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => this.handleFileUpload(file));
+                fileInput.value = '';
+            });
+
+            const emojiBtn = document.getElementById('emojiBtn');
+            emojiBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = this.emojiPicker.style.display === 'grid';
+                this.emojiPicker.style.display = isVisible ? 'none' : 'grid';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiBtn')) {
+                    this.emojiPicker.style.display = 'none';
+                }
+            });
+
+            const emojis = document.querySelectorAll('.emoji');
+            emojis.forEach(emoji => {
+                emoji.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.chatInput.value += emoji.dataset.emoji;
+                    this.chatInput.focus();
+                    this.autoResize();
+                    this.emojiPicker.style.display = 'none';
+                });
+            });
+
+            this.chatMessages.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.chatMessages.classList.add('drag-over');
             });
             
-            if (!isVisible) {
-                dropdown.classList.add('show');
-                
-                setTimeout(() => {
-                    document.addEventListener('click', function handler(e) {
-                        if (!button.closest('.message-menu').contains(e.target)) {
-                            dropdown.classList.remove('show');
-                            document.removeEventListener('click', handler);
-                        }
-                    });
-                }, 0);
-            }
+            this.chatMessages.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                this.chatMessages.classList.remove('drag-over');
+            });
+
+            this.chatMessages.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.chatMessages.classList.remove('drag-over');
+                const files = Array.from(e.dataTransfer.files);
+                files.forEach(file => this.handleFileUpload(file));
+            });
         }
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('chatSidebar');
-            sidebar.classList.toggle('open');
+        setupSocketListeners() {
+            this.socket.on('connect_error', (error) => {
+                console.error('Socket connection error:', error);
+                this.showError('Failed to connect to the conversation server.');
+            });
+
+            this.socket.on('receiveMessage', (message) => {
+                this.handleReceivedMessage(message);
+                if (this.currentChatId === message.chatId) {
+                    this.chatMessages.querySelector('#noMessages')?.remove();
+                }
+            });
+
+            this.socket.on("messageDeletedForMe", ({ messageId, userId }) => {
+                if (userId === this.currentUserId) {
+                    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+                    if (msgEl) {
+                        msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
+                        msgEl.classList.add('deleted');
+                    }
+                }
+            });
+
+            this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
+                const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+                if (msgEl) {
+                    msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
+                    msgEl.classList.add('deleted');
+                    this.updateLastMessage(this.currentChatUserId, "Message deleted");
+                }
+            });
+
+            this.socket.on("messageReacted", ({ messageId, reaction }) => {
+                const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+                if (msgEl) {
+                    let reactionsDiv = msgEl.querySelector(".message-reactions");
+                    if (!reactionsDiv) {
+                        reactionsDiv = document.createElement("div");
+                        reactionsDiv.className = "message-reactions";
+                        msgEl.appendChild(reactionsDiv);
+                    }
+                    const reactionEl = document.createElement("span");
+                    reactionEl.className = "reaction";
+                    reactionEl.textContent = reaction;
+                    reactionsDiv.appendChild(reactionEl);
+                }
+            });
+
+            this.socket.on('userOnline', (userId) => {
+                this.onlineUsers.add(userId);
+                this.updateOnlineStatus();
+            });
+
+            this.socket.on('userOffline', (userId) => {
+                this.onlineUsers.delete(userId);
+                this.updateOnlineStatus();
+            });
+
+            this.socket.on('typing', (data) => {
+                if (data.senderId === this.currentChatUserId) {
+                    this.showTypingIndicator();
+                }
+            });
+
+            this.socket.on('stopTyping', (data) => {
+                if (data.senderId === this.currentChatUserId) {
+                    this.hideTypingIndicator();
+                }
+            });
+
+            this.socket.emit('userOnline', this.currentUserId);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            window.chatApp = new PersonalChat();
-        });
+        checkURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            const userId = params.get('userId');
+            const username = decodeURIComponent(params.get('username') || '');
+            const profilePhoto = decodeURIComponent(params.get('profilePhoto') || '/default-avatar.png');
 
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) {
-                document.body.classList.add('mobile');
+            if (userId && username) {
+                console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
+                this.openChat(userId, username, profilePhoto);
             } else {
-                document.body.classList.remove('mobile');
+                console.log('No URL parameters, loading from dashboard');
             }
+        }
+
+        async toggleRecording() {
+            if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                this.stopRecording();
+            } else {
+                await this.startRecording();
+            }
+        }
+async startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.audioChunks = [];
+        this.isRecordingCanceled = false;  // Reset cancel flag
+
+        this.mediaRecorder.addEventListener('dataavailable', (e) => {
+            this.audioChunks.push(e.data);
         });
-    </script>
+
+        this.mediaRecorder.addEventListener('stop', () => {
+            if (!this.isRecordingCanceled) {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                const duration = this.calculateDuration();
+                this.sendVoiceMessage(audioBlob, duration);
+            }
+            stream.getTracks().forEach(track => track.stop());
+            this.stopTimer();
+        });
+
+        this.mediaRecorder.start();
+        this.recordBtn.classList.add('recording');
+        this.recordBtn.querySelector('i').classList.replace('fa-microphone', 'fa-stop');
+        this.recordingIndicator.style.display = 'flex';
+        this.startTimer();
+    } catch (err) {
+        console.error('Error starting recording:', err);
+        this.showError('Failed to start recording. Please check microphone permissions.');
+    }
+}
+        stopRecording() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+        this.mediaRecorder.stop();
+        this.recordBtn.classList.remove('recording');
+        this.recordBtn.querySelector('i').classList.replace('fa-stop', 'fa-microphone');
+        this.recordingIndicator.style.display = 'none';
+    }
+}
+
+        cancelRecording() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+        this.isRecordingCanceled = true;  // Set cancel flag
+        this.mediaRecorder.stop();
+        this.audioChunks = [];
+        this.recordBtn.classList.remove('recording');
+        this.recordBtn.querySelector('i').classList.replace('fa-stop', 'fa-microphone');
+        this.recordingIndicator.style.display = 'none';
+        this.stopTimer();
+    }
+}
+
+        startTimer() {
+            this.recordingStartTime = Date.now();
+            this.timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                this.recordingTimer.textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        stopTimer() {
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+            this.recordingTimer.textContent = '00:00';
+        }
+
+        calculateDuration() {
+            if (!this.recordingStartTime) return 0;
+            return Math.floor((Date.now() - this.recordingStartTime) / 1000);
+        }
+
+        async sendVoiceMessage(audioBlob, duration) {
+    if (!this.currentChatUserId) return;
+    if (this.isRecordingCanceled) return;
+
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const formData = new FormData();
+    formData.append('file', audioBlob, `voice-message-${Date.now()}.webm`);
+    formData.append('senderId', this.currentUserId);
+    formData.append('recipientId', this.currentChatUserId);
+    formData.append('duration', duration);
+
+    try {
+        this.appendMessage({
+            sender: this.currentUserId,
+            fileUrl: URL.createObjectURL(audioBlob),
+            fileType: 'audio', // Explicitly set fileType
+            message: '',
+            timestamp: new Date(),
+            _id: tempId,
+            isTemp: true,
+            duration
+        });
+
+        const res = await fetch('http://localhost:3000/chat/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            this.socket.emit('sendMessage', {
+                senderId: this.currentUserId,
+                recipientId: this.currentChatUserId,
+                fileUrl: data.fileUrl,
+                fileType: data.fileType,
+                message: data.message,
+                timestamp: new Date(),
+                tempId,
+                duration: data.duration
+            });
+        } else {
+            const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+            if (tempMessage) tempMessage.remove();
+            this.showError('Failed to upload voice message.');
+        }
+    } catch (err) {
+        console.error('Error uploading voice message:', err);
+        const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+        if (tempMessage) tempMessage.remove();
+        this.showError('Error uploading voice message. Please try again.');
+    }
+    this.isSendingMessage = false;
+}
+
+        async loadChats() {
+            try {
+                const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}`);
+                const data = await response.json();
+                console.log('Conversations loaded:', data);
+
+                this.chatList.innerHTML = '';
+                if (data.success && data.chats.length > 0) {
+                    data.chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+                    data.chats.forEach(chat => {
+                        this.addChatToSidebar(chat);
+                    });
+
+                    if (!this.currentChatUserId) {
+                        const latestChat = data.chats[0];
+                        this.openChat(latestChat.userId, latestChat.username, latestChat.profilePhoto);
+                    }
+                } else {
+                    this.chatList.innerHTML = '<p style="text-align: center; color: #8d6e63; font-style: italic; padding: 30px;">No conversations yet</p>';
+                    if (!this.currentChatUserId) {
+                        this.emptyState.style.display = 'flex';
+                        this.chatArea.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                this.chatList.innerHTML = '<p style="text-align: center; color: #c62828; padding: 30px;">Error loading conversations</p>';
+                this.showError('Failed to load conversations. Please try again.');
+            }
+        }
+
+        getUserInitials(username) {
+            if (!username || username === 'undefined') return 'U';
+            const words = username.split(' ').filter(word => word.length > 0);
+            if (words.length === 0) return 'U';
+            if (words.length === 1) return words[0].charAt(0).toUpperCase();
+            return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+        }
+
+        addChatToSidebar(chat) {
+            const existingChat = document.querySelector(`[data-user-id="${chat.userId}"]`);
+            if (existingChat) {
+                this.updateChatItem(existingChat, chat);
+                return;
+            }
+
+            const username = chat.username && chat.username !== 'undefined' ? chat.username : 'Unknown Friend';
+            const profilePhoto = chat.profilePhoto && chat.profilePhoto !== 'undefined'
+                ? (chat.profilePhoto.startsWith('http') ? chat.profilePhoto : `/uploads/${chat.profilePhoto}`)
+                : null;
+
+            const isOnline = this.onlineUsers.has(chat.userId);
+            const unreadCount = this.unreadCounts[chat.userId] || 0;
+            const userInitials = this.getUserInitials(username);
+
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chat-item';
+            chatItem.dataset.userId = chat.userId;
+
+            let profileElement = '';
+            if (profilePhoto) {
+                profileElement = `
+                    <div style="position: relative;">
+                        <img src="${profilePhoto}" alt="${username}" class="profile-pic">
+                        ${isOnline ? '<div class="online-indicator"></div>' : ''}
+                    </div>
+                `;
+            } else {
+                profileElement = `
+                    <div style="position: relative;">
+                        <div class="profile-initials">${userInitials}</div>
+                        ${isOnline ? '<div class="online-indicator"></div>' : ''}
+                    </div>
+                `;
+            }
+
+            chatItem.innerHTML = `
+                ${profileElement}
+                <div class="chat-info">
+                    <div class="chat-name">${username}</div>
+                    <div class="last-message">${chat.lastMessage || 'Begin your conversation...'}</div>
+                </div>
+                <div class="chat-meta">
+                    <div class="message-time">${this.formatTime(chat.lastMessageTime)}</div>
+                    ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                </div>
+            `;
+
+            chatItem.addEventListener('click', () => {
+                this.openChat(chat.userId, username, profilePhoto);
+            });
+
+            this.chatList.appendChild(chatItem);
+            console.log(`Added conversation to sidebar: ${username}`);
+        }
+
+        async openChat(userId, username, profilePhoto) {
+            console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
+            this.currentChatUserId = userId;
+
+            try {
+                const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
+                const data = await response.json();
+                if (data.success) {
+                    this.currentChatId = data.chatId;
+                }
+            } catch (error) {
+                console.error('Error fetching chat ID:', error);
+                this.showError('Failed to load chat. Please try again.');
+                return;
+            }
+
+            let chatItem = document.querySelector(`[data-user-id="${userId}"]`);
+            if (!chatItem) {
+                this.addChatToSidebar({
+                    userId,
+                    username,
+                    profilePhoto,
+                    lastMessage: '',
+                    lastMessageTime: new Date()
+                });
+                chatItem = document.querySelector(`[data-user-id="${userId}"]`);
+                await this.loadChats();
+            }
+
+            this.emptyState.style.display = 'none';
+            this.chatArea.style.display = 'flex';
+
+            this.chatHeaderName.textContent = username || 'Unknown Friend';
+            
+            if (profilePhoto && profilePhoto !== 'undefined' && profilePhoto !== '/default-avatar.png') {
+                this.chatHeaderPic.src = profilePhoto;
+                this.chatHeaderPic.style.display = 'block';
+                this.chatHeaderInitials.style.display = 'none';
+            } else {
+                this.chatHeaderPic.style.display = 'none';
+                this.chatHeaderInitials.style.display = 'flex';
+                this.chatHeaderInitials.textContent = this.getUserInitials(username);
+            }
+
+            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+            if (chatItem) {
+                chatItem.classList.add('active');
+                console.log(`Highlighted conversation item for userId: ${userId}`);
+            }
+
+            this.unreadCounts[userId] = 0;
+            this.updateUnreadBadge(userId);
+
+            await this.loadMessages(userId);
+
+            this.updateOnlineStatus();
+
+            this.chatInput.style.display = 'block';
+            this.chatInput.focus();
+
+            this.emojiPicker.style.display = 'none';
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('chatSidebar').classList.remove('open');
+            }
+        }
+
+        updateChatItem(chatItem, chat) {
+            const nameEl = chatItem.querySelector('.chat-name');
+            const messageEl = chatItem.querySelector('.last-message');
+            const timeEl = chatItem.querySelector('.message-time');
+            
+            if (nameEl) nameEl.textContent = chat.username;
+            if (messageEl) messageEl.textContent = chat.lastMessage || 'Begin your conversation...';
+            if (timeEl) timeEl.textContent = this.formatTime(chat.lastMessageTime);
+        }
+
+        async loadMessages(userId) {
+            try {
+                const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
+                const data = await response.json();
+                console.log('Messages loaded:', data);
+
+                this.chatMessages.innerHTML = '';
+                if (data.success && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        this.appendMessage({
+                            _id: msg._id,
+                            sender: msg.sender,
+                            message: msg.message,
+                            fileUrl: msg.fileUrl,
+                            fileType: msg.fileType,
+                            timestamp: msg.timestamp,
+                            replyTo: msg.replyTo,
+                            hiddenFor: msg.hiddenFor,
+                            reactions: msg.reactions,
+                            deletedForEveryone: msg.deletedForEveryone,
+                            duration: msg.duration
+                        });
+                    });
+                } else {
+                    this.chatMessages.innerHTML = '<p id="noMessages">Your conversation begins here...</p>';
+                }
+                this.scrollToBottom();
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                this.showError('Failed to load messages. Please try again.');
+            }
+        }
+
+        sendMessage() {
+            if (this.isSendingMessage) return; // Prevent duplicate messages
+            const message = this.chatInput.value.trim();
+            if (!message || !this.currentChatUserId) return;
+
+            this.isSendingMessage = true;
+            const messageData = {
+                senderId: this.currentUserId,
+                recipientId: this.currentChatUserId,
+                message: message,
+                timestamp: new Date(),
+                replyTo: this.replyTo ? this.replyTo.id : null
+            };
+
+            const tempId = `temp-${Date.now()}-${Math.random()}`;
+            this.appendMessage({ ...messageData, sender: this.currentUserId, _id: tempId, isTemp: true });
+            this.socket.emit("sendMessage", { ...messageData, tempId });
+            this.cancelReply();
+            this.chatInput.value = "";
+            this.autoResize();
+            this.isSendingMessage = false;
+        }
+
+        replyToMessage(messageEl) {
+            const msgId = messageEl.dataset.id;
+            const originalText = messageEl.querySelector(".message-text")?.innerText || "Attachment";
+
+            this.replyTo = { id: msgId, text: originalText };
+
+            let replyBox = document.getElementById("replyBox");
+            if (!replyBox) {
+                replyBox = document.createElement("div");
+                replyBox.id = "replyBox";
+                replyBox.className = "reply-preview";
+                this.chatInput.parentNode.insertBefore(replyBox, this.chatInput.parentNode.firstChild);
+            }
+            replyBox.innerHTML = `
+                <div class="reply-content">
+                    <span class="reply-text">Replying to: ${originalText.substring(0, 50)}${originalText.length > 50 ? '...' : ''}</span>
+                    <button class="close-reply" onclick="window.chatApp.cancelReply()">×</button>
+                </div>
+            `;
+            this.chatInput.focus();
+        }
+
+        cancelReply() {
+            this.replyTo = null;
+            const replyBox = document.getElementById("replyBox");
+            if (replyBox) replyBox.remove();
+        }
+
+        addReaction(messageEl, emoji) {
+            const msgId = messageEl.dataset.id;
+            this.socket.emit("reactMessage", {
+                chatId: this.currentChatId,
+                messageId: msgId,
+                userId: this.currentUserId,
+                reaction: emoji
+            });
+        }
+
+        deleteForMe(messageEl) {
+            const msgId = messageEl.dataset.id;
+            this.socket.emit("deleteMessageForMe", {
+                chatId: this.currentChatId,
+                messageId: msgId,
+                userId: this.currentUserId
+            });
+        }
+
+        deleteForEveryone(messageEl) {
+            const msgId = messageEl.dataset.id;
+            this.socket.emit("deleteMessageForEveryone", {
+                chatId: this.currentChatId,
+                messageId: msgId,
+                userId: this.currentUserId
+            });
+        }
+
+    
+        
+async handleFileUpload(file) {
+    if (!file || !this.currentChatUserId) return;
+
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('senderId', this.currentUserId);
+    formData.append('recipientId', this.currentChatUserId);
+
+    try {
+        this.appendMessage({
+            sender: this.currentUserId,
+            fileUrl: URL.createObjectURL(file),
+            fileType: file.type.split('/')[0], // Set based on MIME type
+            message: '',
+            timestamp: new Date(),
+            _id: tempId,
+            isTemp: true
+        });
+
+        const res = await fetch('http://localhost:3000/chat/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            this.socket.emit('sendMessage', {
+                senderId: this.currentUserId,
+                recipientId: this.currentChatUserId,
+                fileUrl: data.fileUrl,
+                fileType: data.fileType,
+                message: data.message,
+                timestamp: new Date(),
+                tempId
+            });
+        } else {
+            const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+            if (tempMessage) tempMessage.remove();
+            console.error("Upload failed", data);
+            this.showError("Failed to upload file.");
+        }
+    } catch (err) {
+        console.error("Upload error:", err);
+        const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+        if (tempMessage) tempMessage.remove();
+        this.showError("Error uploading file. Please try again.");
+    }
+    this.isSendingMessage = false;
+}
+       appendMessage(message) {
+    // Prevent duplicate messages by checking if message with same ID exists
+    if (document.querySelector(`[data-id="${message._id}"]`)) return;
+
+    const isSent = message.sender === this.currentUserId;
+    const isHidden = message.hiddenFor && message.hiddenFor.includes(this.currentUserId);
+    const isDeleted = message.deletedForEveryone;
+    const messageGroup = document.createElement('div');
+    messageGroup.className = `message-group ${isSent ? 'sent' : 'received'}`;
+
+    const messageEl = document.createElement('div');
+    messageEl.className = `message ${isSent ? 'sent' : 'received'} ${isHidden || isDeleted ? 'deleted' : ''} ${message.isTemp ? 'temp' : ''}`;
+    messageEl.dataset.id = message._id;
+
+    let content = '';
+    if (isHidden || isDeleted) {
+        content = `<div class="message-deleted">${isHidden ? 'This message was deleted for you' : 'This message was deleted'}</div>`;
+    } else if (message.fileUrl) {
+        const fileName = decodeURIComponent(message.fileUrl.split('/').pop() || 'file');
+        const ext = fileName.split('.').pop().toLowerCase();
+        const isImage = message.fileType === 'image' || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+        const isAudio = message.fileType === 'audio' || ['mp3', 'wav', 'webm'].includes(ext);
+
+        if (isImage) {
+            content = `<img src="${message.fileUrl}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
+        } else if (isAudio) {
+            const durationStr = message.duration ? `${Math.floor(message.duration / 60)}:${(message.duration % 60).toString().padStart(2, '0')}` : '00:00';
+            content = `
+                <div class="voice-message">
+                    <button class="play-btn"><i class="fas fa-play"></i></button>
+                    <audio controls src="${message.fileUrl}"></audio>
+                    <span class="voice-duration">${durationStr}</span>
+                </div>
+            `;
+        } else {
+            content = `
+                <div class="file-message">
+                    <div class="file-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="file-info">
+                        <div class="file-name">${fileName}</div>
+                        <div class="file-size">Click to download this memory</div>
+                    </div>
+                    <a href="${message.fileUrl}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
+                </div>
+            `;
+        }
+    } else {
+        content = message.message;
+    }
+
+    let replyContent = '';
+    if (message.replyTo) {
+        const repliedMsg = document.querySelector(`[data-id="${message.replyTo}"]`);
+        const repliedText = repliedMsg ? repliedMsg.querySelector(".message-text")?.innerText || "Attachment" : "Original message not found";
+        replyContent = `<div class="reply-ref">Replying to: ${repliedText}</div>`;
+    }
+
+    let reactionsContent = '';
+    if (message.reactions && message.reactions.length > 0) {
+        reactionsContent = `<div class="message-reactions">${message.reactions.map(r => `<span class="reaction">${r.emoji}</span>`).join('')}</div>`;
+    }
+
+    messageEl.innerHTML = `
+        ${replyContent}
+        <div class="message-text">${content}</div>
+        ${reactionsContent}
+        <div class="message-actions">
+            <button class="message-action-btn" title="Reply" onclick="window.chatApp.replyToMessage(this.closest('.message'))">
+                <i class="fas fa-reply"></i>
+            </button>
+            <button class="message-action-btn" title="React" onclick="window.chatApp.addReaction(this.closest('.message'), '❤️')">
+                <i class="fas fa-heart"></i>
+            </button>
+            <div class="message-menu">
+                <button class="message-action-btn" title="More" onclick="toggleMessageMenu(this)">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+                <div class="message-dropdown">
+                    <button onclick="window.chatApp.deleteForMe(this.closest('.message'))">Delete for Me</button>
+                    ${isSent ? `<button onclick="window.chatApp.deleteForEveryone(this.closest('.message'))">Delete for Everyone</button>` : ''}
+                </div>
+            </div>
+        </div>
+        <div class="message-time">
+            ${this.formatTime(message.timestamp)}
+            ${isSent ? '<span class="message-status"><i class="fas fa-feather-alt"></i></span>' : ''}
+        </div>
+    `;
+
+    messageGroup.appendChild(messageEl);
+    this.chatMessages.appendChild(messageGroup);
+    this.scrollToBottom();
+}
+      handleReceivedMessage(message) {
+    if (message.tempId) {
+        const tempMessage = document.querySelector(`[data-id="${message.tempId}"]`);
+        if (tempMessage) {
+            tempMessage.dataset.id = message._id;
+            tempMessage.classList.remove('temp');
+            if (message.fileUrl) {
+                const fileName = decodeURIComponent(message.fileUrl.split('/').pop());
+                const isImage = message.fileType === 'image';
+                const isAudio = message.fileType === 'audio';
+                let content = '';
+                if (isImage) {
+                    content = `<img src="${message.fileUrl}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
+                } else if (isAudio) {
+                    const durationStr = message.duration ? `${Math.floor(message.duration / 60)}:${(message.duration % 60).toString().padStart(2, '0')}` : '00:00';
+                    content = `
+                        <div class="voice-message">
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                            <audio controls src="${message.fileUrl}"></audio>
+                            <span class="voice-duration">${durationStr}</span>
+                        </div>
+                    `;
+                } else {
+                    content = `
+                        <div class="file-message">
+                            <div class="file-icon"><i class="fas fa-file-alt"></i></div>
+                            <div class="file-info">
+                                <div class="file-name">${fileName}</div>
+                                <div class="file-size">Click to download this memory</div>
+                            </div>
+                            <a href="${message.fileUrl}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
+                        </div>
+                    `;
+                }
+                tempMessage.querySelector('.message-text').innerHTML = content;
+            } else {
+                tempMessage.querySelector('.message-text').innerText = message.message;
+            }
+            return;
+        }
+    }
+
+    if (message.chatId === this.currentChatId) {
+        this.appendMessage(message);
+        this.chatMessages.querySelector('#noMessages')?.remove();
+    } else {
+        this.unreadCounts[message.sender] = (this.unreadCounts[message.sender] || 0) + 1;
+        this.updateUnreadBadge(message.sender);
+    }
+
+    let display;
+    if (message.fileUrl) {
+        display = message.fileType === 'image' ? 'Shared a beautiful moment' : message.fileType === 'audio' ? 'Shared a voice message' : 'Shared a file';
+    } else if (message.deletedForEveryone) {
+        display = 'Message deleted';
+    } else {
+        display = message.message;
+    }
+
+    this.updateLastMessage(message.sender, display);
+    this.loadChats();
+}
+                    
+              
+
+        updateLastMessage(userId, message) {
+            const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
+            if (chatItem) {
+                const lastMessageEl = chatItem.querySelector('.last-message');
+                const timeEl = chatItem.querySelector('.message-time');
+                
+                if (lastMessageEl) lastMessageEl.textContent = message;
+                if (timeEl) timeEl.textContent = this.formatTime(new Date());
+            }
+        }
+
+        updateUnreadBadge(userId) {
+            const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
+            if (!chatItem) return;
+
+            const existingBadge = chatItem.querySelector('.unread-badge');
+            const unreadCount = this.unreadCounts[userId] || 0;
+
+            if (unreadCount > 0) {
+                if (existingBadge) {
+                    existingBadge.textContent = unreadCount;
+                } else {
+                    const metaEl = chatItem.querySelector('.chat-meta');
+                    const badge = document.createElement('div');
+                    badge.className = 'unread-badge';
+                    badge.textContent = unreadCount;
+                    metaEl.appendChild(badge);
+                }
+            } else if (existingBadge) {
+                existingBadge.remove();
+            }
+        }
+
+        updateOnlineStatus() {
+            if (this.currentChatUserId && this.onlineUsers.has(this.currentChatUserId)) {
+                this.onlineStatus.textContent = 'Online';
+                this.onlineStatus.style.color = '#4caf50';
+            } else {
+                this.onlineStatus.textContent = 'Offline';
+                this.onlineStatus.style.color = '#8d6e63';
+            }
+        }
+
+        showTypingIndicator() {
+            this.typingIndicator.style.display = 'flex';
+            this.scrollToBottom();
+        }
+
+        hideTypingIndicator() {
+            this.typingIndicator.style.display = 'none';
+        }
+
+        handleTyping() {
+            if (!this.currentChatUserId) return;
+            this.socket.emit('typing', {
+                senderId: this.currentUserId,
+                recipientId: this.currentChatUserId
+            });
+            clearTimeout(this.typingTimeout);
+            this.typingTimeout = setTimeout(() => {
+                this.socket.emit('stopTyping', {
+                    senderId: this.currentUserId,
+                    recipientId: this.currentChatUserId
+                });
+            }, 3000);
+        }
+
+        autoResize() {
+            this.chatInput.style.height = 'auto';
+            this.chatInput.style.height = `${this.chatInput.scrollHeight}px`;
+            this.sendBtn.disabled = !this.chatInput.value.trim();
+        }
+
+        scrollToBottom() {
+            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        }
+
+        formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            const today = new Date();
+            const isToday = date.toDateString() === today.toDateString();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return isToday ? `${hours}:${minutes}` : `${date.toLocaleDateString()} ${hours}:${minutes}`;
+        }
+
+        searchChats(query) {
+            const chatItems = document.querySelectorAll('.chat-item');
+            chatItems.forEach(item => {
+                const username = item.querySelector('.chat-name').textContent.toLowerCase();
+                item.style.display = username.includes(query.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            this.chatMessages.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+    }
+
+    // Global function for message menu toggle
+    function toggleMessageMenu(button) {
+        const dropdown = button.nextElementSibling;
+        const isVisible = dropdown.classList.contains('show');
+        document.querySelectorAll('.message-dropdown').forEach(menu => menu.classList.remove('show'));
+        if (!isVisible) {
+            dropdown.classList.add('show');
+        }
+    }
+
+    // Global function to toggle sidebar on mobile
+    function toggleSidebar() {
+        const sidebar = document.getElementById('chatSidebar');
+        sidebar.classList.toggle('open');
+    }
+
+    // Initialize the chat
+    window.chatApp = new PersonalChat();
+</script>
 </body>
 </html>

@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const Chat = require('../Models/Chat');
-const User = require('../Models/User');
+
+
+const Chat = require("../Models/Chat");
+const Invitation = require("../Models/Invitation");
+const User = require("../Models/User");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -25,7 +28,9 @@ const upload = multer({
     storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf','audio/mpeg', // MP3
+            'audio/wav',  // WAV
+            'audio/webm'  ];
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -131,67 +136,37 @@ router.post("/sendMessage", async (req, res) => {
         res.status(500).json({ success: false, error: "Server error" });
     }
 });
-
-// Upload a file
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
 
-        const { senderId, recipientId } = req.body;
+        const { senderId, recipientId, duration } = req.body;
         if (!senderId || !recipientId) {
             return res.status(400).json({ success: false, message: 'Missing sender or recipient' });
         }
 
         const fileUrl = `/uploads/${req.file.filename}`;
-        const fileType = req.file.mimetype.startsWith("image")
-            ? "image"
-            : req.file.mimetype.startsWith("video")
-            ? "video"
-            : req.file.mimetype.startsWith("audio")
-            ? "audio"
-            : "file";
+        const fileType = req.file.mimetype.startsWith('image')
+            ? 'image'
+            : req.file.mimetype.startsWith('audio')
+            ? 'audio'
+            : 'file';
 
-        let chat = await Chat.findOne({
-            $or: [
-                { senderId, recipientId },
-                { senderId: recipientId, recipientId: senderId }
-            ]
+        // Do NOT save to chat here; return file info for frontend to handle via socket
+        res.json({ 
+            success: true, 
+            fileUrl, 
+            fileType, 
+            message: '', 
+            duration: duration ? parseInt(duration) : null 
         });
-
-        if (!chat) {
-            chat = new Chat({
-                senderId,
-                recipientId,
-                messages: []
-            });
-        }
-
-        const newMessage = {
-            sender: senderId,
-            message: "",
-            fileUrl,
-            fileType,
-            timestamp: new Date(),
-            hiddenFor: [],
-            reactions: [],
-            deletedForEveryone: false
-        };
-
-        chat.messages.push(newMessage);
-        chat.lastMessage = fileType === "image" ? "Shared a beautiful moment" : "Shared a file";
-        chat.updatedAt = new Date();
-        await chat.save();
-
-        res.json({ success: true, message: newMessage });
     } catch (error) {
         console.error('Error uploading file:', error);
         res.status(500).json({ success: false, message: 'Error uploading file' });
     }
 });
-
-// React to a message
 router.post("/:chatId/react/:messageId", async (req, res) => {
     try {
         const { chatId, messageId } = req.params;
@@ -271,5 +246,50 @@ router.post("/:chatId/delete/:messageId", async (req, res) => {
         res.status(500).json({ success: false, message: 'Error deleting message' });
     }
 });
+
+
+
+router.get("/friends/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // --- 1. From chats ---
+    const chats = await Chat.find({
+      $or: [{ senderId: userId }, { recipientId: userId }]
+    }).lean();
+
+    const chatUserIds = chats.map(chat =>
+      chat.senderId.toString() === userId.toString()
+        ? chat.recipientId.toString()
+        : chat.senderId.toString()
+    );
+
+    // --- 2. From invitations ---
+    const invitations = await Invitation.find({
+      $or: [{ senderId: userId }, { recipientId: userId }]
+    }).lean();
+
+    const inviteUserIds = invitations.map(inv =>
+      inv.senderId.toString() === userId.toString()
+        ? inv.recipientId.toString()
+        : inv.senderId.toString()
+    );
+
+    // --- 3. Merge both & remove duplicates ---
+    const allUserIds = [...new Set([...chatUserIds, ...inviteUserIds])];
+
+    // --- 4. Fetch user details ---
+    const friends = await User.find({ _id: { $in: allUserIds } })
+      .select("username profilePic")
+      .lean();
+
+    res.json({ success: true, friends });
+  } catch (error) {
+    console.error("Error fetching friend list:", error);
+    res.status(500).json({ success: false, message: "Error fetching friends" });
+  }
+});
+
+
 
 module.exports = router;

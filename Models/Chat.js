@@ -5,12 +5,12 @@ const chatSchema = new mongoose.Schema({
     recipientId: { type: String, required: true },
     messages: [{
         sender: { type: String, required: true },
-        message: { type: String, default: '' }, // Text (optional)
-        fileUrl: { type: String, default: null }, // File path
-        fileType: { type: String, default: null }, // "image", "video", "audio", "file"
+        message: { type: String, default: '' },
+        fileUrl: { type: String, default: null },
+        fileType: { type: String, default: null },
         timestamp: { type: Date, default: Date.now },
-        deletedForEveryone: { type: Boolean, default: false }, // For deleteForEveryone
-        hiddenFor: [{ type: String }], // For deleteForMe
+        deletedForEveryone: { type: Boolean, default: false },
+        hiddenFor: [{ type: String }],
         reactions: [{
             emoji: String,
             userId: { type: String }
@@ -19,7 +19,8 @@ const chatSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Chat.messages',
             default: null
-        }
+        },
+        duration: { type: Number, default: null } // Add duration field for audio messages
     }],
     lastMessage: { type: String, default: '' },
     updatedAt: { type: Date, default: Date.now }
