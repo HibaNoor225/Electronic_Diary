@@ -60,7 +60,7 @@ app.use('/api/users', userRoutes);
 app.use('/api', CategoryMoodRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/admin',adminRoutes)
-app.use('/chat/api', chatRoutes); // correct
+//app.use('/chat/api', chatRoutes); // correct
 
 
 
@@ -77,13 +77,13 @@ app.use((err, req, res, next) => {
 });
 
 //For invalid requests
-app.use((req, res) => {
-  res.status(404).json({
-    result: "failure",
-    message: "Route not found",
-    data: null
-  });
-});
+// app.use((req, res) => {
+//   res.status(404).json({
+//     result: "failure",
+//     message: "Route not found",
+//     data: null
+//   });
+// });
 
 
 

@@ -258,6 +258,13 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
+        .group-indicator {
+            font-size: 12px;
+            color: #8b4513;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
         /* Chat Panel Styles */
         .chat-panel {
             flex: 1;
@@ -291,6 +298,87 @@
             border: 3px solid #d4c5a9;
             box-shadow: 0 4px 12px rgba(139,69,19,0.2);
         }
+
+       .message-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    background: #fdfbf7;
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(139,69,19,0.2);
+    padding: 5px;
+    border: 2px solid #d4c5a9;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Position actions for sent messages */
+/* Sent (on the right side) → actions on the LEFT of the bubble */
+.message.sent .message-actions {
+    right: calc(100% + 10px); 
+    left: auto;
+}
+
+/* Received (on the left side) → actions on the RIGHT of the bubble */
+/* Default: outside */
+/* Received messages → keep compact */
+.message.received .message-actions {
+    right: 10px; /* Position actions to the right of the message */
+    left: auto; /* Remove left positioning */
+    min-width: unset; /* Allow natural width */
+    max-width: unset; /* Remove forced limit */
+    display: flex; /* Ensure buttons align properly */
+    gap: 5px; /* Space between buttons */
+    padding: 5px 8px; /* Compact padding */
+}
+
+/* Hover state for received message actions */
+.message.received:hover .message-actions {
+    display: flex;
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    min-width: auto; /* No forced width */
+    max-width: none;
+    padding: 5px 8px; /* Smaller padding for compact fit */
+}
+
+/* Adjust for smaller screens to ensure actions stay visible */
+@media (max-width: 480px) {
+    .message.received .message-actions {
+        right: 10px; /* Keep actions on the right */
+        left: auto;
+    }
+}
+/* Sent messages → wide action bar outside */
+.message.sent:hover .message-actions {
+    display: flex;
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    min-width: 120px; 
+    padding: 5px 10px;
+}
+
+
+
+
+.message-action-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    font-size: 14px;
+    color: #8d6e63;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.message-action-btn:hover {
+    background: #8b4513;
+    color: #fdfbf7;
+    transform: scale(1.1);
+}
 
         .chat-header-initials {
             width: 50px;
@@ -348,7 +436,94 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(139,69,19,0.3);
         }
+.message {
+    position: relative; /* Add this to contain the absolutely positioned actions */
+    background: #fff8f0;
+    padding: 15px 20px;
+    border-radius: 20px;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+    border: 2px solid #e6d8c5;
+    transition: all 0.3s ease;
+    animation: messageSlideIn 0.4s ease;
+}
 
+.message-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    background: #fdfbf7;
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(139,69,19,0.2);
+    padding: 5px;
+    border: 2px solid #d4c5a9;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Position actions for sent messages */
+.message.sent .message-actions {
+    right: -90px; /* Reduced from -100px for better positioning */
+}
+
+/* Position actions for received messages */
+.message.received .message-actions {
+    left: -90px; /* Reduced from -100px for better positioning */
+}
+
+/* Show actions on message hover */
+.message:hover .message-actions {
+    display: flex;
+    opacity: 1;
+}
+
+.message-action-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    font-size: 14px;
+    color: #8d6e63;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.message-action-btn:hover {
+    background: #8b4513;
+    color: #fdfbf7;
+    transform: scale(1.1);
+}
+
+.message-text {
+    font-size: 16px; /* Consistent text size */
+    line-height: 1.4;
+}
+
+.message-image {
+    max-width: 100%; /* Ensure images scale down */
+    max-height: 300px; /* Limit image height */
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.message.sent {
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+    color: #fdfbf7;
+    border-bottom-right-radius: 8px;
+    border-color: #8b4513;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.2);
+}
+
+.message.received {
+    background: #fff8f0;
+    border: 2px solid #d4c5a9;
+    border-bottom-left-radius: 8px;
+    color: #5d4037;
+    box-shadow: 0 4px 15px rgba(139,69,19,0.1);
+}
         /* Messages Area */
         .chat-messages {
             flex: 1;
@@ -390,102 +565,98 @@
             animation: messageSlideIn 0.4s ease;
         }
 
-        @keyframes messageSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(15px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
+      @keyframes messageSlideIn {
+    from {
+        opacity: 1; /* Change from 0 to 1 */
+        transform: translateY(15px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
-        .message.sent {
-            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-            color: #fdfbf7;
-            border-bottom-right-radius: 8px;
-            border-color: #8b4513;
-            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
-            text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.2);
-        }
-
-        .message.received {
-            background: #fff8f0;
-            border: 2px solid #d4c5a9;
-            border-bottom-left-radius: 8px;
-            color: #5d4037;
-            box-shadow: 0 4px 15px rgba(139,69,19,0.1);
-        }
 
         .message:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(139,69,19,0.2);
         }
 
-        .message.temp {
-            opacity: 0.7;
-        }
+       .message.temp {
+    opacity: 1; /* Change from 0.7 to 1 */
+}
+/* Style for the action bar */
+.message-actions {
+    position: absolute; /* Position it relative to the message */
+    right: 10px; /* Place it 10px from the right edge */
+    top: 50%; /* Center it vertically */
+    transform: translateY(-50%); /* Adjust vertical centering */
+    display: none; /* Hide it by default */
+    background: #fdfbf7; /* Background color */
+    border-radius: 25px; /* Rounded corners */
+    box-shadow: 0 4px 20px rgba(139, 69, 19, 0.2); /* Shadow effect */
+    padding: 5px; /* Inner spacing */
+    border: 2px solid #d4c5a9; /* Border */
+    z-index: 100; /* Ensure it appears above other elements */
+}
 
-        .message-actions {
-            position: absolute;
-            right: -100px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
-            background: #fdfbf7;
-            border-radius: 25px;
-            box-shadow: 0 4px 20px rgba(139,69,19,0.2);
-            padding: 5px;
-            border: 2px solid #d4c5a9;
-            z-index: 100;
-        }
+/* Show the action bar when hovering over it */
+.message-actions:hover {
+    display: flex;
+}
 
-        .message-actions:hover {
-            display: flex;
-        }
+/* Add a pseudo-element to extend the hover area */
+.message-actions::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: -10px;
+    width: 20px;
+    height: calc(100% + 20px);
+    background: transparent;
+}
 
-        .message-actions::before {
-            content: '';
-            position: absolute;
-            left: -20px;
-            top: -10px;
-            width: 20px;
-            height: calc(100% + 20px);
-            background: transparent;
-        }
+/* Adjust positioning for sent messages */
+.message-group.sent .message-actions::before {
+    left: auto; /* Reset left positioning */
+    right: -20px; /* Move the pseudo-element to the right */
+}
+.message-group.received .message-actions {
+  /* Anchor the right edge of .message-actions */
+  /* to the right edge of the .message. */
+  /* -80px pushes it 80px *outward* from the right edge, keeping it visible. */
+  right: -80px; /* <-- This should push it OUT to the right */
+  left: auto; /* <-- Ensure no left positioning is interfering */
+}
+/* Adjust the action bar for sent messages */
+.message-group.sent .message-actions {
+    right: auto; /* Reset right positioning */
+    left: -80px; /* Place it 10px from the left edge */
+}
 
-        .message-group.sent .message-actions::before {
-            left: auto;
-            right: -20px;
-        }
+/* Show the action bar when hovering over the message */
+.message:hover .message-actions {
+    display: flex;
+}
 
-        .message-group.sent .message-actions {
-            right: auto;
-            left: -100px;
-        }
+/* Style for action buttons */
+.message-action-btn {
+    background: none; /* No background */
+    border: none; /* No border */
+    padding: 8px; /* Inner spacing */
+    font-size: 14px; /* Text size */
+    color: #8d6e63; /* Text color */
+    cursor: pointer; /* Pointer cursor on hover */
+    border-radius: 50%; /* Circular buttons */
+    transition: all 0.3s ease; /* Smooth transitions */
+}
 
-        .message:hover .message-actions {
-            display: flex;
-        }
-
-        .message-action-btn {
-            background: none;
-            border: none;
-            padding: 8px;
-            font-size: 14px;
-            color: #8d6e63;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .message-action-btn:hover {
-            background: #8b4513;
-            color: #fdfbf7;
-            transform: scale(1.1);
-        }
-
+/* Hover effect for buttons */
+.message-action-btn:hover {
+    background: #8b4513; /* Background color on hover */
+    color: #fdfbf7; /* Text color on hover */
+    transform: scale(1.1); /* Slightly enlarge */
+}
         .message-time {
             font-size: 11px;
             color: rgba(253, 251, 247, 0.8);
@@ -745,44 +916,50 @@
 
         /* Voice Message Styles */
         .voice-message {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 20px;
-            background: #fff8f0;
-            border-radius: 15px;
-            margin: 8px 0;
-            border: 2px solid #e6d8c5;
-        }
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Slightly increased gap for better spacing */
+    padding: 14px 22px; /* Increased padding for a larger box */
+    background: #fff8f0;
+    border-radius: 15px;
+    margin: 8px 0;
+    border: 2px solid #e6d8c5;
+    max-width: 75%; /* Slightly increased to accommodate content */
+}
+.voice-message audio {
+    max-width: 200px; /* Increased slightly to fit player comfortably */
+    outline: none;
+    flex-shrink: 0;
+    margin-left: -15px;
+}
 
-        .voice-message audio {
-            max-width: 300px;
-            outline: none;
-        }
+/* Increase duration text size */
+.voice-message .audio-duration {
+    font-size: 15px; /* Increased from 10px for better readability */
+    color: #8d6e63;
+    font-style: italic;
+    margin-left: 10px; /* Adjusted for better spacing */
+    white-space: nowrap;
+    flex-shrink: 0;
+}
 
-        .voice-message .play-btn {
-            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-            color: #fdfbf7;
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
+/* Play button styling remains the same but ensure it fits */
+.voice-message .play-btn {
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+    color: #fdfbf7;
+    border: none;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
 
-        .voice-message .play-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
-        }
-
-        .voice-message .voice-duration {
-            font-size: 12px;
-            color: #8d6e63;
-            font-style: italic;
-            margin-left: 10px;
-        }
-
+.voice-message .play-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+}
         /* Recording Indicator */
         .recording-indicator {
             display: flex;
@@ -878,15 +1055,28 @@
         }
 
         /* Reply Preview */
-        .reply-preview {
-            background: #fff8f0;
-            border-left: 4px solid #8b4513;
-            padding: 15px 20px;
-            margin: 0 30px 15px;
-            border-radius: 8px;
-            border: 1px solid #e6d8c5;
-        }
+       .reply-preview {
+    background: #fff8f0;
+    border-left: 4px solid #8b4513;
+    padding: 10px 15px;
+    margin: 0 30px 10px;
+    border-radius: 8px;
+    border: 1px solid #e6d8c5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
+.reply-ref {
+    font-size: 12px;
+    color: #8d6e63;
+    font-style: italic;
+    margin-bottom: 8px;
+    padding: 5px 10px;
+    background: rgba(212,197,169,0.1);
+    border-left: 3px solid #8b4513;
+    border-radius: 5px;
+}
         .reply-content {
             display: flex;
             justify-content: space-between;
@@ -992,26 +1182,145 @@
             border: 3px dashed #8b4513 !important;
         }
 
+        /* Group Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #fdfbf7;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(139,69,19,0.3);
+            border: 2px solid #d4c5a9;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: #5d4037;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #8d6e63;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #8b4513;
+        }
+
+        .modal-body {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .modal-body input, .modal-body select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #d4c5a9;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #5d4037;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #e6d8c5;
+            cursor: pointer;
+        }
+
+        .friend-item input {
+            margin-right: 10px;
+        }
+
+        .friend-item label {
+            color: #5d4037;
+            font-size: 14px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+            color: #fdfbf7;
+        }
+
+        .modal-btn.primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+        }
+
+        .modal-btn.secondary {
+            background: #e6d8c5;
+            color: #5d4037;
+        }
+
+        .modal-btn.secondary:hover {
+            background: #d4c5a9;
+        }
+
         /* Custom Scrollbar */
         .chat-list-container::-webkit-scrollbar,
-        .chat-messages::-webkit-scrollbar {
+        .chat-messages::-webkit-scrollbar,
+        .modal-body::-webkit-scrollbar {
             width: 8px;
         }
 
         .chat-list-container::-webkit-scrollbar-track,
-        .chat-messages::-webkit-scrollbar-track {
+        .chat-messages::-webkit-scrollbar-track,
+        .modal-body::-webkit-scrollbar-track {
             background: #f7f3e9;
             border-radius: 4px;
         }
 
         .chat-list-container::-webkit-scrollbar-thumb,
-        .chat-messages::-webkit-scrollbar-thumb {
+        .chat-messages::-webkit-scrollbar-thumb,
+        .modal-body::-webkit-scrollbar-thumb {
             background: #d4c5a9;
             border-radius: 4px;
         }
 
         .chat-list-container::-webkit-scrollbar-thumb:hover,
-        .chat-messages::-webkit-scrollbar-thumb:hover {
+        .chat-messages::-webkit-scrollbar-thumb:hover,
+        .modal-body::-webkit-scrollbar-thumb:hover {
             background: #8b4513;
         }
 
@@ -1076,14 +1385,31 @@
                 padding: 8px 15px;
             }
             
-            .chat-input {
-                font-size: 16px;
-            }
-
+        .chat-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    padding: 10px 0;
+    resize: none;
+    max-height: 120px;
+    min-height: 20px;
+    line-height: 1.6;
+    color: #5d4037;
+    font-family: 'Georgia', serif;
+    overflow-y: auto; /* Allow scrolling if content exceeds max height */
+    pointer-events: auto; /* Ensure input is clickable and typable */
+}
             #emojiPicker {
                 left: 20px;
                 right: 20px;
                 width: auto;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 15px;
             }
         }
 
@@ -1134,6 +1460,13 @@
             border-left: 3px solid #8b4513;
             border-radius: 5px;
         }
+        .sender-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #5d4037;
+    margin-bottom: 5px;
+    text-shadow: 0.5px 0.5px 1px rgba(93,64,55,0.1);
+}
     </style>
 </head>
 <body>
@@ -1141,20 +1474,18 @@
         <!-- Sidebar -->
         <div class="chat-sidebar" id="chatSidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-feather-alt"></i> Personal Conversations</h2>
-                <button class="action-btn" title="New Conversation">
-                    <i class="fas fa-edit"></i>
+                <h2><i class="fas fa-feather-alt"></i> Conversations</h2>
+                <button class="action-btn" title="New Group" onclick="window.chatApp.openCreateGroupModal()">
+                    <i class="fas fa-users"></i>
                 </button>
             </div>
             
             <div class="search-container">
-                <input type="text" class="search-box" placeholder="Search your conversations..." id="searchBox">
+                <input type="text" class="search-box" placeholder="Search conversations..." id="searchBox">
             </div>
 
             <div class="chat-list-container">
-                <div id="chatList">
-                    <!-- Chat items will be populated here -->
-                </div>
+                <div id="chatList"></div>
             </div>
         </div>
 
@@ -1162,8 +1493,8 @@
         <div class="chat-panel">
             <div id="emptyState" class="empty-chat">
                 <i class="fas fa-feather-alt"></i>
-                <h3>Welcome to Your Personal Conversations</h3>
-                <p>Select a conversation to continue your story.<br>Connect with friends and share your thoughts in style.</p>
+                <h3>Welcome to Your Conversations</h3>
+                <p>Select a conversation or create a group to connect with friends.</p>
             </div>
 
             <div id="chatArea" style="display: none; flex: 1; flex-direction: column;">
@@ -1174,28 +1505,18 @@
                         <div id="chatHeaderInitials" class="chat-header-initials" style="display: none;"></div>
                         <div class="chat-header-details">
                             <h3 id="chatHeaderName">Select a conversation</h3>
-                            <div class="online-status" id="onlineStatus">Online</div>
+                            <div class="online-status" id="onlineStatus"></div>
                         </div>
                     </div>
-                    <div class="chat-actions">
-                        <button class="action-btn" title="Video Call">
-                            <i class="fas fa-video"></i>
-                        </button>
-                        <button class="action-btn" title="Voice Call">
-                            <i class="fas fa-phone"></i>
-                        </button>
-                        <button class="action-btn" title="More Options">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
+                    <div class="chat-actions" id="chatActions">
+                        <!-- Dynamic actions added here -->
                     </div>
                 </div>
 
-                <div class="chat-messages" id="chatMessages">
-                    <!-- Messages will be populated here -->
-                </div>
+                <div class="chat-messages" id="chatMessages"></div>
 
                 <div id="typingIndicator" class="typing-indicator" style="display: none;">
-                    <span>Someone is writing their thoughts...</span>
+                    <span id="typingText">Someone is writing...</span>
                     <div class="typing-dots">
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
@@ -1235,7 +1556,7 @@
                         </div>
                         <button class="cancel-btn" onclick="window.chatApp.cancelRecording()">Cancel</button>
                     </div>
-                    <input type="file" id="fileInput" style="display:none;" accept="image/*,application/pdf">
+                    <input type="file" id="fileInput" style="display:none;" accept="image/*,application/pdf,audio/*">
                     <div id="emojiPicker" style="display:none;">
                         <span class="emoji" data-emoji="😀">😀</span>
                         <span class="emoji" data-emoji="😁">😁</span>
@@ -1278,970 +1599,1529 @@
                 </div>
             </div>
         </div>
+
+        <!-- Create Group Modal -->
+        <div id="createGroupModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Group</h3>
+                    <button class="modal-close" onclick="window.chatApp.closeCreateGroupModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="groupNameInput" placeholder="Group Name">
+                    <div id="friendList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn secondary" onclick="window.chatApp.closeCreateGroupModal()">Cancel</button>
+                    <button class="modal-btn primary" onclick="window.chatApp.createGroup()">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Remove Member Modal -->
+        <div id="manageMembersModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Manage Members</h3>
+                    <button class="modal-close" onclick="window.chatApp.closeManageMembersModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="memberList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn secondary" onclick="window.chatApp.closeManageMembersModal()">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 <script>
-    class PersonalChat {
-        constructor() {
-            this.socket = io("http://localhost:3000");
-            this.currentUserId = localStorage.getItem('userId'); 
-            this.currentChatUserId = null;
-            this.currentChatId = null;
-            this.unreadCounts = {};
-            this.lastMessages = {};
-            this.onlineUsers = new Set();
-            this.replyTo = null;
-            this.mediaRecorder = null;
-            this.audioChunks = [];
-            this.recordingStartTime = null;
-            this.timerInterval = null;
-            this.isSendingMessage = false; // Prevent duplicate messages
-            this.isRecordingCanceled = false;  // New flag for canceled recordings
+class PersonalChat {
+    constructor() {
+        this.socket = io("http://localhost:3000");
+        this.currentUserId = localStorage.getItem('userId');
+        this.currentChatId = null;
+        this.currentChatType = null;
+        this.currentGroupDetails = null;
+        this.unreadCounts = {};
+        this.lastMessages = {};
+        this.onlineUsers = new Set();
+        this.replyTo = null;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.recordingStartTime = null;
+        this.timerInterval = null;
+        this.isSendingMessage = false;
+        this.isRecordingCanceled = false;
+        this.typingUsers = new Set();
+        this.userMap = new Map();
 
-            if (!this.currentUserId) {
-                console.error("User ID not found in localStorage");
-                this.showError("Please log in to access your conversations.");
-                return;
+        if (!this.currentUserId) {
+            console.error("User ID not found in localStorage");
+            this.showError("Please log in to access your conversations.");
+            return;
+        }
+
+        this.initializeElements();
+        this.setupEventListeners();
+        this.setupSocketListeners();
+        this.checkURLParams();
+        this.loadChats();
+    }
+
+    initializeElements() {
+        this.chatList = document.getElementById('chatList');
+        this.chatMessages = document.getElementById('chatMessages');
+        this.chatInput = document.getElementById('chatInput');
+        this.sendBtn = document.getElementById('sendBtn');
+        this.chatHeaderName = document.getElementById('chatHeaderName');
+        this.chatHeaderPic = document.getElementById('chatHeaderPic');
+        this.chatHeaderInitials = document.getElementById('chatHeaderInitials');
+        this.onlineStatus = document.getElementById('onlineStatus');
+        this.searchBox = document.getElementById('searchBox');
+        this.emptyState = document.getElementById('emptyState');
+        this.chatArea = document.getElementById('chatArea');
+        this.typingIndicator = document.getElementById('typingIndicator');
+        this.typingText = document.getElementById('typingText');
+        this.emojiPicker = document.getElementById('emojiPicker');
+        this.recordBtn = document.getElementById('recordBtn');
+        this.recordingIndicator = document.getElementById('recordingIndicator');
+        this.recordingTimer = document.getElementById('recordingTimer');
+        this.createGroupModal = document.getElementById('createGroupModal');
+        this.groupNameInput = document.getElementById('groupNameInput');
+        this.friendList = document.getElementById('friendList');
+        this.manageMembersModal = document.getElementById('manageMembersModal');
+        this.memberList = document.getElementById('memberList');
+        this.chatActions = document.getElementById('chatActions');
+    }
+
+    setupEventListeners() {
+        this.sendBtn.addEventListener('click', () => this.sendMessage());
+        this.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
             }
+        });
 
-            this.initializeElements();
-            this.setupEventListeners();
-            this.setupSocketListeners();
-            this.checkURLParams();
-            this.loadChats();
-        }
+        this.chatInput.addEventListener('input', () => {
+            this.autoResize();
+            this.handleTyping();
+        });
 
-        initializeElements() {
-            this.chatList = document.getElementById('chatList');
-            this.chatMessages = document.getElementById('chatMessages');
-            this.chatInput = document.getElementById('chatInput');
-            this.sendBtn = document.getElementById('sendBtn');
-            this.chatHeaderName = document.getElementById('chatHeaderName');
-            this.chatHeaderPic = document.getElementById('chatHeaderPic');
-            this.chatHeaderInitials = document.getElementById('chatHeaderInitials');
-            this.onlineStatus = document.getElementById('onlineStatus');
-            this.searchBox = document.getElementById('searchBox');
-            this.emptyState = document.getElementById('emptyState');
-            this.chatArea = document.getElementById('chatArea');
-            this.typingIndicator = document.getElementById('typingIndicator');
-            this.emojiPicker = document.getElementById('emojiPicker');
-            this.recordBtn = document.getElementById('recordBtn');
-            this.recordingIndicator = document.getElementById('recordingIndicator');
-            this.recordingTimer = document.getElementById('recordingTimer');
-        }
+        this.searchBox.addEventListener('input', (e) => {
+            this.searchChats(e.target.value);
+        });
 
-        setupEventListeners() {
-            this.sendBtn.addEventListener('click', () => this.sendMessage());
-            this.chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.sendMessage();
-                }
-            });
+        this.recordBtn.addEventListener('click', () => this.toggleRecording());
+        const attachBtn = document.querySelector('.input-action-btn[title="Attach File"]');
+        attachBtn.addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
 
-            this.chatInput.addEventListener('input', () => {
-                this.autoResize();
-                this.handleTyping();
-            });
+        const fileInput = document.getElementById('fileInput');
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => this.handleFileUpload(file));
+            fileInput.value = '';
+        });
 
-            this.searchBox.addEventListener('input', (e) => {
-                this.searchChats(e.target.value);
-            });
+        const emojiBtn = document.getElementById('emojiBtn');
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = this.emojiPicker.style.display === 'grid';
+            this.emojiPicker.style.display = isVisible ? 'none' : 'grid';
+        });
 
-            this.recordBtn.addEventListener('click', () => this.toggleRecording());
-            const attachBtn = document.querySelector('.input-action-btn[title="Attach File"]');
-            attachBtn.addEventListener('click', () => {
-                document.getElementById('fileInput').click();
-            });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiBtn')) {
+                this.emojiPicker.style.display = 'none';
+            }
+        });
 
-            const fileInput = document.getElementById('fileInput');
-            fileInput.addEventListener('change', (e) => {
-                const files = Array.from(e.target.files);
-                files.forEach(file => this.handleFileUpload(file));
-                fileInput.value = '';
-            });
-
-            const emojiBtn = document.getElementById('emojiBtn');
-            emojiBtn.addEventListener('click', (e) => {
+        const emojis = document.querySelectorAll('.emoji');
+        emojis.forEach(emoji => {
+            emoji.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isVisible = this.emojiPicker.style.display === 'grid';
-                this.emojiPicker.style.display = isVisible ? 'none' : 'grid';
+                this.chatInput.value += emoji.dataset.emoji;
+                this.chatInput.focus();
+                this.autoResize();
+                this.emojiPicker.style.display = 'none';
             });
+        });
 
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiBtn')) {
-                    this.emojiPicker.style.display = 'none';
-                }
-            });
+        this.chatMessages.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            this.chatMessages.classList.add('drag-over');
+        });
 
-            const emojis = document.querySelectorAll('.emoji');
-            emojis.forEach(emoji => {
-                emoji.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.chatInput.value += emoji.dataset.emoji;
-                    this.chatInput.focus();
-                    this.autoResize();
-                    this.emojiPicker.style.display = 'none';
-                });
-            });
+        this.chatMessages.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            this.chatMessages.classList.remove('drag-over');
+        });
 
-            this.chatMessages.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                this.chatMessages.classList.add('drag-over');
-            });
-            
-            this.chatMessages.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                this.chatMessages.classList.remove('drag-over');
-            });
+        this.chatMessages.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.chatMessages.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            files.forEach(file => this.handleFileUpload(file));
+        });
+    }
 
-            this.chatMessages.addEventListener('drop', (e) => {
-                e.preventDefault();
-                this.chatMessages.classList.remove('drag-over');
-                const files = Array.from(e.dataTransfer.files);
-                files.forEach(file => this.handleFileUpload(file));
-            });
-        }
+    setupSocketListeners() {
+        this.socket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+            this.showError('Failed to connect to the conversation server.');
+        });
 
-        setupSocketListeners() {
-            this.socket.on('connect_error', (error) => {
-                console.error('Socket connection error:', error);
-                this.showError('Failed to connect to the conversation server.');
-            });
+        this.socket.on('receiveMessage', (message) => {
+            this.handleReceivedMessage(message);
+            if (this.currentChatId === message.chatId) {
+                this.chatMessages.querySelector('#noMessages')?.remove();
+            } else {
+                this.unreadCounts[message.chatId] = (this.unreadCounts[message.chatId] || 0) + 1;
+                this.updateUnreadBadge(message.chatId);
+                this.updateLastMessage(message.chatId, message.message || (message.fileType ? `[${message.fileType}]` : ''));
+            }
+        });
 
-            this.socket.on('receiveMessage', (message) => {
-                this.handleReceivedMessage(message);
-                if (this.currentChatId === message.chatId) {
-                    this.chatMessages.querySelector('#noMessages')?.remove();
-                }
-            });
-
-            this.socket.on("messageDeletedForMe", ({ messageId, userId }) => {
-                if (userId === this.currentUserId) {
-                    const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-                    if (msgEl) {
-                        msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
-                        msgEl.classList.add('deleted');
-                    }
-                }
-            });
-
-            this.socket.on("messageDeletedForEveryone", ({ messageId }) => {
+        this.socket.on('messageDeletedForMe', ({ messageId, userId, type }) => {
+            if (userId === this.currentUserId) {
                 const msgEl = document.querySelector(`[data-id="${messageId}"]`);
                 if (msgEl) {
-                    msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
+                    msgEl.innerHTML = `<div class="message-deleted">This message was deleted for you</div>`;
                     msgEl.classList.add('deleted');
-                    this.updateLastMessage(this.currentChatUserId, "Message deleted");
                 }
-            });
+            }
+        });
 
-            this.socket.on("messageReacted", ({ messageId, reaction }) => {
-                const msgEl = document.querySelector(`[data-id="${messageId}"]`);
-                if (msgEl) {
-                    let reactionsDiv = msgEl.querySelector(".message-reactions");
-                    if (!reactionsDiv) {
-                        reactionsDiv = document.createElement("div");
-                        reactionsDiv.className = "message-reactions";
-                        msgEl.appendChild(reactionsDiv);
-                    }
-                    const reactionEl = document.createElement("span");
-                    reactionEl.className = "reaction";
-                    reactionEl.textContent = reaction;
-                    reactionsDiv.appendChild(reactionEl);
+        this.socket.on('messageDeletedForEveryone', ({ messageId, chatId, type }) => {
+            const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+            if (msgEl) {
+                msgEl.innerHTML = `<div class="message-deleted">This message was deleted</div>`;
+                msgEl.classList.add('deleted');
+                if (this.currentChatId === chatId) {
+                    this.updateLastMessage(chatId, 'Message deleted');
                 }
-            });
+            }
+        });
 
-            this.socket.on('userOnline', (userId) => {
-                this.onlineUsers.add(userId);
-                this.updateOnlineStatus();
-            });
+        this.socket.on('messageReacted', ({ messageId, reaction, type }) => {
+            const msgEl = document.querySelector(`[data-id="${messageId}"]`);
+            if (msgEl) {
+                let reactionsDiv = msgEl.querySelector('.message-reactions');
+                if (!reactionsDiv) {
+                    reactionsDiv = document.createElement('div');
+                    reactionsDiv.className = 'message-reactions';
+                    msgEl.appendChild(reactionsDiv);
+                }
+                const reactionEl = document.createElement('span');
+                reactionEl.className = 'reaction';
+                reactionEl.textContent = reaction;
+                reactionEl.addEventListener('click', () => this.addReaction(messageId, reaction));
+                reactionsDiv.appendChild(reactionEl);
+            }
+        });
 
-            this.socket.on('userOffline', (userId) => {
-                this.onlineUsers.delete(userId);
-                this.updateOnlineStatus();
-            });
+        this.socket.on('userOnline', (userId) => {
+            this.onlineUsers.add(userId);
+            this.updateOnlineStatus();
+        });
 
-            this.socket.on('typing', (data) => {
-                if (data.senderId === this.currentChatUserId) {
+        this.socket.on('userOffline', (userId) => {
+            this.onlineUsers.delete(userId);
+            this.updateOnlineStatus();
+        });
+
+        this.socket.on('typing', ({ senderId, chatId, type }) => {
+            if (this.currentChatId === chatId && type === this.currentChatType) {
+                this.typingUsers.add(senderId);
+                this.showTypingIndicator();
+            }
+        });
+
+        this.socket.on('stopTyping', ({ senderId, chatId, type }) => {
+            if (this.currentChatId === chatId && type === this.currentChatType) {
+                this.typingUsers.delete(senderId);
+                if (this.typingUsers.size === 0) {
+                    this.hideTypingIndicator();
+                } else {
                     this.showTypingIndicator();
                 }
-            });
-
-            this.socket.on('stopTyping', (data) => {
-                if (data.senderId === this.currentChatUserId) {
-                    this.hideTypingIndicator();
-                }
-            });
-
-            this.socket.emit('userOnline', this.currentUserId);
-        }
-
-        checkURLParams() {
-            const params = new URLSearchParams(window.location.search);
-            const userId = params.get('userId');
-            const username = decodeURIComponent(params.get('username') || '');
-            const profilePhoto = decodeURIComponent(params.get('profilePhoto') || '/default-avatar.png');
-
-            if (userId && username) {
-                console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
-                this.openChat(userId, username, profilePhoto);
-            } else {
-                console.log('No URL parameters, loading from dashboard');
             }
-        }
-
-        async toggleRecording() {
-            if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-                this.stopRecording();
-            } else {
-                await this.startRecording();
-            }
-        }
-async startRecording() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        this.mediaRecorder = new MediaRecorder(stream);
-        this.audioChunks = [];
-        this.isRecordingCanceled = false;  // Reset cancel flag
-
-        this.mediaRecorder.addEventListener('dataavailable', (e) => {
-            this.audioChunks.push(e.data);
         });
 
-        this.mediaRecorder.addEventListener('stop', () => {
-            if (!this.isRecordingCanceled) {
-                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                const duration = this.calculateDuration();
-                this.sendVoiceMessage(audioBlob, duration);
+        this.socket.on('memberAdded', ({ userId, groupId }) => {
+            if (this.currentChatId === groupId) {
+                this.currentGroupDetails.participants.push(userId);
+                this.updateChatHeader();
+                this.showError('A new member has joined the group!');
             }
-            stream.getTracks().forEach(track => track.stop());
+            this.loadChats();
+        });
+
+        this.socket.on('memberRemoved', ({ userId, groupId }) => {
+            if (this.currentChatId === groupId) {
+                this.currentGroupDetails.participants = this.currentGroupDetails.participants.filter(id => id !== userId);
+                this.updateChatHeader();
+                this.showError('A member has been removed from the group.');
+            }
+            this.loadChats();
+        });
+
+        this.socket.on('memberLeft', ({ userId, groupId }) => {
+            if (this.currentChatId === groupId) {
+                this.currentGroupDetails.participants = this.currentGroupDetails.participants.filter(id => id !== userId);
+                if (this.currentGroupDetails.adminId === userId && this.currentGroupDetails.participants.length > 0) {
+                    this.currentGroupDetails.adminId = this.currentGroupDetails.participants[0];
+                }
+                this.updateChatHeader();
+                this.showError('A member has left the group.');
+            }
+            this.loadChats();
+        });
+
+        this.socket.on('groupDeleted', ({ groupId }) => {
+            if (this.currentChatId === groupId) {
+                this.currentChatId = null;
+                this.currentChatType = null;
+                this.currentGroupDetails = null;
+                this.chatArea.style.display = 'none';
+                this.emptyState.style.display = 'flex';
+                this.showError('This group has been deleted.');
+            }
+            this.loadChats();
+        });
+
+        this.socket.emit('userOnline', this.currentUserId);
+    }
+
+    checkURLParams() {
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('userId');
+        const username = decodeURIComponent(params.get('username') || '');
+        const profilePhoto = decodeURIComponent(params.get('profilePhoto') || '');
+
+        if (userId && username) {
+            this.openChat({ userId, username, profilePic: null, type: 'personal' }); // Force null for profilePic
+        }
+    }
+
+    async toggleRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.stopRecording();
+        } else {
+            await this.startRecording();
+        }
+    }
+
+    async startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks = [];
+            this.isRecordingCanceled = false;
+
+            this.mediaRecorder.addEventListener('dataavailable', (e) => {
+                this.audioChunks.push(e.data);
+            });
+
+            this.mediaRecorder.addEventListener('stop', () => {
+                if (!this.isRecordingCanceled) {
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                    const duration = this.calculateDuration();
+                    this.sendVoiceMessage(audioBlob, duration);
+                }
+                stream.getTracks().forEach(track => track.stop());
+                this.stopTimer();
+            });
+
+            this.mediaRecorder.start();
+            this.recordBtn.classList.add('recording');
+            this.recordBtn.querySelector('i').classList.replace('fa-microphone', 'fa-stop');
+            this.recordingIndicator.style.display = 'flex';
+            this.startTimer();
+        } catch (err) {
+            console.error('Error starting recording:', err);
+            this.showError('Failed to start recording. Please check microphone permissions.');
+        }
+    }
+
+    stopRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.stop();
+            this.recordBtn.classList.remove('recording');
+            this.recordBtn.querySelector('i').classList.replace('fa-stop', 'fa-microphone');
+            this.recordingIndicator.style.display = 'none';
+        }
+    }
+
+    cancelRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.isRecordingCanceled = true;
+            this.mediaRecorder.stop();
+            this.audioChunks = [];
+            this.recordBtn.classList.remove('recording');
+            this.recordBtn.querySelector('i').classList.replace('fa-stop', 'fa-microphone');
+            this.recordingIndicator.style.display = 'none';
             this.stopTimer();
-        });
-
-        this.mediaRecorder.start();
-        this.recordBtn.classList.add('recording');
-        this.recordBtn.querySelector('i').classList.replace('fa-microphone', 'fa-stop');
-        this.recordingIndicator.style.display = 'flex';
-        this.startTimer();
-    } catch (err) {
-        console.error('Error starting recording:', err);
-        this.showError('Failed to start recording. Please check microphone permissions.');
-    }
-}
-        stopRecording() {
-    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-        this.mediaRecorder.stop();
-        this.recordBtn.classList.remove('recording');
-        this.recordBtn.querySelector('i').classList.replace('fa-stop', 'fa-microphone');
-        this.recordingIndicator.style.display = 'none';
-    }
-}
-
-        cancelRecording() {
-    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-        this.isRecordingCanceled = true;  // Set cancel flag
-        this.mediaRecorder.stop();
-        this.audioChunks = [];
-        this.recordBtn.classList.remove('recording');
-        this.recordBtn.querySelector('i').classList.replace('fa-stop', 'fa-microphone');
-        this.recordingIndicator.style.display = 'none';
-        this.stopTimer();
-    }
-}
-
-        startTimer() {
-            this.recordingStartTime = Date.now();
-            this.timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
-                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-                const seconds = (elapsed % 60).toString().padStart(2, '0');
-                this.recordingTimer.textContent = `${minutes}:${seconds}`;
-            }, 1000);
         }
+    }
 
-        stopTimer() {
-            if (this.timerInterval) {
-                clearInterval(this.timerInterval);
-                this.timerInterval = null;
-            }
-            this.recordingTimer.textContent = '00:00';
+    startTimer() {
+        this.recordingStartTime = Date.now();
+        this.timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            this.recordingTimer.textContent = `${minutes}:${seconds}`;
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
         }
+        this.recordingTimer.textContent = '00:00';
+    }
 
-        calculateDuration() {
-            if (!this.recordingStartTime) return 0;
-            return Math.floor((Date.now() - this.recordingStartTime) / 1000);
-        }
+    calculateDuration() {
+        if (!this.recordingStartTime) return 0;
+        return Math.floor((Date.now() - this.recordingStartTime) / 1000);
+    }
 
-        async sendVoiceMessage(audioBlob, duration) {
-    if (!this.currentChatUserId) return;
-    if (this.isRecordingCanceled) return;
+    async sendVoiceMessage(audioBlob, duration) {
+        if (!this.currentChatId || !this.currentChatType) return;
+        if (this.isRecordingCanceled) return;
 
-    const tempId = `temp-${Date.now()}-${Math.random()}`;
-    const formData = new FormData();
-    formData.append('file', audioBlob, `voice-message-${Date.now()}.webm`);
-    formData.append('senderId', this.currentUserId);
-    formData.append('recipientId', this.currentChatUserId);
-    formData.append('duration', duration);
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const formData = new FormData();
+        formData.append('file', audioBlob, `voice-message-${Date.now()}.webm`);
+        formData.append('senderId', this.currentUserId);
+        formData.append('chatId', this.currentChatId);
+        formData.append('type', this.currentChatType);
+        formData.append('duration', duration);
 
-    try {
-        this.appendMessage({
-            sender: this.currentUserId,
-            fileUrl: URL.createObjectURL(audioBlob),
-            fileType: 'audio', // Explicitly set fileType
-            message: '',
-            timestamp: new Date(),
-            _id: tempId,
-            isTemp: true,
-            duration
-        });
-
-        const res = await fetch('http://localhost:3000/chat/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await res.json();
-        if (data.success) {
-            this.socket.emit('sendMessage', {
-                senderId: this.currentUserId,
-                recipientId: this.currentChatUserId,
-                fileUrl: data.fileUrl,
-                fileType: data.fileType,
-                message: data.message,
+        try {
+            this.appendMessage({
+                sender: this.currentUserId,
+                fileUrl: URL.createObjectURL(audioBlob),
+                fileType: 'audio',
+                message: '',
                 timestamp: new Date(),
-                tempId,
-                duration: data.duration
-            });
-        } else {
-            const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
-            if (tempMessage) tempMessage.remove();
-            this.showError('Failed to upload voice message.');
-        }
-    } catch (err) {
-        console.error('Error uploading voice message:', err);
-        const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
-        if (tempMessage) tempMessage.remove();
-        this.showError('Error uploading voice message. Please try again.');
-    }
-    this.isSendingMessage = false;
-}
-
-        async loadChats() {
-            try {
-                const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}`);
-                const data = await response.json();
-                console.log('Conversations loaded:', data);
-
-                this.chatList.innerHTML = '';
-                if (data.success && data.chats.length > 0) {
-                    data.chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-                    data.chats.forEach(chat => {
-                        this.addChatToSidebar(chat);
-                    });
-
-                    if (!this.currentChatUserId) {
-                        const latestChat = data.chats[0];
-                        this.openChat(latestChat.userId, latestChat.username, latestChat.profilePhoto);
-                    }
-                } else {
-                    this.chatList.innerHTML = '<p style="text-align: center; color: #8d6e63; font-style: italic; padding: 30px;">No conversations yet</p>';
-                    if (!this.currentChatUserId) {
-                        this.emptyState.style.display = 'flex';
-                        this.chatArea.style.display = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-                this.chatList.innerHTML = '<p style="text-align: center; color: #c62828; padding: 30px;">Error loading conversations</p>';
-                this.showError('Failed to load conversations. Please try again.');
-            }
-        }
-
-        getUserInitials(username) {
-            if (!username || username === 'undefined') return 'U';
-            const words = username.split(' ').filter(word => word.length > 0);
-            if (words.length === 0) return 'U';
-            if (words.length === 1) return words[0].charAt(0).toUpperCase();
-            return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
-        }
-
-        addChatToSidebar(chat) {
-            const existingChat = document.querySelector(`[data-user-id="${chat.userId}"]`);
-            if (existingChat) {
-                this.updateChatItem(existingChat, chat);
-                return;
-            }
-
-            const username = chat.username && chat.username !== 'undefined' ? chat.username : 'Unknown Friend';
-            const profilePhoto = chat.profilePhoto && chat.profilePhoto !== 'undefined'
-                ? (chat.profilePhoto.startsWith('http') ? chat.profilePhoto : `/uploads/${chat.profilePhoto}`)
-                : null;
-
-            const isOnline = this.onlineUsers.has(chat.userId);
-            const unreadCount = this.unreadCounts[chat.userId] || 0;
-            const userInitials = this.getUserInitials(username);
-
-            const chatItem = document.createElement('div');
-            chatItem.className = 'chat-item';
-            chatItem.dataset.userId = chat.userId;
-
-            let profileElement = '';
-            if (profilePhoto) {
-                profileElement = `
-                    <div style="position: relative;">
-                        <img src="${profilePhoto}" alt="${username}" class="profile-pic">
-                        ${isOnline ? '<div class="online-indicator"></div>' : ''}
-                    </div>
-                `;
-            } else {
-                profileElement = `
-                    <div style="position: relative;">
-                        <div class="profile-initials">${userInitials}</div>
-                        ${isOnline ? '<div class="online-indicator"></div>' : ''}
-                    </div>
-                `;
-            }
-
-            chatItem.innerHTML = `
-                ${profileElement}
-                <div class="chat-info">
-                    <div class="chat-name">${username}</div>
-                    <div class="last-message">${chat.lastMessage || 'Begin your conversation...'}</div>
-                </div>
-                <div class="chat-meta">
-                    <div class="message-time">${this.formatTime(chat.lastMessageTime)}</div>
-                    ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                </div>
-            `;
-
-            chatItem.addEventListener('click', () => {
-                this.openChat(chat.userId, username, profilePhoto);
+                _id: tempId,
+                isTemp: true,
+                duration
             });
 
-            this.chatList.appendChild(chatItem);
-            console.log(`Added conversation to sidebar: ${username}`);
-        }
+            const res = await fetch('http://localhost:3000/chat/api/upload', {
+                method: 'POST',
+                body: formData
+            });
 
-        async openChat(userId, username, profilePhoto) {
-            console.log(`Opening conversation with userId: ${userId}, username: ${username}, profilePhoto: ${profilePhoto}`);
-            this.currentChatUserId = userId;
-
-            try {
-                const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
-                const data = await response.json();
-                if (data.success) {
-                    this.currentChatId = data.chatId;
-                }
-            } catch (error) {
-                console.error('Error fetching chat ID:', error);
-                this.showError('Failed to load chat. Please try again.');
-                return;
-            }
-
-            let chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-            if (!chatItem) {
-                this.addChatToSidebar({
-                    userId,
-                    username,
-                    profilePhoto,
-                    lastMessage: '',
-                    lastMessageTime: new Date()
+            const data = await res.json();
+            if (data.success) {
+                this.socket.emit('sendMessage', {
+                    chatId: this.currentChatId,
+                    senderId: this.currentUserId,
+                    fileUrl: data.fileUrl,
+                    fileType: data.fileType,
+                    message: data.message,
+                    timestamp: new Date(),
+                    tempId,
+                    duration: data.duration,
+                    type: this.currentChatType
                 });
-                chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-                await this.loadChats();
-            }
-
-            this.emptyState.style.display = 'none';
-            this.chatArea.style.display = 'flex';
-
-            this.chatHeaderName.textContent = username || 'Unknown Friend';
-            
-            if (profilePhoto && profilePhoto !== 'undefined' && profilePhoto !== '/default-avatar.png') {
-                this.chatHeaderPic.src = profilePhoto;
-                this.chatHeaderPic.style.display = 'block';
-                this.chatHeaderInitials.style.display = 'none';
             } else {
-                this.chatHeaderPic.style.display = 'none';
-                this.chatHeaderInitials.style.display = 'flex';
-                this.chatHeaderInitials.textContent = this.getUserInitials(username);
+                const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+                if (tempMessage) tempMessage.remove();
+                this.showError('Failed to upload voice message.');
             }
-
-            document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
-            if (chatItem) {
-                chatItem.classList.add('active');
-                console.log(`Highlighted conversation item for userId: ${userId}`);
-            }
-
-            this.unreadCounts[userId] = 0;
-            this.updateUnreadBadge(userId);
-
-            await this.loadMessages(userId);
-
-            this.updateOnlineStatus();
-
-            this.chatInput.style.display = 'block';
-            this.chatInput.focus();
-
-            this.emojiPicker.style.display = 'none';
-
-            if (window.innerWidth <= 768) {
-                document.getElementById('chatSidebar').classList.remove('open');
-            }
-        }
-
-        updateChatItem(chatItem, chat) {
-            const nameEl = chatItem.querySelector('.chat-name');
-            const messageEl = chatItem.querySelector('.last-message');
-            const timeEl = chatItem.querySelector('.message-time');
-            
-            if (nameEl) nameEl.textContent = chat.username;
-            if (messageEl) messageEl.textContent = chat.lastMessage || 'Begin your conversation...';
-            if (timeEl) timeEl.textContent = this.formatTime(chat.lastMessageTime);
-        }
-
-        async loadMessages(userId) {
-            try {
-                const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}/${userId}`);
-                const data = await response.json();
-                console.log('Messages loaded:', data);
-
-                this.chatMessages.innerHTML = '';
-                if (data.success && data.messages.length > 0) {
-                    data.messages.forEach(msg => {
-                        this.appendMessage({
-                            _id: msg._id,
-                            sender: msg.sender,
-                            message: msg.message,
-                            fileUrl: msg.fileUrl,
-                            fileType: msg.fileType,
-                            timestamp: msg.timestamp,
-                            replyTo: msg.replyTo,
-                            hiddenFor: msg.hiddenFor,
-                            reactions: msg.reactions,
-                            deletedForEveryone: msg.deletedForEveryone,
-                            duration: msg.duration
-                        });
-                    });
-                } else {
-                    this.chatMessages.innerHTML = '<p id="noMessages">Your conversation begins here...</p>';
-                }
-                this.scrollToBottom();
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                this.showError('Failed to load messages. Please try again.');
-            }
-        }
-
-        sendMessage() {
-            if (this.isSendingMessage) return; // Prevent duplicate messages
-            const message = this.chatInput.value.trim();
-            if (!message || !this.currentChatUserId) return;
-
-            this.isSendingMessage = true;
-            const messageData = {
-                senderId: this.currentUserId,
-                recipientId: this.currentChatUserId,
-                message: message,
-                timestamp: new Date(),
-                replyTo: this.replyTo ? this.replyTo.id : null
-            };
-
-            const tempId = `temp-${Date.now()}-${Math.random()}`;
-            this.appendMessage({ ...messageData, sender: this.currentUserId, _id: tempId, isTemp: true });
-            this.socket.emit("sendMessage", { ...messageData, tempId });
-            this.cancelReply();
-            this.chatInput.value = "";
-            this.autoResize();
-            this.isSendingMessage = false;
-        }
-
-        replyToMessage(messageEl) {
-            const msgId = messageEl.dataset.id;
-            const originalText = messageEl.querySelector(".message-text")?.innerText || "Attachment";
-
-            this.replyTo = { id: msgId, text: originalText };
-
-            let replyBox = document.getElementById("replyBox");
-            if (!replyBox) {
-                replyBox = document.createElement("div");
-                replyBox.id = "replyBox";
-                replyBox.className = "reply-preview";
-                this.chatInput.parentNode.insertBefore(replyBox, this.chatInput.parentNode.firstChild);
-            }
-            replyBox.innerHTML = `
-                <div class="reply-content">
-                    <span class="reply-text">Replying to: ${originalText.substring(0, 50)}${originalText.length > 50 ? '...' : ''}</span>
-                    <button class="close-reply" onclick="window.chatApp.cancelReply()">×</button>
-                </div>
-            `;
-            this.chatInput.focus();
-        }
-
-        cancelReply() {
-            this.replyTo = null;
-            const replyBox = document.getElementById("replyBox");
-            if (replyBox) replyBox.remove();
-        }
-
-        addReaction(messageEl, emoji) {
-            const msgId = messageEl.dataset.id;
-            this.socket.emit("reactMessage", {
-                chatId: this.currentChatId,
-                messageId: msgId,
-                userId: this.currentUserId,
-                reaction: emoji
-            });
-        }
-
-        deleteForMe(messageEl) {
-            const msgId = messageEl.dataset.id;
-            this.socket.emit("deleteMessageForMe", {
-                chatId: this.currentChatId,
-                messageId: msgId,
-                userId: this.currentUserId
-            });
-        }
-
-        deleteForEveryone(messageEl) {
-            const msgId = messageEl.dataset.id;
-            this.socket.emit("deleteMessageForEveryone", {
-                chatId: this.currentChatId,
-                messageId: msgId,
-                userId: this.currentUserId
-            });
-        }
-
-    
-        
-async handleFileUpload(file) {
-    if (!file || !this.currentChatUserId) return;
-
-    const tempId = `temp-${Date.now()}-${Math.random()}`;
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('senderId', this.currentUserId);
-    formData.append('recipientId', this.currentChatUserId);
-
-    try {
-        this.appendMessage({
-            sender: this.currentUserId,
-            fileUrl: URL.createObjectURL(file),
-            fileType: file.type.split('/')[0], // Set based on MIME type
-            message: '',
-            timestamp: new Date(),
-            _id: tempId,
-            isTemp: true
-        });
-
-        const res = await fetch('http://localhost:3000/chat/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await res.json();
-        if (data.success) {
-            this.socket.emit('sendMessage', {
-                senderId: this.currentUserId,
-                recipientId: this.currentChatUserId,
-                fileUrl: data.fileUrl,
-                fileType: data.fileType,
-                message: data.message,
-                timestamp: new Date(),
-                tempId
-            });
-        } else {
+        } catch (err) {
+            console.error('Error uploading voice message:', err);
             const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
             if (tempMessage) tempMessage.remove();
-            console.error("Upload failed", data);
-            this.showError("Failed to upload file.");
+            this.showError('Error uploading voice message. Please try again.');
         }
-    } catch (err) {
-        console.error("Upload error:", err);
-        const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
-        if (tempMessage) tempMessage.remove();
-        this.showError("Error uploading file. Please try again.");
+        this.isSendingMessage = false;
     }
-    this.isSendingMessage = false;
-}
-       appendMessage(message) {
-    // Prevent duplicate messages by checking if message with same ID exists
-    if (document.querySelector(`[data-id="${message._id}"]`)) return;
 
+    async loadChats() {
+        try {
+            const response = await fetch(`http://localhost:3000/chat/api/chat/${this.currentUserId}`);
+            const data = await response.json();
+            console.log('Conversations loaded:', data);
+
+            this.chatList.innerHTML = '';
+            if (data.success && data.chats.length > 0) {
+                data.chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+                data.chats.forEach(chat => {
+                    this.addChatToSidebar(chat);
+                });
+
+                if (!this.currentChatId) {
+                    const latestChat = data.chats[0];
+                    this.openChat(latestChat);
+                }
+            } else {
+                this.chatList.innerHTML = '<p style="text-align: center; color: #8d6e63; font-style: italic; padding: 30px;">No conversations yet</p>';
+                if (!this.currentChatId) {
+                    this.emptyState.style.display = 'flex';
+                    this.chatArea.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            this.chatList.innerHTML = '<p style="text-align: center; color: #c62828; padding: 30px;">Error loading conversations</p>';
+            this.showError('Failed to load conversations. Please try again.');
+        }
+    }
+
+    getUserInitials(name) {
+        if (!name || name === 'undefined') return 'U';
+        const words = name.split(' ').filter(word => word.length > 0);
+        if (words.length === 0) return 'U';
+        if (words.length === 1) return words[0].charAt(0).toUpperCase();
+        return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+    }
+
+    addChatToSidebar(chat) {
+        const existingChat = document.querySelector(`[data-chat-id="${chat.chatId}"]`);
+        if (existingChat) {
+            this.updateChatItem(existingChat, chat);
+            return;
+        }
+
+        const isPersonal = chat.type === 'personal';
+        const name = isPersonal ? (chat.username || 'Unknown Friend') : (chat.groupName || 'Unnamed Group');
+        const isOnline = isPersonal && this.onlineUsers.has(chat.userId);
+        const unreadCount = this.unreadCounts[chat.chatId] || 0;
+        const initials = this.getUserInitials(name);
+
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        chatItem.dataset.chatId = chat.chatId;
+
+        // Always show initials, ignore profilePic
+        const profileElement = `
+            <div style="position: relative;">
+                <div class="profile-initials">${initials}</div>
+                ${isOnline && isPersonal ? '<div class="online-indicator"></div>' : ''}
+            </div>
+        `;
+
+        chatItem.innerHTML = `
+            ${profileElement}
+            <div class="chat-info">
+                <div class="chat-name">${name}</div>
+                <div class="last-message">${chat.lastMessage || 'Begin your conversation...'}</div>
+                ${!isPersonal ? `<div class="group-indicator">${chat.participants.length} members</div>` : ''}
+            </div>
+            <div class="chat-meta">
+                <div class="message-time">${this.formatTime(chat.lastMessageTime)}</div>
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+            </div>
+        `;
+
+        chatItem.addEventListener('click', () => {
+            this.openChat(chat);
+        });
+
+        this.chatList.appendChild(chatItem);
+        console.log(`Added conversation to sidebar: ${name}`);
+    }
+
+    updateChatItem(chatItem, chat) {
+        const isPersonal = chat.type === 'personal';
+        const name = isPersonal ? (chat.username || 'Unknown Friend') : (chat.groupName || 'Unnamed Group');
+        const isOnline = isPersonal && this.onlineUsers.has(chat.userId);
+        const unreadCount = this.unreadCounts[chat.chatId] || 0;
+        const initials = this.getUserInitials(name);
+
+        // Always show initials, ignore profilePic
+        const profileElement = `
+            <div style="position: relative;">
+                <div class="profile-initials">${initials}</div>
+                ${isOnline && isPersonal ? '<div class="online-indicator"></div>' : ''}
+            </div>
+        `;
+
+        chatItem.innerHTML = `
+            ${profileElement}
+            <div class="chat-info">
+                <div class="chat-name">${name}</div>
+                <div class="last-message">${chat.lastMessage || 'Begin your conversation...'}</div>
+                ${!isPersonal ? `<div class="group-indicator">${chat.participants.length} members</div>` : ''}
+            </div>
+            <div class="chat-meta">
+                <div class="message-time">${this.formatTime(chat.lastMessageTime)}</div>
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+            </div>
+        `;
+    }
+async openChat(chat) {
+    console.log(`Opening ${chat.type} chat:`, chat);
+    this.currentChatId = chat.chatId;
+    this.currentChatType = chat.type;
+    this.currentGroupDetails = chat.type === 'group' ? {
+        groupName: chat.groupName,
+        participants: chat.participants,
+        adminId: chat.adminId
+    } : null;
+
+    this.socket.emit('joinChat', { chatId: this.currentChatId, type: this.currentChatType });
+
+    this.emptyState.style.display = 'none';
+    this.chatArea.style.display = 'flex';
+
+    const name = chat.type === 'personal' ? (chat.username || 'Unknown Friend') : (chat.groupName || 'Unnamed Group');
+    this.chatHeaderName.textContent = name;
+
+    // Always show initials in chat header, ignore profilePic
+    this.chatHeaderPic.style.display = 'none';
+    this.chatHeaderInitials.style.display = 'flex';
+    this.chatHeaderInitials.textContent = this.getUserInitials(name);
+
+    document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+    const chatItem = document.querySelector(`[data-chat-id="${chat.chatId}"]`);
+    if (chatItem) {
+        chatItem.classList.add('active');
+    }
+
+    this.unreadCounts[chat.chatId] = 0;
+    this.updateUnreadBadge(chat.chatId);
+
+    if (chat.type === 'group') {
+        await this.loadGroupParticipants(chat.participants);
+    }
+
+    await this.loadMessages(chat.chatId);
+
+    this.updateChatHeader();
+    this.updateOnlineStatus();
+
+    this.chatInput.style.display = 'block';
+    this.chatInput.disabled = false; // Ensure input is not disabled
+    this.chatInput.focus(); // Focus on the input field
+
+    this.emojiPicker.style.display = 'none';
+
+    if (window.innerWidth <= 768) {
+        document.getElementById('chatSidebar').classList.remove('open');
+    }
+}
+    // NEW: Method to fetch and cache usernames for group participants
+    async loadGroupParticipants(participantIds) {
+        this.userMap.clear();
+        const promises = participantIds.map(async (id) => {
+            if (id === this.currentUserId) {
+                this.userMap.set(id, 'You'); // Not needed for display, but for completeness
+                return;
+            }
+            try {
+                const res = await fetch(`http://localhost:3000/chat/api/user/${id}`); // Assumes backend endpoint for user details
+                const data = await res.json();
+                if (data.success && data.user) {
+                    this.userMap.set(id, data.user.username || 'Unknown');
+                } else {
+                    this.userMap.set(id, 'Unknown');
+                }
+            } catch (err) {
+                console.error(`Error fetching user ${id}:`, err);
+                this.userMap.set(id, 'Unknown');
+            }
+        });
+        await Promise.all(promises);
+    }
+    updateChatHeader() {
+        this.chatActions.innerHTML = '';
+        if (this.currentChatType === 'personal') {
+            this.chatActions.innerHTML = `
+                <button class="action-btn" title="Video Call"><i class="fas fa-video"></i></button>
+                <button class="action-btn" title="Voice Call"><i class="fas fa-phone"></i></button>
+                <button class="action-btn" title="More Options"><i class="fas fa-ellipsis-v"></i></button>
+            `;
+        } else if (this.currentChatType === 'group') {
+            let actions = `
+                <button class="action-btn" title="Group Info" onclick="window.chatApp.openManageMembersModal()"><i class="fas fa-users"></i></button>
+                <button class="action-btn" title="Leave Group" onclick="window.chatApp.leaveGroup()"><i class="fas fa-sign-out-alt"></i></button>
+            `;
+            if (this.currentGroupDetails.adminId === this.currentUserId) {
+                actions += `
+                    <button class="action-btn" title="Delete Group" onclick="window.chatApp.deleteGroup()"><i class="fas fa-trash"></i></button>
+                `;
+            }
+            this.chatActions.innerHTML = actions;
+        }
+
+        if (this.currentChatType === 'group') {
+            const participantCount = this.currentGroupDetails.participants.length;
+            this.onlineStatus.textContent = `${participantCount} members${this.currentGroupDetails.adminId === this.currentUserId ? ' (You are admin)' : ''}`;
+        }
+    }
+
+    async loadMessages(chatId) {
+    try {
+        const response = await fetch(`http://localhost:3000/chat/api/messages/${chatId}?userId=${this.currentUserId}`);
+        const data = await response.json();
+        console.log('Messages loaded:', data);
+
+        this.chatMessages.innerHTML = '';
+        if (data.success && data.messages.length > 0) {
+            data.messages.forEach(message => {
+                this.appendMessage(message);
+            });
+            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        } else {
+            this.chatMessages.innerHTML = '<div id="noMessages" style="text-align: center; color: #8d6e63; font-style: italic; padding: 30px;">No messages yet</div>';
+        }
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        this.chatMessages.innerHTML = '<div style="text-align: center; color: #c62828; padding: 30px;">Error loading messages</div>';
+        this.showError('Failed to load messages. Please try again.');
+    }
+}
+
+
+appendMessage(message) {
     const isSent = message.sender === this.currentUserId;
-    const isHidden = message.hiddenFor && message.hiddenFor.includes(this.currentUserId);
-    const isDeleted = message.deletedForEveryone;
     const messageGroup = document.createElement('div');
     messageGroup.className = `message-group ${isSent ? 'sent' : 'received'}`;
 
     const messageEl = document.createElement('div');
-    messageEl.className = `message ${isSent ? 'sent' : 'received'} ${isHidden || isDeleted ? 'deleted' : ''} ${message.isTemp ? 'temp' : ''}`;
+    messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
     messageEl.dataset.id = message._id;
+    if (message.isTemp) messageEl.classList.add('temp');
+
+    // Create message actions container
+    const actionsContainer = document.createElement('div');
+    actionsContainer.className = 'message-actions';
+    actionsContainer.innerHTML = `
+        <button class="message-action-btn reply-btn" title="Reply">
+            <i class="fas fa-reply"></i>
+        </button>
+        <button class="message-action-btn react-btn" title="React">
+            <i class="fas fa-smile"></i>
+        </button>
+        <button class="message-action-btn more-btn" title="More">
+            <i class="fas fa-ellipsis-h"></i>
+        </button>
+    `;
+
+    // Attach event listeners to action buttons
+    actionsContainer.querySelector('.reply-btn').addEventListener('click', () => {
+        this.replyToMessage(message._id);
+    });
+
+    actionsContainer.querySelector('.react-btn').addEventListener('click', () => {
+        this.addReaction(message._id, '❤️');
+    });
+
+    actionsContainer.querySelector('.more-btn').addEventListener('click', () => {
+        const moreOptions = document.createElement('div');
+        moreOptions.className = 'message-dropdown show';
+        moreOptions.innerHTML = `
+            <button class="delete-for-me">Delete for Me</button>
+            ${isSent ? '<button class="delete-for-all">Delete for Everyone</button>' : ''}
+        `;
+
+        // Remove existing dropdowns to prevent duplicates
+        document.querySelectorAll('.message-dropdown').forEach(el => el.remove());
+        actionsContainer.appendChild(moreOptions);
+
+        moreOptions.querySelector('.delete-for-me').addEventListener('click', () => {
+            this.deleteMessageForMe(message._id);
+            moreOptions.remove();
+        });
+
+        if (isSent) {
+            moreOptions.querySelector('.delete-for-all').addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this message for everyone?')) {
+                    this.deleteMessageForEveryone(message._id);
+                }
+                moreOptions.remove();
+            });
+        }
+
+        // Close dropdown when clicking outside
+        const closeDropdown = (e) => {
+            if (!actionsContainer.contains(e.target)) {
+                moreOptions.remove();
+                document.removeEventListener('click', closeDropdown);
+            }
+        };
+        document.addEventListener('click', closeDropdown);
+    });
 
     let content = '';
-    if (isHidden || isDeleted) {
-        content = `<div class="message-deleted">${isHidden ? 'This message was deleted for you' : 'This message was deleted'}</div>`;
-    } else if (message.fileUrl) {
-        const fileName = decodeURIComponent(message.fileUrl.split('/').pop() || 'file');
-        const ext = fileName.split('.').pop().toLowerCase();
-        const isImage = message.fileType === 'image' || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-        const isAudio = message.fileType === 'audio' || ['mp3', 'wav', 'webm'].includes(ext);
+    // Check deleted states first to avoid unnecessary processing
+    if (message.deletedForEveryone) {
+        content = `<div class="message-deleted">This message was deleted</div>`;
+    } else if (message.hiddenFor?.includes(this.currentUserId)) {
+        content = `<div class="message-deleted">This message was deleted for you</div>`;
+    } else if (message.message) {
+        content = `<div class="message-text">${message.message}</div>`;
+    } else if (message.fileType === 'image') {
+        content = `<img src="${message.fileUrl}" alt="Shared image" class="message-image">`;
+    } else if (message.fileType === 'audio') {
+        content = `
+            <div class="voice-message">
+                <audio controls class="message-audio">
+                    <source src="${message.fileUrl}" type="audio/webm">
+                    Your browser does not support the audio element.
+                </audio>
+                <div class="audio-duration">${this.formatDuration(message.duration)}</div>
+            </div>`;
+    } else if (message.fileType === 'file') {
+        content = `
+            <div class="file-message">
+                <div class="file-icon"><i class="fas fa-file"></i></div>
+                <div class="file-info">
+                    <div class="file-name">${message.fileName || 'Download File'}</div>
+                    <div class="file-size">${this.formatFileSize(message.fileSize)}</div>
+                </div>
+                <a href="${message.fileUrl}" class="download-btn">Download</a>
+            </div>`;
+    }
 
-        if (isImage) {
-            content = `<img src="${message.fileUrl}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
-        } else if (isAudio) {
-            const durationStr = message.duration ? `${Math.floor(message.duration / 60)}:${(message.duration % 60).toString().padStart(2, '0')}` : '00:00';
-            content = `
-                <div class="voice-message">
-                    <button class="play-btn"><i class="fas fa-play"></i></button>
-                    <audio controls src="${message.fileUrl}"></audio>
-                    <span class="voice-duration">${durationStr}</span>
-                </div>
-            `;
-        } else {
-            content = `
-                <div class="file-message">
-                    <div class="file-icon"><i class="fas fa-file-alt"></i></div>
-                    <div class="file-info">
-                        <div class="file-name">${fileName}</div>
-                        <div class="file-size">Click to download this memory</div>
-                    </div>
-                    <a href="${message.fileUrl}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
-                </div>
-            `;
-        }
-    } else {
-        content = message.message;
+    let senderNameHtml = '';
+    if (!isSent && this.currentChatType === 'group') {
+        const senderName = this.userMap.get(message.sender) || 'Unknown';
+        senderNameHtml = `<div class="sender-name">${senderName}</div>`;
     }
 
     let replyContent = '';
     if (message.replyTo) {
-        const repliedMsg = document.querySelector(`[data-id="${message.replyTo}"]`);
-        const repliedText = repliedMsg ? repliedMsg.querySelector(".message-text")?.innerText || "Attachment" : "Original message not found";
-        replyContent = `<div class="reply-ref">Replying to: ${repliedText}</div>`;
+        const replyMessage = document.querySelector(`[data-id="${message.replyTo}"]`);
+        let replyText = 'Replying to a previous message';
+        if (replyMessage) {
+            const textEl = replyMessage.querySelector('.message-text');
+            const imageEl = replyMessage.querySelector('.message-image');
+            const audioEl = replyMessage.querySelector('.message-audio');
+            const fileEl = replyMessage.querySelector('.file-message');
+            
+            if (textEl && textEl.textContent.trim()) {
+                replyText = `Replying to: ${textEl.textContent.substring(0, 30)}${textEl.textContent.length > 30 ? '...' : ''}`;
+            } else if (imageEl) {
+                replyText = 'Replying to: Image';
+            } else if (audioEl) {
+                replyText = 'Replying to: Voice message';
+            } else if (fileEl) {
+                replyText = 'Replying to: File';
+            } else {
+                replyText = 'Replying to: Message';
+            }
+        } else {
+            replyText = 'Replying to a deleted or unavailable message';
+        }
+        replyContent = `<div class="reply-ref" data-reply-id="${message.replyTo}">${replyText}</div>`;
     }
 
     let reactionsContent = '';
-    if (message.reactions && message.reactions.length > 0) {
+    if (message.reactions?.length > 0) {
         reactionsContent = `<div class="message-reactions">${message.reactions.map(r => `<span class="reaction">${r.emoji}</span>`).join('')}</div>`;
     }
 
     messageEl.innerHTML = `
         ${replyContent}
-        <div class="message-text">${content}</div>
+        ${senderNameHtml}
+        ${content}
         ${reactionsContent}
-        <div class="message-actions">
-            <button class="message-action-btn" title="Reply" onclick="window.chatApp.replyToMessage(this.closest('.message'))">
-                <i class="fas fa-reply"></i>
-            </button>
-            <button class="message-action-btn" title="React" onclick="window.chatApp.addReaction(this.closest('.message'), '❤️')">
-                <i class="fas fa-heart"></i>
-            </button>
-            <div class="message-menu">
-                <button class="message-action-btn" title="More" onclick="toggleMessageMenu(this)">
-                    <i class="fas fa-ellipsis-h"></i>
-                </button>
-                <div class="message-dropdown">
-                    <button onclick="window.chatApp.deleteForMe(this.closest('.message'))">Delete for Me</button>
-                    ${isSent ? `<button onclick="window.chatApp.deleteForEveryone(this.closest('.message'))">Delete for Everyone</button>` : ''}
-                </div>
-            </div>
-        </div>
-        <div class="message-time">
-            ${this.formatTime(message.timestamp)}
-            ${isSent ? '<span class="message-status"><i class="fas fa-feather-alt"></i></span>' : ''}
+        <div class="message-meta">
+            <span class="message-time">${this.formatTime(message.timestamp)}</span>
+            ${isSent ? `<span class="message-status">${message.isTemp ? '⌛' : '✔'}</span>` : ''}
         </div>
     `;
 
+    messageEl.appendChild(actionsContainer);
     messageGroup.appendChild(messageEl);
     this.chatMessages.appendChild(messageGroup);
-    this.scrollToBottom();
+    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
 }
-      handleReceivedMessage(message) {
-    if (message.tempId) {
-        const tempMessage = document.querySelector(`[data-id="${message.tempId}"]`);
-        if (tempMessage) {
-            tempMessage.dataset.id = message._id;
-            tempMessage.classList.remove('temp');
-            if (message.fileUrl) {
-                const fileName = decodeURIComponent(message.fileUrl.split('/').pop());
-                const isImage = message.fileType === 'image';
-                const isAudio = message.fileType === 'audio';
-                let content = '';
-                if (isImage) {
-                    content = `<img src="${message.fileUrl}" alt="${fileName}" style="max-width: 300px; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(139,69,19,0.2);" loading="lazy">`;
-                } else if (isAudio) {
-                    const durationStr = message.duration ? `${Math.floor(message.duration / 60)}:${(message.duration % 60).toString().padStart(2, '0')}` : '00:00';
-                    content = `
-                        <div class="voice-message">
-                            <button class="play-btn"><i class="fas fa-play"></i></button>
-                            <audio controls src="${message.fileUrl}"></audio>
-                            <span class="voice-duration">${durationStr}</span>
-                        </div>
-                    `;
-                } else {
-                    content = `
-                        <div class="file-message">
-                            <div class="file-icon"><i class="fas fa-file-alt"></i></div>
-                            <div class="file-info">
-                                <div class="file-name">${fileName}</div>
-                                <div class="file-size">Click to download this memory</div>
-                            </div>
-                            <a href="${message.fileUrl}" target="_blank" class="download-btn"><i class="fas fa-download"></i> Open</a>
-                        </div>
-                    `;
-                }
-                tempMessage.querySelector('.message-text').innerHTML = content;
-            } else {
-                tempMessage.querySelector('.message-text').innerText = message.message;
+
+    handleReceivedMessage(message) {
+    try {
+        // If server confirms a temp message, replace the optimistic element
+        if (message.tempId) {
+            const tempEl = document.querySelector(`[data-id="${message.tempId}"]`);
+            if (tempEl) {
+                // Remove the temp element (its container) and append the confirmed message
+                const tempGroup = tempEl.closest('.message-group');
+                if (tempGroup) tempGroup.remove();
+                this.appendMessage(message); // append confirmed message
+                return;
             }
+        }
+
+        // If message belongs to the currently open chat, show it immediately
+        if (message.chatId && message.chatId === this.currentChatId) {
+            this.appendMessage(message);
+            this.chatMessages.querySelector('#noMessages')?.remove();
             return;
         }
-    }
 
-    if (message.chatId === this.currentChatId) {
-        this.appendMessage(message);
-        this.chatMessages.querySelector('#noMessages')?.remove();
-    } else {
-        this.unreadCounts[message.sender] = (this.unreadCounts[message.sender] || 0) + 1;
-        this.updateUnreadBadge(message.sender);
-    }
+        // For other chats: increment unread counter keyed by chatId (not sender)
+        if (message.chatId) {
+            this.unreadCounts[message.chatId] = (this.unreadCounts[message.chatId] || 0) + 1;
+            this.updateUnreadBadge(message.chatId);
+        }
 
-    let display;
-    if (message.fileUrl) {
-        display = message.fileType === 'image' ? 'Shared a beautiful moment' : message.fileType === 'audio' ? 'Shared a voice message' : 'Shared a file';
-    } else if (message.deletedForEveryone) {
-        display = 'Message deleted';
-    } else {
-        display = message.message;
-    }
+        // Build a short display text for the sidebar's last-message preview
+        let display;
+        if (message.fileUrl) {
+            display = message.fileType === 'image'
+                ? 'Shared a photo'
+                : message.fileType === 'audio'
+                    ? 'Shared a voice message'
+                    : 'Shared a file';
+        } else if (message.deletedForEveryone) {
+            display = 'Message deleted';
+        } else {
+            display = message.message || '';
+        }
 
-    this.updateLastMessage(message.sender, display);
-    this.loadChats();
+        // Update the last message for the chat item (use chatId)
+        if (message.chatId) {
+            this.updateLastMessage(message.chatId, display);
+        }
+
+        // If the chat item isn't present in sidebar, reload chats so it appears
+        if (message.chatId && !document.querySelector(`[data-chat-id="${message.chatId}"]`)) {
+            this.loadChats();
+        }
+    } catch (err) {
+        console.error('handleReceivedMessage error:', err);
+    }
 }
-                    
-              
+    async sendMessage() {
+    if (!this.currentChatId || !this.currentChatType || this.isSendingMessage) return;
 
-        updateLastMessage(userId, message) {
-            const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-            if (chatItem) {
-                const lastMessageEl = chatItem.querySelector('.last-message');
-                const timeEl = chatItem.querySelector('.message-time');
-                
-                if (lastMessageEl) lastMessageEl.textContent = message;
-                if (timeEl) timeEl.textContent = this.formatTime(new Date());
+    const messageText = this.chatInput.value.trim();
+    if (!messageText && !this.replyTo) return;
+
+    this.isSendingMessage = true;
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    this.appendMessage({
+        sender: this.currentUserId,
+        message: messageText,
+        timestamp: new Date(),
+        _id: tempId,
+        isTemp: true,
+        replyTo: this.replyTo
+    });
+
+    try {
+        this.socket.emit('sendMessage', {
+            chatId: this.currentChatId,
+            senderId: this.currentUserId,
+            message: messageText,
+            replyTo: this.replyTo,
+            type: this.currentChatType,
+            tempId
+        });
+        this.chatInput.value = '';
+        this.replyTo = null;
+        this.updateReplyPreview();
+        this.autoResize();
+    } catch (error) {
+        console.error('Error sending message:', error);
+        const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+        if (tempMessage) tempMessage.remove();
+        this.showError('Failed to send message. Please try again.');
+    } finally {
+        this.isSendingMessage = false;
+    }
+}
+
+    async handleFileUpload(file) {
+        if (!this.currentChatId || !this.currentChatType) return;
+
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('senderId', this.currentUserId);
+        formData.append('chatId', this.currentChatId);
+        formData.append('type', this.currentChatType);
+
+        try {
+            this.appendMessage({
+                sender: this.currentUserId,
+                fileUrl: URL.createObjectURL(file),
+                fileType: file.type.startsWith('image') ? 'image' : file.type.startsWith('audio') ? 'audio' : 'file',
+                message: '',
+                timestamp: new Date(),
+                _id: tempId,
+                isTemp: true,
+                fileName: file.name,
+                fileSize: file.size
+            });
+
+            const res = await fetch('http://localhost:3000/chat/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                this.socket.emit('sendMessage', {
+                    chatId: this.currentChatId,
+                    senderId: this.currentUserId,
+                    fileUrl: data.fileUrl,
+                    fileType: data.fileType,
+                    message: data.message,
+                    fileName: data.fileName,
+                    fileSize: data.fileSize,
+                    timestamp: new Date(),
+                    tempId,
+                    type: this.currentChatType
+                });
+            } else {
+                const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+                if (tempMessage) tempMessage.remove();
+                this.showError('Failed to upload file.');
             }
+        } catch (err) {
+            console.error('Error uploading file:', err);
+            const tempMessage = document.querySelector(`[data-id="${tempId}"]`);
+            if (tempMessage) tempMessage.remove();
+            this.showError('Error uploading file. Please try again.');
+        }
+    }
+
+    async addReaction(messageId, emoji) {
+        try {
+            const response = await fetch(`http://localhost:3000/chat/api/message/react/${messageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    emoji,
+                    userId: this.currentUserId,
+                    type: this.currentChatType,
+                    chatId: this.currentChatId
+                })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                this.showError('Failed to add reaction: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error adding reaction:', error);
+            this.showError('Error adding reaction. Please try again.');
+        }
+    }
+
+    async deleteMessageForMe(messageId) {
+        try {
+            const response = await fetch('http://localhost:3000/chat/api/message/delete/me', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messageId,
+                    userId: this.currentUserId,
+                    type: this.currentChatType,
+                    chatId: this.currentChatId
+                })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                this.showError('Failed to delete message: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            this.showError('Error deleting message. Please try again.');
+        }
+    }
+
+    async deleteMessageForEveryone(messageId) {
+        try {
+            const response = await fetch('http://localhost:3000/chat/api/message/delete/everyone', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messageId,
+                    userId: this.currentUserId,
+                    type: this.currentChatType,
+                    chatId: this.currentChatId
+                })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                this.showError('Failed to delete message: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            this.showError('Error deleting message. Please try again.');
+        }
+    }
+
+    async openCreateGroupModal() {
+        this.groupNameInput.value = '';
+        this.friendList.innerHTML = '';
+        try {
+            const response = await fetch(`http://localhost:3000/chat/api/friends/${this.currentUserId}`);
+            const data = await response.json();
+            if (data.success && data.friends.length > 0) {
+                this.friendList.innerHTML = data.friends.map(friend => `
+                    <div class="friend-item">
+                        <input type="checkbox" value="${friend._id}" id="friend-${friend._id}">
+                        <label for="friend-${friend._id}">${friend.username}</label>
+                    </div>
+                `).join('');
+                this.createGroupModal.style.display = 'flex';
+            } else {
+                this.showError('No friends available to add to a group.');
+            }
+        } catch (error) {
+            console.error('Error loading friends:', error);
+            this.showError('Failed to load friends list.');
+        }
+    }
+
+    closeCreateGroupModal() {
+        this.createGroupModal.style.display = 'none';
+        this.friendList.innerHTML = '';
+        this.groupNameInput.value = '';
+    }
+
+    async createGroup() {
+        const groupName = this.groupNameInput.value.trim();
+        const selectedFriends = Array.from(this.friendList.querySelectorAll('input:checked')).map(input => input.value);
+        if (!groupName) {
+            this.showError('Please enter a group name.');
+            return;
+        }
+        if (selectedFriends.length < 2) {
+            this.showError('Please select at least 2 friends to create a group.');
+            return;
         }
 
-        updateUnreadBadge(userId) {
-            const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
-            if (!chatItem) return;
-
-            const existingBadge = chatItem.querySelector('.unread-badge');
-            const unreadCount = this.unreadCounts[userId] || 0;
-
-            if (unreadCount > 0) {
-                if (existingBadge) {
-                    existingBadge.textContent = unreadCount;
-                } else {
-                    const metaEl = chatItem.querySelector('.chat-meta');
-                    const badge = document.createElement('div');
-                    badge.className = 'unread-badge';
-                    badge.textContent = unreadCount;
-                    metaEl.appendChild(badge);
-                }
-            } else if (existingBadge) {
-                existingBadge.remove();
+        try {
+            const response = await fetch('http://localhost:3000/chat/api/group/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    groupName,
+                    members: [...selectedFriends, this.currentUserId],
+                    createdBy: this.currentUserId
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.closeCreateGroupModal();
+                this.loadChats();
+                this.openChat({
+                    chatId: data.group._id,
+                    type: 'group',
+                    groupName: data.group.groupName,
+                    participants: data.group.participants,
+                    adminId: data.group.adminId,
+                    lastMessage: '',
+                    lastMessageTime: new Date()
+                });
+            } else {
+                this.showError('Failed to create group: ' + data.message);
             }
+        } catch (error) {
+            console.error('Error creating group:', error);
+            this.showError('Error creating group. Please try again.');
+        }
+    }
+
+    async openManageMembersModal() {
+        if (this.currentChatType !== 'group' || !this.currentGroupDetails) return;
+        this.memberList.innerHTML = '';
+        try {
+            const response = await fetch(`http://localhost:3000/chat/api/friends/${this.currentUserId}`);
+            const data = await response.json();
+            if (data.success) {
+                const friends = data.friends;
+                const isAdmin = this.currentGroupDetails.adminId === this.currentUserId;
+                const members = this.currentGroupDetails.participants;
+                this.memberList.innerHTML = friends.map(friend => {
+                    const isMember = members.includes(friend._id);
+                    const isCurrentUser = friend._id === this.currentUserId;
+                    let actionButton = '';
+                    if (isAdmin && !isCurrentUser) {
+                        if (isMember) {
+                            actionButton = `<button class="modal-btn secondary" onclick="window.chatApp.removeMember('${friend._id}')">Remove</button>`;
+                        } else {
+                            actionButton = `<button class="modal-btn primary" onclick="window.chatApp.addMember('${friend._id}')">Add</button>`;
+                        }
+                    }
+                    return `
+                        <div class="friend-item">
+                            <label>${friend.username}${isCurrentUser ? ' (You)' : ''}${isMember ? ' (Member)' : ''}</label>
+                            ${actionButton}
+                        </div>
+                    `;
+                }).join('');
+                this.manageMembersModal.style.display = 'flex';
+            } else {
+                this.showError('Failed to load friends list.');
+            }
+        } catch (error) {
+            console.error('Error loading friends:', error);
+            this.showError('Failed to load friends list.');
+        }
+    }
+
+    closeManageMembersModal() {
+        this.manageMembersModal.style.display = 'none';
+        this.memberList.innerHTML = '';
+    }
+
+    async addMember(userId) {
+    try {
+        const groupId = this.currentChatId;
+        const adminId = this.currentUserId;
+
+        console.log(`Adding user ${userId} to group ${groupId} by admin ${adminId}`);
+
+        const response = await fetch(`http://localhost:3000/chat/api/group/${groupId}/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId,
+                adminId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('Member added successfully:', data.group);
+            if (this.currentChatId === groupId && this.currentGroupDetails) {
+                this.currentGroupDetails.participants = data.group.participants;
+                this.updateChatHeader();
+            }
+            await this.loadChats();
+            this.socket.emit('memberAdded', { userId, groupId });
+            this.closeManageMembersModal();
+            this.showError('Member added successfully!');
+        } else {
+            console.error('Add member failed:', response.status, response.statusText, data);
+            this.showError('Failed to add member: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error adding member:', error);
+        this.showError('Error adding member. Please try again.');
+    }
+}
+// inside class PersonalChat
+async removeMember(userId) {
+    try {
+        const groupId = this.currentChatId;
+        const adminId = this.currentUserId;
+
+        console.log(`Removing user ${userId} from group ${groupId} by admin ${adminId}`);
+
+        if (!groupId || !userId || !adminId) {
+            throw new Error("Missing groupId, userId, or adminId");
         }
 
-        updateOnlineStatus() {
-            if (this.currentChatUserId && this.onlineUsers.has(this.currentChatUserId)) {
+        const res = await fetch(`http://localhost:3000/chat/api/group/${groupId}/remove`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, adminId })
+        });
+
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch (e) { data = { success: false, message: text }; }
+
+        if (!res.ok || !data.success) {
+            console.error('Remove member failed:', res.status, res.statusText, data);
+            throw new Error(data.message || `HTTP ${res.status}`);
+        }
+
+        console.log('Member removed successfully:', data.group);
+        if (this.currentChatId === groupId && this.currentGroupDetails) {
+            this.currentGroupDetails.participants = data.group.participants;
+            this.updateChatHeader();
+        }
+        await this.loadChats();
+        this.socket.emit('memberRemoved', { userId, groupId });
+        this.closeManageMembersModal();
+        this.showError('Member removed successfully!');
+    } catch (err) {
+        console.error('Error removing member:', err.message || err);
+        this.showError('Error removing member: ' + (err.message || 'Please try again.'));
+    }
+}
+async leaveGroup() {
+    if (!confirm('Are you sure you want to leave this group?')) return;
+    try {
+        const groupId = this.currentChatId;
+        const userId = this.currentUserId;
+
+        console.log(`User ${userId} leaving group ${groupId}`);
+
+        const res = await fetch(`http://localhost:3000/chat/api/group/${groupId}/leave`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            console.error('Leave group failed:', res.status, res.statusText, data);
+            this.showError('Failed to leave group: ' + (data.message || res.statusText));
+            return;
+        }
+
+        // success — update UI & reload chats
+        this.socket.emit('memberLeft', { userId, groupId });
+        this.currentChatId = null;
+        this.currentChatType = null;
+        this.currentGroupDetails = null;
+        this.chatArea.style.display = 'none';
+        this.emptyState.style.display = 'flex';
+        await this.loadChats();
+        this.showError('You have left the group.');
+    } catch (error) {
+        console.error('Error leaving group:', error);
+        this.showError('Error leaving group: ' + (error.message || 'Please try again.'));
+    }
+}
+// Refactored deleteGroup method
+async deleteGroup() {
+    if (!confirm('Are you sure you want to delete this group? This cannot be undone.')) return;
+    try {
+        const groupId = this.currentChatId;
+        const adminId = this.currentUserId;
+
+        console.log(`Admin ${adminId} deleting group ${groupId}`);
+
+        const data = await fetch(`http://localhost:3000/chat/api/group/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groupId, adminId })
+        });
+
+        console.log('Group deleted successfully:', data);
+
+        this.socket.emit('groupDeleted', { groupId });
+        this.currentChatId = null;
+        this.currentChatType = null;
+        this.currentGroupDetails = null;
+        this.chatArea.style.display = 'none';
+        this.emptyState.style.display = 'flex';
+        await this.loadChats();
+        this.showError('Group deleted successfully.');
+
+    } catch (error) {
+        console.error('Error deleting group:', error.message || error);
+        this.showError('Error deleting group: ' + (error.message || 'Please try again.'));
+    }
+}
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => {
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 3000);
+        }, 100);
+    }
+
+    updateOnlineStatus() {
+        if (this.currentChatType === 'personal' && this.currentChatId) {
+            const chat = Array.from(this.chatList.querySelectorAll('.chat-item')).find(item => item.dataset.chatId === this.currentChatId);
+            if (chat && this.onlineUsers.has(chat.dataset.userId)) {
                 this.onlineStatus.textContent = 'Online';
-                this.onlineStatus.style.color = '#4caf50';
+                this.onlineStatus.classList.add('online');
             } else {
                 this.onlineStatus.textContent = 'Offline';
-                this.onlineStatus.style.color = '#8d6e63';
+                this.onlineStatus.classList.remove('online');
+            }
+        }
+    }
+
+    updateUnreadBadge(chatId) {
+        const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
+        if (chatItem) {
+            const badge = chatItem.querySelector('.unread-badge');
+            if (this.unreadCounts[chatId] > 0) {
+                if (badge) {
+                    badge.textContent = this.unreadCounts[chatId];
+                } else {
+                    const newBadge = document.createElement('div');
+                    newBadge.className = 'unread-badge';
+                    newBadge.textContent = this.unreadCounts[chatId];
+                    chatItem.querySelector('.chat-meta').appendChild(newBadge);
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+    }
+
+    updateLastMessage(chatId, message) {
+        this.lastMessages[chatId] = message;
+        const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
+        if (chatItem) {
+            const lastMessageEl = chatItem.querySelector('.last-message');
+            if (lastMessageEl) {
+                lastMessageEl.textContent = message || 'Begin your conversation...';
+            }
+        }
+    }
+
+    formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = (now - date) / 1000;
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+        return date.toLocaleDateString();
+    }
+
+    formatDuration(seconds) {
+        if (!seconds) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    formatFileSize(bytes) {
+        if (!bytes) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    }
+
+    autoResize() {
+        this.chatInput.style.height = 'auto';
+        this.chatInput.style.height = `${Math.min(this.chatInput.scrollHeight, 100)}px`;
+    }
+
+    handleTyping() {
+        if (!this.currentChatId || !this.currentChatType) return;
+        this.socket.emit('typing', {
+            senderId: this.currentUserId,
+            chatId: this.currentChatId,
+            type: this.currentChatType
+        });
+        clearTimeout(this.typingTimeout);
+        this.typingTimeout = setTimeout(() => {
+            this.socket.emit('stopTyping', {
+                senderId: this.currentUserId,
+                chatId: this.currentChatId,
+                type: this.currentChatType
+            });
+        }, 2000);
+    }
+
+    showTypingIndicator() {
+        this.typingIndicator.style.display = 'flex';
+        this.typingText.textContent = this.typingUsers.size === 1 ? 'Someone is writing...' : 'Multiple users are writing...';
+    }
+
+    hideTypingIndicator() {
+        this.typingIndicator.style.display = 'none';
+    }
+
+    showContextMenu(e, messageId, isSent, message) {
+        const existingMenu = document.querySelector('.context-menu');
+        if (existingMenu) existingMenu.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.top = `${e.clientY}px`;
+        menu.style.left = `${e.clientX}px`;
+
+        const options = [];
+        if (!message.deletedForEveryone && !message.hiddenFor?.includes(this.currentUserId)) {
+            options.push(`<div class="context-menu-item" onclick="window.chatApp.replyToMessage('${messageId}')">Reply</div>`);
+            options.push(`<div class="context-menu-item" onclick="window.chatApp.addReaction('${messageId}', '😊')">React 😊</div>`);
+            options.push(`<div class="context-menu-item" onclick="window.chatApp.addReaction('${messageId}', '👍')">React 👍</div>`);
+            options.push(`<div class="context-menu-item" onclick="window.chatApp.addReaction('${messageId}', '❤️')">React ❤️</div>`);
+            options.push(`<div class="context-menu-item" onclick="window.chatApp.deleteMessageForMe('${messageId}')">Delete for Me</div>`);
+            if (isSent) {
+                options.push(`<div class="context-menu-item" onclick="window.chatApp.deleteMessageForEveryone('${messageId}')">Delete for Everyone</div>`);
             }
         }
 
-        showTypingIndicator() {
-            this.typingIndicator.style.display = 'flex';
-            this.scrollToBottom();
-        }
+        menu.innerHTML = options.join('');
+        document.body.appendChild(menu);
 
-        hideTypingIndicator() {
-            this.typingIndicator.style.display = 'none';
-        }
-
-        handleTyping() {
-            if (!this.currentChatUserId) return;
-            this.socket.emit('typing', {
-                senderId: this.currentUserId,
-                recipientId: this.currentChatUserId
-            });
-            clearTimeout(this.typingTimeout);
-            this.typingTimeout = setTimeout(() => {
-                this.socket.emit('stopTyping', {
-                    senderId: this.currentUserId,
-                    recipientId: this.currentChatUserId
-                });
-            }, 3000);
-        }
-
-        autoResize() {
-            this.chatInput.style.height = 'auto';
-            this.chatInput.style.height = `${this.chatInput.scrollHeight}px`;
-            this.sendBtn.disabled = !this.chatInput.value.trim();
-        }
-
-        scrollToBottom() {
-            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-        }
-
-        formatTime(timestamp) {
-            if (!timestamp) return '';
-            const date = new Date(timestamp);
-            const today = new Date();
-            const isToday = date.toDateString() === today.toDateString();
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            return isToday ? `${hours}:${minutes}` : `${date.toLocaleDateString()} ${hours}:${minutes}`;
-        }
-
-        searchChats(query) {
-            const chatItems = document.querySelectorAll('.chat-item');
-            chatItems.forEach(item => {
-                const username = item.querySelector('.chat-name').textContent.toLowerCase();
-                item.style.display = username.includes(query.toLowerCase()) ? 'flex' : 'none';
-            });
-        }
-
-        showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
-            this.chatMessages.appendChild(errorDiv);
-            setTimeout(() => errorDiv.remove(), 5000);
-        }
+        const removeMenu = () => {
+            menu.remove();
+            document.removeEventListener('click', removeMenu);
+        };
+        document.addEventListener('click', removeMenu);
     }
 
-    // Global function for message menu toggle
-    function toggleMessageMenu(button) {
-        const dropdown = button.nextElementSibling;
-        const isVisible = dropdown.classList.contains('show');
-        document.querySelectorAll('.message-dropdown').forEach(menu => menu.classList.remove('show'));
-        if (!isVisible) {
-            dropdown.classList.add('show');
+    replyToMessage(messageId) {
+    this.replyTo = messageId;
+    this.updateReplyPreview();
+    this.chatInput.focus(); // Ensure input is focused for typing
+}
+
+updateReplyPreview() {
+    let replyPreview = document.querySelector('.reply-preview');
+    if (this.replyTo) {
+        if (!replyPreview) {
+            replyPreview = document.createElement('div');
+            replyPreview.className = 'reply-preview';
+            replyPreview.dataset.replyId = this.replyTo;
+            this.chatInput.parentElement.parentElement.insertBefore(replyPreview, this.chatInput.parentElement);
         }
-    }
+        const messageEl = document.querySelector(`[data-id="${this.replyTo}"]`);
+        let replyText = 'Replying to a previous message';
+        
+        if (messageEl) {
+            const textEl = messageEl.querySelector('.message-text');
+            const imageEl = messageEl.querySelector('.message-image');
+            const audioEl = messageEl.querySelector('.message-audio');
+            const fileEl = messageEl.querySelector('.file-message');
+            
+            if (textEl && textEl.textContent.trim()) {
+                replyText = `Replying to: ${textEl.textContent.substring(0, 30)}${textEl.textContent.length > 30 ? '...' : ''}`;
+            } else if (imageEl) {
+                replyText = 'Replying to: Image';
+            } else if (audioEl) {
+                replyText = 'Replying to: Voice message';
+            } else if (fileEl) {
+                replyText = 'Replying to: File';
+            } else {
+                replyText = 'Replying to: Message';
+            }
+        } else {
+            replyText = 'Replying to a deleted or unavailable message';
+        }
 
-    // Global function to toggle sidebar on mobile
-    function toggleSidebar() {
-        const sidebar = document.getElementById('chatSidebar');
-        sidebar.classList.toggle('open');
+        replyPreview.innerHTML = `
+            <div class="reply-content">
+                <span class="reply-text">${replyText}</span>
+                <button class="close-reply" onclick="window.chatApp.cancelReply()">×</button>
+            </div>
+        `;
+    } else if (replyPreview) {
+        replyPreview.remove();
     }
+}
 
-    // Initialize the chat
-    window.chatApp = new PersonalChat();
+    cancelReply() {
+        this.replyTo = null;
+        this.updateReplyPreview();
+    }
+}
+
+window.chatApp = new PersonalChat();
 </script>
 </body>
 </html>

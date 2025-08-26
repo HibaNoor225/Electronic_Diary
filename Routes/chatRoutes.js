@@ -1,10 +1,8 @@
 const express = require('express');
-const router = express.Router();
-
-
-const Chat = require("../Models/Chat");
-const Invitation = require("../Models/Invitation");
-const User = require("../Models/User");
+const Chat = require('../Models/Chat');
+const GroupChat = require('../Models/groupChat');
+const Invitation = require('../Models/Invitations');
+const User = require('../Models/User');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -12,7 +10,7 @@ const fs = require('fs');
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadPath = 'uploads/';
+        const uploadPath = 'Uploads/';
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
@@ -28,9 +26,10 @@ const upload = multer({
     storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf','audio/mpeg', // MP3
-            'audio/wav',  // WAV
-            'audio/webm'  ];
+        const allowedTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'application/pdf',
+            'audio/mpeg', 'audio/wav', 'audio/webm'
+        ];
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -39,55 +38,98 @@ const upload = multer({
     }
 });
 
-// Get all chats for a user
-router.get('/chat/:userId', async (req, res) => {
-    try {
-        const userId = req.params.userId;
-        const chats = await Chat.find({
-            $or: [{ senderId: userId }, { recipientId: userId }]
-        })
-            .sort({ updatedAt: -1 })
-            .lean();
+module.exports = (io) => {
+    const router = express.Router();
 
-        const chatData = await Promise.all(chats.map(async (chat) => {
-            const otherUserId = chat.senderId === userId ? chat.recipientId : chat.senderId;
-            const otherUser = await User.findById(otherUserId).select('username profilePic');
-            return {
-                userId: otherUserId,
-                username: otherUser?.username || 'Unknown',
-                profilePic: otherUser?.profilePic || '/default-avatar.png',
-                lastMessage: chat.lastMessage || '',
-                lastMessageTime: chat.updatedAt
-            };
-        }));
+    // =================== GET ALL CHATS ===================
+    router.get('/chat/:userId', async (req, res) => {
+        try {
+            const userId = req.params.userId;
+            if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+                return res.status(400).json({ success: false, message: 'Invalid user ID' });
+            }
 
-        res.json({ success: true, chats: chatData });
-    } catch (error) {
-        console.error('Error fetching chats:', error);
-        res.status(500).json({ success: false, message: 'Error fetching chats' });
-    }
-});
+            const personalChats = await Chat.find({
+                $or: [{ senderId: userId }, { recipientId: userId }]
+            }).sort({ updatedAt: -1 }).lean();
 
-// Get messages for a specific chat
-router.get('/chat/:userId/:recipientId', async (req, res) => {
-    try {
-        const { userId, recipientId } = req.params;
-        let chat = await Chat.findOne({
-            $or: [
-                { senderId: userId, recipientId },
-                { senderId: recipientId, recipientId: userId }
-            ]
-        }).lean();
+            const personalChatData = await Promise.all(personalChats.map(async (chat) => {
+                const otherUserId = chat.senderId === userId ? chat.recipientId : chat.senderId;
+                const otherUser = await User.findById(otherUserId).select('username profilePic').lean();
+                return {
+                    chatId: chat._id.toString(),
+                    type: 'personal',
+                    userId: otherUserId,
+                    username: otherUser?.username || 'Unknown',
+                    profilePic: otherUser?.profilePic || null,
+                    lastMessage: chat.lastMessage || '',
+                    lastMessageTime: chat.updatedAt
+                };
+            }));
 
-        if (!chat) {
-            chat = new Chat({ senderId: userId, recipientId, messages: [] });
-            await chat.save();
+            const groupChats = await GroupChat.find({ participants: userId })
+                .sort({ updatedAt: -1 })
+                .lean();
+
+            const groupChatData = groupChats.map(group => ({
+                chatId: group._id.toString(),
+                type: 'group',
+                groupName: group.groupName,
+                participants: group.participants.map(id => id.toString()),
+                adminId: group.adminId.toString(),
+                lastMessage: group.lastMessage || '',
+                lastMessageTime: group.updatedAt
+            }));
+
+            const chats = [...personalChatData, ...groupChatData].sort(
+                (a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
+            );
+
+            res.json({ success: true, chats });
+        } catch (error) {
+            console.error('Error fetching chats:', error);
+            res.status(500).json({ success: false, message: 'Error fetching chats' });
         }
+    });
+
+    // =================== GET MESSAGES ===================
+    router.get('/messages/:chatId', async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const userId = req.query.userId; // Add userId as a query parameter
+        if (!chatId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ success: false, message: 'Invalid chat ID' });
+        }
+
+        let chat = await Chat.findById(chatId).lean();
+        let type = 'personal';
+        if (!chat) {
+            chat = await GroupChat.findById(chatId).lean();
+            type = 'group';
+        }
+        if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+
+        const messages = chat.messages || [];
+        // Filter out messages where the userId is in hiddenFor
+        const filteredMessages = messages.filter(
+            msg => !msg.hiddenFor?.includes(userId)
+        );
 
         res.json({
             success: true,
-            chatId: chat._id,
-            messages: chat.messages || []
+            chatId: chat._id.toString(),
+            type,
+            messages: filteredMessages.map(msg => ({
+                ...msg,
+                _id: msg._id?.toString() || null,
+                sender: msg.sender?.toString() || null,
+                replyTo: msg.replyTo?.toString() || null,
+                hiddenFor: msg.hiddenFor?.map(id => id.toString()) || [],
+                reactions: msg.reactions?.map(r => ({
+                    ...r,
+                    userId: r.userId?.toString() || null
+                })) || []
+            }))
         });
     } catch (error) {
         console.error('Error fetching messages:', error);
@@ -95,201 +137,337 @@ router.get('/chat/:userId/:recipientId', async (req, res) => {
     }
 });
 
-// Send a message
-router.post("/sendMessage", async (req, res) => {
+    // =================== SEND MESSAGE ===================
+    router.post('/sendMessage', async (req, res) => {
     try {
-        const { senderId, recipientId, message, replyTo } = req.body;
-
-        if (!senderId || !recipientId || !message) {
-            return res.status(400).json({ success: false, error: "Missing fields" });
+        const { chatId, senderId, message, replyTo, type, fileUrl, fileType, fileName, fileSize, duration } = req.body;
+        if (!chatId || !senderId || !type || (!message && !fileUrl)) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
-        let chat = await Chat.findOne({
-            $or: [
-                { senderId, recipientId },
-                { senderId: recipientId, recipientId: senderId }
-            ]
-        });
+        let chat = (type === 'personal')
+            ? await Chat.findById(chatId)
+            : await GroupChat.findById(chatId);
 
-        if (!chat) {
-            chat = new Chat({ senderId, recipientId, messages: [], lastMessage: "" });
-        }
+        if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
 
         const newMessage = {
             sender: senderId,
-            message,
+            message: message || '',
             timestamp: new Date(),
             replyTo: replyTo || null,
             hiddenFor: [],
             reactions: [],
-            deletedForEveryone: false
+            deletedForEveryone: false,
+            fileUrl,
+            fileType,
+            fileName,
+            fileSize,
+            duration: duration ? parseInt(duration) : null
         };
 
         chat.messages.push(newMessage);
-        chat.lastMessage = message;
+        chat.lastMessage = fileUrl
+            ? (fileType === 'image' ? 'Shared a beautiful moment'
+                : fileType === 'audio' ? 'Shared a voice message'
+                : 'Shared a file')
+            : message || 'Message';
         chat.updatedAt = new Date();
         await chat.save();
 
-        res.json({ success: true, message: newMessage });
-    } catch (err) {
-        console.error('Error sending message:', err);
-        res.status(500).json({ success: false, error: "Server error" });
-    }
-});
-router.post('/upload', upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: 'No file uploaded' });
-        }
-
-        const { senderId, recipientId, duration } = req.body;
-        if (!senderId || !recipientId) {
-            return res.status(400).json({ success: false, message: 'Missing sender or recipient' });
-        }
-
-        const fileUrl = `/uploads/${req.file.filename}`;
-        const fileType = req.file.mimetype.startsWith('image')
-            ? 'image'
-            : req.file.mimetype.startsWith('audio')
-            ? 'audio'
-            : 'file';
-
-        // Do NOT save to chat here; return file info for frontend to handle via socket
-        res.json({ 
-            success: true, 
-            fileUrl, 
-            fileType, 
-            message: '', 
-            duration: duration ? parseInt(duration) : null 
+        io.to(chatId).emit('receiveMessage', {
+            _id: newMessage._id.toString(),
+            sender: senderId,
+            message: newMessage.message,
+            fileUrl,
+            fileType,
+            fileName,
+            fileSize,
+            timestamp: newMessage.timestamp,
+            replyTo: newMessage.replyTo?.toString() || null,
+            duration: newMessage.duration,
+            type
         });
+
+        res.json({ success: true, message: { ...newMessage, _id: newMessage._id.toString(), replyTo: newMessage.replyTo?.toString() || null }, chatId, type });
     } catch (error) {
-        console.error('Error uploading file:', error);
-        res.status(500).json({ success: false, message: 'Error uploading file' });
-    }
-});
-router.post("/:chatId/react/:messageId", async (req, res) => {
-    try {
-        const { chatId, messageId } = req.params;
-        const { emoji, userId } = req.body;
-
-        if (!emoji || !userId) {
-            return res.status(400).json({ success: false, message: 'Missing emoji or userId' });
-        }
-
-        const chat = await Chat.findOne({ _id: chatId });
-        if (!chat) {
-            return res.status(404).json({ success: false, message: 'Chat not found' });
-        }
-
-        const message = chat.messages.id(messageId);
-        if (!message) {
-            return res.status(404).json({ success: false, message: 'Message not found' });
-        }
-
-        if (!message.reactions) message.reactions = [];
-
-        const existing = message.reactions.find(r => r.userId === userId && r.emoji === emoji);
-        if (existing) {
-            message.reactions = message.reactions.filter(r => !(r.userId === userId && r.emoji === emoji));
-        } else {
-            message.reactions.push({ emoji, userId });
-        }
-
-        await chat.save();
-        res.json({ success: true, reactions: message.reactions });
-
-        // Emit via socket (handled in chatSocket.js)
-    } catch (error) {
-        console.error('Error reacting to message:', error);
-        res.status(500).json({ success: false, message: 'Error reacting to message' });
+        console.error('Error sending message:', error);
+        res.status(500).json({ success: false, message: 'Error sending message' });
     }
 });
 
-// Delete a message
-router.post("/:chatId/delete/:messageId", async (req, res) => {
-    try {
-        const { chatId, messageId } = req.params;
-        const { userId, forEveryone } = req.body;
+    // =================== FILE UPLOAD ===================
+    router.post('/upload', upload.single('file'), async (req, res) => {
+        try {
+            if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
 
-        if (!userId) {
-            return res.status(400).json({ success: false, message: 'Missing userId' });
+            const fileUrl = `/uploads/${req.file.filename}`;
+            const fileType = req.file.mimetype.startsWith('image')
+                ? 'image'
+                : req.file.mimetype.startsWith('audio')
+                ? 'audio'
+                : 'file';
+
+            res.json({
+                success: true,
+                fileUrl,
+                fileType,
+                fileName: req.file.originalname,
+                fileSize: req.file.size
+            });
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            res.status(500).json({ success: false, message: 'Error uploading file' });
         }
+    });
 
-        const chat = await Chat.findOne({ _id: chatId });
-        if (!chat) {
-            return res.status(404).json({ success: false, message: 'Chat not found' });
-        }
+    // =================== REACT TO MESSAGE ===================
+    router.post('/message/react/:messageId', async (req, res) => {
+        try {
+            const { messageId } = req.params;
+            const { emoji, userId, type, chatId } = req.body;
 
-        const message = chat.messages.id(messageId);
-        if (!message) {
-            return res.status(404).json({ success: false, message: 'Message not found' });
-        }
+            let chat = (type === 'personal')
+                ? await Chat.findById(chatId)
+                : await GroupChat.findById(chatId);
 
-        if (forEveryone && message.sender !== userId) {
-            return res.status(403).json({ success: false, message: 'Not authorized to delete for everyone' });
-        }
+            if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
 
-        if (forEveryone) {
-            message.deletedForEveryone = true;
-            message.message = "🚫 This message was deleted";
-            chat.lastMessage = "Message deleted";
-        } else {
-            if (!message.hiddenFor.includes(userId)) {
-                message.hiddenFor.push(userId);
+            const message = chat.messages.id(messageId);
+            if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
+
+            if (!message.reactions) message.reactions = [];
+            const existing = message.reactions.find(r => r.userId?.toString() === userId && r.emoji === emoji);
+            if (existing) {
+                message.reactions = message.reactions.filter(r => !(r.userId?.toString() === userId && r.emoji === emoji));
+            } else {
+                message.reactions.push({ emoji, userId });
             }
+
+            await chat.save();
+
+            io.to(chatId).emit('messageReacted', { messageId, reaction: emoji, type });
+
+            res.json({ success: true, reactions: message.reactions.map(r => ({ ...r, userId: r.userId?.toString() })) });
+        } catch (error) {
+            console.error('Error reacting to message:', error);
+            res.status(500).json({ success: false, message: 'Error reacting to message' });
+        }
+    });
+
+    // =================== DELETE FOR ME ===================
+   router.post('/message/delete/me', async (req, res) => {
+    try {
+        const { messageId, userId, type, chatId } = req.body;
+
+        let chat = (type === 'personal')
+            ? await Chat.findById(chatId)
+            : await GroupChat.findById(chatId);
+
+        if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+
+        const message = chat.messages.id(messageId);
+        if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
+
+        if (!message.hiddenFor.includes(userId)) {
+            message.hiddenFor.push(userId);
         }
 
         await chat.save();
-        res.json({ success: true, message });
+        io.to(chatId).emit('messageDeletedForMe', { messageId, userId, type });
+
+        res.json({ success: true });
     } catch (error) {
-        console.error('Error deleting message:', error);
+        console.error('Error deleting message for me:', error);
         res.status(500).json({ success: false, message: 'Error deleting message' });
     }
 });
 
+    // =================== DELETE FOR EVERYONE ===================
+    router.post('/message/delete/everyone', async (req, res) => {
+        try {
+            const { messageId, userId, type, chatId } = req.body;
 
+            let chat = (type === 'personal')
+                ? await Chat.findById(chatId)
+                : await GroupChat.findById(chatId);
 
-router.get("/friends/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
+            if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
 
-    // --- 1. From chats ---
-    const chats = await Chat.find({
-      $or: [{ senderId: userId }, { recipientId: userId }]
-    }).lean();
+            const message = chat.messages.id(messageId);
+            if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
 
-    const chatUserIds = chats.map(chat =>
-      chat.senderId.toString() === userId.toString()
-        ? chat.recipientId.toString()
-        : chat.senderId.toString()
-    );
+            message.deletedForEveryone = true;
+            message.message = '🚫 This message was deleted';
+            chat.lastMessage = 'Message deleted';
+            await chat.save();
 
-    // --- 2. From invitations ---
-    const invitations = await Invitation.find({
-      $or: [{ senderId: userId }, { recipientId: userId }]
-    }).lean();
+            io.to(chatId).emit('messageDeletedForEveryone', { messageId, chatId, type });
 
-    const inviteUserIds = invitations.map(inv =>
-      inv.senderId.toString() === userId.toString()
-        ? inv.recipientId.toString()
-        : inv.senderId.toString()
-    );
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error deleting message for everyone:', error);
+            res.status(500).json({ success: false, message: 'Error deleting message' });
+        }
+    });
 
-    // --- 3. Merge both & remove duplicates ---
-    const allUserIds = [...new Set([...chatUserIds, ...inviteUserIds])];
+    // =================== GROUP ROUTES ===================
+    router.post('/group/create', async (req, res) => {
+        try {
+            const { groupName, members, createdBy } = req.body;
+            const group = new GroupChat({
+                groupName,
+                participants: members,
+                adminId: createdBy,
+                createdBy,
+                messages: [],
+                lastMessage: '',
+                updatedAt: new Date()
+            });
+            await group.save();
 
-    // --- 4. Fetch user details ---
-    const friends = await User.find({ _id: { $in: allUserIds } })
-      .select("username profilePic")
-      .lean();
+            io.to(group._id.toString()).emit('groupCreated', {
+                groupId: group._id.toString(),
+                groupName,
+                participants: group.participants.map(id => id.toString()),
+                adminId: group.adminId.toString()
+            });
 
-    res.json({ success: true, friends });
-  } catch (error) {
-    console.error("Error fetching friend list:", error);
-    res.status(500).json({ success: false, message: "Error fetching friends" });
-  }
-});
+            res.json({ success: true, group });
+        } catch (error) {
+            console.error('Error creating group:', error);
+            res.status(500).json({ success: false, message: 'Error creating group' });
+        }
+    });
 
+    router.post('/group/:groupId/add', async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const { userId } = req.body;
 
+            const group = await GroupChat.findById(groupId);
+            group.participants.push(userId);
+            await group.save();
 
-module.exports = router;
+            io.to(groupId).emit('memberAdded', { userId, groupId });
+            res.json({ success: true, group });
+        } catch (error) {
+            console.error('Error adding member:', error);
+            res.status(500).json({ success: false, message: 'Error adding member' });
+        }
+    });
+
+    router.post('/group/:groupId/remove', async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const { userId } = req.body;
+
+            const group = await GroupChat.findById(groupId);
+            group.participants = group.participants.filter(id => id.toString() !== userId);
+            await group.save();
+
+            io.to(groupId).emit('memberRemoved', { userId, groupId });
+            res.json({ success: true, group });
+        } catch (error) {
+            console.error('Error removing member:', error);
+            res.status(500).json({ success: false, message: 'Error removing member' });
+        }
+    });
+
+    router.post('/group/:groupId/leave', async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const { userId } = req.body;
+
+            const group = await GroupChat.findById(groupId);
+            group.participants = group.participants.filter(id => id.toString() !== userId);
+
+            if (group.adminId.toString() === userId && group.participants.length > 0) {
+                group.adminId = group.participants[0];
+            }
+
+            await group.save();
+            io.to(groupId).emit('memberLeft', { userId, groupId });
+
+            if (group.participants.length === 0) {
+                await GroupChat.deleteOne({ _id: groupId });
+                io.to(groupId).emit('groupDeleted', { groupId });
+            }
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error leaving group:', error);
+            res.status(500).json({ success: false, message: 'Error leaving group' });
+        }
+    });
+
+    router.post('/group/delete', async (req, res) => {
+        try {
+            const { groupId } = req.body;
+            await GroupChat.deleteOne({ _id: groupId });
+
+            io.to(groupId).emit('groupDeleted', { groupId });
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error deleting group:', error);
+            res.status(500).json({ success: false, message: 'Error deleting group' });
+        }
+    });
+
+    // =================== FRIENDS ===================
+    router.get('/friends/:userId', async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const chats = await Chat.find({
+                $or: [{ senderId: userId }, { recipientId: userId }]
+            }).lean();
+
+            const chatUserIds = chats.map(chat =>
+                chat.senderId.toString() === userId
+                    ? chat.recipientId.toString()
+                    : chat.senderId.toString()
+            );
+
+            const invitations = await Invitation.find({
+                $or: [{ senderId: userId }, { recipientId: userId }]
+            }).lean();
+
+            const inviteUserIds = invitations.map(inv =>
+                inv.senderId.toString() === userId
+                    ? inv.recipientId.toString()
+                    : inv.senderId.toString()
+            );
+
+            const allUserIds = [...new Set([...chatUserIds, ...inviteUserIds])];
+            const friends = await User.find({ _id: { $in: allUserIds } })
+                .select('username profilePic')
+                .lean();
+
+            res.json({
+                success: true,
+                friends: friends.map(friend => ({
+                    ...friend,
+                    _id: friend._id.toString(),
+                    profilePic: friend.profilePic || null
+                }))
+            });
+        } catch (error) {
+            console.error('Error fetching friend list:', error);
+            res.status(500).json({ success: false, message: 'Error fetching friends' });
+        }
+    });
+
+    router.get('/user/:userId', async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const user = await User.findById(userId).select('username').lean();
+            if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+            res.json({ success: true, user: { username: user.username || 'Unknown' } });
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+            res.status(500).json({ success: false, message: 'Error fetching user details' });
+        }
+    });
+
+    return router;
+};
