@@ -94,114 +94,183 @@ module.exports = (io) => {
 
     // =================== GET MESSAGES ===================
     router.get('/messages/:chatId', async (req, res) => {
-    try {
-        const { chatId } = req.params;
-        const userId = req.query.userId; // Add userId as a query parameter
-        if (!chatId.match(/^[0-9a-fA-F]{24}$/)) {
-            return res.status(400).json({ success: false, message: 'Invalid chat ID' });
+        try {
+            const { chatId } = req.params;
+            const userId = req.query.userId;
+            if (!chatId.match(/^[0-9a-fA-F]{24}$/)) {
+                return res.status(400).json({ success: false, message: 'Invalid chat ID' });
+            }
+
+            let chat = await Chat.findById(chatId).lean();
+            let type = 'personal';
+            if (!chat) {
+                chat = await GroupChat.findById(chatId).lean();
+                type = 'group';
+            }
+            if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+
+            const messages = chat.messages || [];
+            const filteredMessages = messages.filter(
+                msg => !msg.hiddenFor?.includes(userId)
+            );
+
+            res.json({
+                success: true,
+                chatId: chat._id.toString(),
+                type,
+                messages: filteredMessages.map(msg => ({
+                    ...msg,
+                    _id: msg._id?.toString() || null,
+                    sender: msg.sender?.toString() || null,
+                    replyTo: msg.replyTo?.toString() || null,
+                    hiddenFor: msg.hiddenFor?.map(id => id.toString()) || [],
+                    reactions: msg.reactions?.map(r => ({
+                        ...r,
+                        userId: r.userId?.toString() || null
+                    })) || []
+                }))
+            });
+        } catch (error) {
+            console.error('Error fetching messages:', error);
+            res.status(500).json({ success: false, message: 'Error fetching messages' });
         }
-
-        let chat = await Chat.findById(chatId).lean();
-        let type = 'personal';
-        if (!chat) {
-            chat = await GroupChat.findById(chatId).lean();
-            type = 'group';
-        }
-        if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
-
-        const messages = chat.messages || [];
-        // Filter out messages where the userId is in hiddenFor
-        const filteredMessages = messages.filter(
-            msg => !msg.hiddenFor?.includes(userId)
-        );
-
-        res.json({
-            success: true,
-            chatId: chat._id.toString(),
-            type,
-            messages: filteredMessages.map(msg => ({
-                ...msg,
-                _id: msg._id?.toString() || null,
-                sender: msg.sender?.toString() || null,
-                replyTo: msg.replyTo?.toString() || null,
-                hiddenFor: msg.hiddenFor?.map(id => id.toString()) || [],
-                reactions: msg.reactions?.map(r => ({
-                    ...r,
-                    userId: r.userId?.toString() || null
-                })) || []
-            }))
-        });
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-        res.status(500).json({ success: false, message: 'Error fetching messages' });
-    }
-});
+    });
 
     // =================== SEND MESSAGE ===================
     router.post('/sendMessage', async (req, res) => {
-    try {
-        const { chatId, senderId, message, replyTo, type, fileUrl, fileType, fileName, fileSize, duration } = req.body;
-        if (!chatId || !senderId || !type || (!message && !fileUrl)) {
-            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        try {
+            const { chatId, senderId, message, replyTo, type, fileUrl, fileType, fileName, fileSize, duration } = req.body;
+            if (!chatId || !senderId || !type || (!message && !fileUrl)) {
+                return res.status(400).json({ success: false, message: 'Missing required fields' });
+            }
+
+            let chat = (type === 'personal')
+                ? await Chat.findById(chatId)
+                : await GroupChat.findById(chatId);
+
+            if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+
+            const newMessage = {
+                sender: senderId,
+                message: message || '',
+                timestamp: new Date(),
+                replyTo: replyTo || null,
+                hiddenFor: [],
+                reactions: [],
+                deletedForEveryone: false,
+                fileUrl,
+                fileType,
+                fileName,
+                fileSize,
+                duration: duration ? parseInt(duration) : null
+            };
+
+            chat.messages.push(newMessage);
+            chat.lastMessage = fileUrl
+                ? (fileType === 'image' ? 'Shared a beautiful moment'
+                    : fileType === 'audio' ? 'Shared a voice message'
+                    : 'Shared a file')
+                : message || 'Message';
+            chat.updatedAt = new Date();
+            await chat.save();
+
+            io.to(chatId).emit('receiveMessage', {
+                _id: newMessage._id.toString(),
+                sender: senderId,
+                message: newMessage.message,
+                fileUrl,
+                fileType,
+                fileName,
+                fileSize,
+                timestamp: newMessage.timestamp,
+                replyTo: newMessage.replyTo?.toString() || null,
+                duration: newMessage.duration,
+                type
+            });
+
+            res.json({ success: true, message: { ...newMessage, _id: newMessage._id.toString(), replyTo: newMessage.replyTo?.toString() || null }, chatId, type });
+        } catch (error) {
+            console.error('Error sending message:', error);
+            res.status(500).json({ success: false, message: 'Error sending message' });
         }
+    });
 
-        let chat = (type === 'personal')
-            ? await Chat.findById(chatId)
-            : await GroupChat.findById(chatId);
+    // =================== EDIT MESSAGE ===================
+    router.post('/message/edit', async (req, res) => {
+        try {
+            const { messageId, userId, type, chatId, newText } = req.body;
 
-        if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+            // Validate input
+            if (!messageId || !userId || !type || !chatId || !newText) {
+                return res.status(400).json({ success: false, message: 'Missing required fields' });
+            }
+            if (!chatId.match(/^[0-9a-fA-F]{24}$/) || !messageId.match(/^[0-9a-fA-F]{24}$/) || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+                return res.status(400).json({ success: false, message: 'Invalid chat ID, message ID, or user ID' });
+            }
+            if (newText.trim() === '') {
+                return res.status(400).json({ success: false, message: 'Edited message cannot be empty' });
+            }
 
-        const newMessage = {
-            sender: senderId,
-            message: message || '',
-            timestamp: new Date(),
-            replyTo: replyTo || null,
-            hiddenFor: [],
-            reactions: [],
-            deletedForEveryone: false,
-            fileUrl,
-            fileType,
-            fileName,
-            fileSize,
-            duration: duration ? parseInt(duration) : null
-        };
+            // Find chat
+            let chat = (type === 'personal')
+                ? await Chat.findById(chatId)
+                : await GroupChat.findById(chatId);
 
-        chat.messages.push(newMessage);
-        chat.lastMessage = fileUrl
-            ? (fileType === 'image' ? 'Shared a beautiful moment'
-                : fileType === 'audio' ? 'Shared a voice message'
-                : 'Shared a file')
-            : message || 'Message';
-        chat.updatedAt = new Date();
-        await chat.save();
+            if (!chat) {
+                return res.status(404).json({ success: false, message: 'Chat not found' });
+            }
 
-        io.to(chatId).emit('receiveMessage', {
-            _id: newMessage._id.toString(),
-            sender: senderId,
-            message: newMessage.message,
-            fileUrl,
-            fileType,
-            fileName,
-            fileSize,
-            timestamp: newMessage.timestamp,
-            replyTo: newMessage.replyTo?.toString() || null,
-            duration: newMessage.duration,
-            type
-        });
+            // Find message
+            const message = chat.messages.id(messageId);
+            if (!message) {
+                return res.status(404).json({ success: false, message: 'Message not found' });
+            }
 
-        res.json({ success: true, message: { ...newMessage, _id: newMessage._id.toString(), replyTo: newMessage.replyTo?.toString() || null }, chatId, type });
-    } catch (error) {
-        console.error('Error sending message:', error);
-        res.status(500).json({ success: false, message: 'Error sending message' });
-    }
-});
+            // Check if user is the sender
+            if (message.sender.toString() !== userId) {
+                return res.status(403).json({ success: false, message: 'Only the sender can edit this message' });
+            }
+
+            // Check if message is already deleted
+            if (message.deletedForEveryone) {
+                return res.status(400).json({ success: false, message: 'Cannot edit a deleted message' });
+            }
+
+            // Check if message is text (only text messages can be edited)
+            if (message.fileType) {
+                return res.status(400).json({ success: false, message: 'Only text messages can be edited' });
+            }
+
+            // Update message
+            message.message = newText.trim();
+            message.edited = true; // Add edited flag
+            message.updatedAt = new Date();
+            chat.lastMessage = newText.trim();
+            chat.updatedAt = new Date();
+            await chat.save();
+
+            // Emit socket event
+            io.to(chatId).emit('messageEdited', {
+                messageId,
+                chatId,
+                type,
+                newText: newText.trim(),
+                updatedAt: message.updatedAt
+            });
+
+            res.json({ success: true, message: { ...message.toObject(), _id: message._id.toString() } });
+        } catch (error) {
+            console.error('Error editing message:', error);
+            res.status(500).json({ success: false, message: 'Error editing message' });
+        }
+    });
 
     // =================== FILE UPLOAD ===================
     router.post('/upload', upload.single('file'), async (req, res) => {
         try {
             if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
 
-            const fileUrl = `/uploads/${req.file.filename}`;
+            const fileUrl = `/Uploads/${req.file.filename}`;
             const fileType = req.file.mimetype.startsWith('image')
                 ? 'image'
                 : req.file.mimetype.startsWith('audio')
@@ -256,32 +325,32 @@ module.exports = (io) => {
     });
 
     // =================== DELETE FOR ME ===================
-   router.post('/message/delete/me', async (req, res) => {
-    try {
-        const { messageId, userId, type, chatId } = req.body;
+    router.post('/message/delete/me', async (req, res) => {
+        try {
+            const { messageId, userId, type, chatId } = req.body;
 
-        let chat = (type === 'personal')
-            ? await Chat.findById(chatId)
-            : await GroupChat.findById(chatId);
+            let chat = (type === 'personal')
+                ? await Chat.findById(chatId)
+                : await GroupChat.findById(chatId);
 
-        if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+            if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
 
-        const message = chat.messages.id(messageId);
-        if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
+            const message = chat.messages.id(messageId);
+            if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
 
-        if (!message.hiddenFor.includes(userId)) {
-            message.hiddenFor.push(userId);
+            if (!message.hiddenFor.includes(userId)) {
+                message.hiddenFor.push(userId);
+            }
+
+            await chat.save();
+            io.to(chatId).emit('messageDeletedForMe', { messageId, userId, type });
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error deleting message for me:', error);
+            res.status(500).json({ success: false, message: 'Error deleting message' });
         }
-
-        await chat.save();
-        io.to(chatId).emit('messageDeletedForMe', { messageId, userId, type });
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error deleting message for me:', error);
-        res.status(500).json({ success: false, message: 'Error deleting message' });
-    }
-});
+    });
 
     // =================== DELETE FOR EVERYONE ===================
     router.post('/message/delete/everyone', async (req, res) => {

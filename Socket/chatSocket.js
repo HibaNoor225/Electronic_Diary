@@ -1,3 +1,5 @@
+
+// Socket.IO Logic
 const Chat = require('../Models/Chat');
 const GroupChat = require('../Models/groupChat');
 
@@ -17,7 +19,6 @@ module.exports = (io) => {
             onlineUsers[userId] = socket.id;
             console.log(`User ${userId} is online with socket ${socket.id}`);
 
-            // Notify all relevant chats
             Promise.all([
                 Chat.find({
                     $or: [{ senderId: userId }, { recipientId: userId }]
@@ -46,93 +47,156 @@ module.exports = (io) => {
         });
 
         // Send message
-        // Send message
-socket.on('sendMessage', async ({ chatId, senderId, message, fileUrl, fileType, fileName, fileSize, replyTo, tempId, duration, type }) => {
-    if (!chatId || !senderId || !type || (!message && !fileUrl)) {
-        console.error('Missing required fields in sendMessage:', { chatId, senderId, type });
-        return;
-    }
-    if (!chatId.match(/^[0-9a-fA-F]{24}$/) || !senderId.match(/^[0-9a-fA-F]{24}$/)) {
-        console.error('Invalid chatId or senderId:', { chatId, senderId });
-        return;
-    }
+        socket.on('sendMessage', async ({ chatId, senderId, message, fileUrl, fileType, fileName, fileSize, replyTo, tempId, duration, type }) => {
+            if (!chatId || !senderId || !type || (!message && !fileUrl)) {
+                console.error('Missing required fields in sendMessage:', { chatId, senderId, type });
+                return;
+            }
+            if (!chatId.match(/^[0-9a-fA-F]{24}$/) || !senderId.match(/^[0-9a-fA-F]{24}$/)) {
+                console.error('Invalid chatId or senderId:', { chatId, senderId });
+                return;
+            }
 
-    try {
-        let chat;
-        if (type === 'personal') {
-            chat = await Chat.findById(chatId);
-        } else if (type === 'group') {
-            chat = await GroupChat.findById(chatId);
-        }
-        if (!chat) {
-            console.error('Chat not found:', chatId);
-            return;
-        }
-        // Check if user is in chat, with fallback for personal chats
-        const isParticipant = type === 'personal'
-            ? (chat.senderId && chat.senderId.toString && chat.senderId.toString() === senderId) || 
-              (chat.recipientId && chat.recipientId.toString && chat.recipientId.toString() === senderId)
-            : (chat.participants && Array.isArray(chat.participants) && 
-               chat.participants.some(id => id && id.toString && id.toString() === senderId));
-        if (!isParticipant) {
-            console.error('User not in chat:', senderId);
-            return;
-        }
+            try {
+                let chat;
+                if (type === 'personal') {
+                    chat = await Chat.findById(chatId);
+                } else if (type === 'group') {
+                    chat = await GroupChat.findById(chatId);
+                }
+                if (!chat) {
+                    console.error('Chat not found:', chatId);
+                    return;
+                }
+                const isParticipant = type === 'personal'
+                    ? (chat.senderId && chat.senderId.toString && chat.senderId.toString() === senderId) || 
+                      (chat.recipientId && chat.recipientId.toString && chat.recipientId.toString() === senderId)
+                    : (chat.participants && Array.isArray(chat.participants) && 
+                       chat.participants.some(id => id && id.toString && id.toString() === senderId));
+                if (!isParticipant) {
+                    console.error('User not in chat:', senderId);
+                    return;
+                }
 
-        const newMsg = {
-            sender: senderId,
-            message: message || '',
-            fileUrl,
-            fileType,
-            fileName,
-            fileSize,
-            timestamp: new Date(),
-            replyTo: replyTo || null,
-            hiddenFor: [],
-            reactions: [],
-            deletedForEveryone: false,
-            duration: duration ? parseInt(duration) : null
-        };
+                const newMsg = {
+                    sender: senderId,
+                    message: message || '',
+                    fileUrl,
+                    fileType,
+                    fileName,
+                    fileSize,
+                    timestamp: new Date(),
+                    replyTo: replyTo || null,
+                    hiddenFor: [],
+                    reactions: [],
+                    deletedForEveryone: false,
+                    duration: duration ? parseInt(duration) : null
+                };
 
-        chat.messages.push(newMsg);
-        chat.lastMessage = fileUrl
-            ? (fileType === 'image' ? 'Shared a beautiful moment' : fileType === 'audio' ? 'Shared a voice message' : 'Shared a file')
-            : message || 'Message deleted';
-        chat.updatedAt = new Date();
-        await chat.save();
+                chat.messages.push(newMsg);
+                chat.lastMessage = fileUrl
+                    ? (fileType === 'image' ? 'Shared a beautiful moment' : fileType === 'audio' ? 'Shared a voice message' : 'Shared a file')
+                    : message || 'Message deleted';
+                chat.updatedAt = new Date();
+                await chat.save();
 
-        const messageId = chat.messages[chat.messages.length - 1]._id.toString();
+                const messageId = chat.messages[chat.messages.length - 1]._id.toString();
 
-        // Broadcast to all in chat room
-        io.to(chatId).emit('receiveMessage', {
-            _id: messageId,
-            chatId,
-            type,
-            sender: senderId,
-            message: newMsg.message,
-            fileUrl,
-            fileType,
-            fileName,
-            fileSize,
-            timestamp: newMsg.timestamp,
-            replyTo: newMsg.replyTo,
-            duration: newMsg.duration,
-            tempId
+                io.to(chatId).emit('receiveMessage', {
+                    _id: messageId,
+                    chatId,
+                    type,
+                    sender: senderId,
+                    message: newMsg.message,
+                    fileUrl,
+                    fileType,
+                    fileName,
+                    fileSize,
+                    timestamp: newMsg.timestamp,
+                    replyTo: newMsg.replyTo,
+                    duration: newMsg.duration,
+                    tempId
+                });
+
+                if (onlineUsers[senderId]) {
+                    io.to(onlineUsers[senderId]).emit('messageConfirmed', {
+                        chatId,
+                        tempId,
+                        messageId,
+                        type
+                    });
+                }
+            } catch (err) {
+                console.error('Error saving message:', err);
+            }
         });
 
-        // Send confirmation to sender
-        if (onlineUsers[senderId]) {
-            io.to(onlineUsers[senderId]).emit('messageConfirmed', {
-                chatId,
-                tempId,
-                messageId,
-                type
-            });
-        }
-    } catch (err) {
-        console.error('Error saving message:', err);
-    }
-});
+        // Edit message
+        socket.on('editMessage', async ({ chatId, messageId, userId, newText, type }) => {
+            if (!chatId || !messageId || !userId || !newText || !type) {
+                console.error('Missing fields in editMessage:', { chatId, messageId, userId, newText, type });
+                return;
+            }
+            if (!chatId.match(/^[0-9a-fA-F]{24}$/) || !messageId.match(/^[0-9a-fA-F]{24}$/) || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+                console.error('Invalid IDs in editMessage:', { chatId, messageId, userId });
+                return;
+            }
+            if (newText.trim() === '') {
+                console.error('Edited message cannot be empty');
+                return;
+            }
+
+            try {
+                let chat;
+                if (type === 'personal') {
+                    chat = await Chat.findById(chatId);
+                } else if (type === 'group') {
+                    chat = await GroupChat.findById(chatId);
+                }
+                if (!chat) {
+                    console.error('Chat not found:', chatId);
+                    return;
+                }
+
+                const message = chat.messages.id(messageId);
+                if (!message) {
+                    console.error('Message not found:', messageId);
+                    return;
+                }
+
+                if (message.sender.toString() !== userId) {
+                    console.error('User not authorized to edit message:', userId);
+                    return;
+                }
+
+                if (message.deletedForEveryone) {
+                    console.error('Cannot edit a deleted message:', messageId);
+                    return;
+                }
+
+                if (message.fileType) {
+                    console.error('Only text messages can be edited:', messageId);
+                    return;
+                }
+
+                message.message = newText.trim();
+                message.edited = true;
+                message.updatedAt = new Date();
+                chat.lastMessage = newText.trim();
+                chat.updatedAt = new Date();
+                await chat.save();
+
+                io.to(chatId).emit('messageEdited', {
+                    messageId,
+                    chatId,
+                    type,
+                    newText: newText.trim(),
+                    updatedAt: message.updatedAt
+                });
+            } catch (err) {
+                console.error('Error editing message:', err);
+            }
+        });
 
         // Delete for me
         socket.on('deleteMessageForMe', async ({ chatId, messageId, userId, type }) => {

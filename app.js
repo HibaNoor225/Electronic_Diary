@@ -12,9 +12,9 @@ const postRoutes=require("./Routes/postRoutes");
 const userRoutes = require('./Routes/userRoutes');
 const CategoryMoodRoutes=require("./Routes/CategoryMoodRoutes.js")
 const suggestionRoutes=require("./Routes/suggestions.js")
-const chatRoutes = require('./Routes/chatRoutes'); // new
 
 
+const aiRoutes=require('./Routes/generateAi.js')
 
 const seedAdminAndData=require("./seedAdmin.js")
 app.use(express.urlencoded({ extended: true }));
@@ -60,6 +60,7 @@ app.use('/api/users', userRoutes);
 app.use('/api', CategoryMoodRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/admin',adminRoutes)
+app.use('/api/ai',aiRoutes)
 //app.use('/chat/api', chatRoutes); // correct
 
 

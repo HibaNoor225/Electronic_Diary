@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -392,6 +393,7 @@ body {
     margin-left: 8px;
     vertical-align: middle;
 }
+
 .event-category, .event-mood {
     width: 100%;
     padding: 12px 15px;
@@ -411,6 +413,7 @@ body {
     transform: translateY(-1px);
     background: rgba(255, 255, 255, 1);
 }
+
 .category-Work { background-color:#f39c12; color:white; }
 .category-Personal { background-color:#3498db; color:white; }
 .category-Travel { background-color:#2ecc71; color:white; }
@@ -424,10 +427,112 @@ body {
 .mood-Stressed { color:#e74c3c; }
 .mood-Neutral { color:#7f8c8d; }
 
+.ai-generate-btn {
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #8b4513, #a0522d);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+    box-shadow: 0 2px 10px rgba(139,69,19,0.2);
+}
 
+.ai-generate-btn:hover {
+    transform: scale(1.05);
+}
+
+.ai-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.ai-modal-content {
+    background: #fdfbf7;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 3px solid #d4c5a9;
+}
+
+.ai-modal-content h2 {
+    color: #5d4037;
+    margin-bottom: 20px;
+}
+
+.ai-modal-content label {
+    display: block;
+    margin-bottom: 10px;
+    color: #5d4037;
+    font-weight: 600;
+}
+
+.ai-modal-content textarea,
+.ai-modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 2px solid #d4c5a9;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1rem;
+    color: #2c2c2c;
+}
+
+.ai-modal-content textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.ai-modal-content select {
+    padding: 12px 15px;
+}
+
+.ai-modal-content button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #8b4513, #a0522d);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+}
+
+.ai-modal-content button:hover {
+    transform: translateY(-2px);
+}
+
+.ai-modal-content button.secondary {
+    background: linear-gradient(135deg, #5d4037, #8b4513);
+}
+
+#ai-result {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #d4c5a9;
+    border-radius: 8px;
+    min-height: 100px;
+    white-space: pre-wrap;
+}
 </style>
-
-
 </head>
 
 <body>
@@ -462,6 +567,54 @@ body {
         </div>
     </div>
 </div>
+
+<div class="ai-modal" id="ai-modal">
+    <div class="ai-modal-content">
+        <h2>Generate Story with AI</h2>
+        <label for="ai-prompt">Keywords, Command, or Additional Text:</label>
+        <textarea id="ai-prompt" placeholder="Enter keywords like 'a family picnic in the park' or add continuation text..."></textarea>
+        <label for="ai-tone">Tone:</label>
+        <select id="ai-tone">
+<option value="reflective">Reflective</option>
+<option value="friendly">Friendly</option>
+    <option value="professional">Professional</option>
+<option value="casual">Casual</option>
+<option value="formal">Formal</option>
+<option value="playful">Playful</option>
+<option value="emotional">Emotional</option>
+<option value="melancholic">Melancholic</option>
+<option value="optimistic">Optimistic</option>
+<option value="adventurous">Adventurous</option>
+<option value="inspirational">Inspirational</option>
+
+        </select>
+        <label for="ai-style">Style:</label>
+        <select id="ai-style">
+           <option value="descriptive">Descriptive</option>
+<option value="minimal">Minimal</option>
+<option value="narrative">Narrative</option>
+<option value="poetic">Poetic</option>
+<option value="modern">Modern</option>
+<option value="dramatic">Dramatic</option>
+<option value="reflective">Reflective</option>
+<option value="humorous">Humorous</option>
+<option value="diary-style">Diary-style</option>
+        </select>
+        <label for="ai-length">Length:</label>
+        <select id="ai-length">
+          <option value="short">Short (3-4 sentences)</option>
+<option value="medium">Medium (7-8 sentences)</option>
+<option value="long">Long (10-12 sentences)</option>
+
+        </select>
+        <button id="ai-generate">Generate</button>
+        <button id="ai-regenerate" style="display: none;">Regenerate</button>
+        <button id="ai-copy" style="display: none;">Copy</button>
+        <button id="ai-close" class="secondary">Close</button>
+        <div id="ai-result"></div>
+    </div>
+</div>
+
 <script type="module">
 import { fetchCategories, fetchMoods } from './api.js';
 
@@ -486,6 +639,19 @@ const eventsList = document.getElementById('events-list');
 const addEventBtn = document.getElementById('add-event-btn');
 const saveAllBtn = document.getElementById('save-all-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
+
+// AI Modal Elements
+const aiModal = document.getElementById('ai-modal');
+const aiPrompt = document.getElementById('ai-prompt');
+const aiTone = document.getElementById('ai-tone');
+const aiStyle = document.getElementById('ai-style');
+const aiLength = document.getElementById('ai-length');
+const aiGenerate = document.getElementById('ai-generate');
+const aiRegenerate = document.getElementById('ai-regenerate');
+const aiCopy = document.getElementById('ai-copy');
+const aiClose = document.getElementById('ai-close');
+const aiResult = document.getElementById('ai-result');
+let currentTextarea = null;
 
 let eventCounter = 0;
 let categories = [];
@@ -526,7 +692,10 @@ function createEventForm() {
         
         <div class="form-group">
             <label>Tell the Story</label>
-            <textarea placeholder="Describe this memory..." class="event-desc"></textarea>
+            <div style="position: relative;">
+                <textarea placeholder="Describe this memory..." class="event-desc"></textarea>
+                <button class="ai-generate-btn" style="position: absolute; bottom: 10px; right: 10px;">Generate with AI</button>
+            </div>
         </div>
         
         <div class="form-group">
@@ -560,6 +729,7 @@ function createEventForm() {
     const categorySelect = div.querySelector('.event-category');
     const moodSelect = div.querySelector('.event-mood');
     const moodEmoji = div.querySelector('.mood-emoji');
+    const aiBtn = div.querySelector('.ai-generate-btn');
 
     categorySelect.innerHTML += categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
     moodSelect.innerHTML += moods.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
@@ -635,6 +805,17 @@ function createEventForm() {
         moodEmoji.textContent = selectedMood?.emojis?.length ? selectedMood.emojis[Math.floor(Math.random() * selectedMood.emojis.length)] : '';
     });
 
+    // AI Button Handler
+    aiBtn.onclick = () => {
+        currentTextarea = div.querySelector('.event-desc');
+        aiPrompt.value = currentTextarea.value.trim() || '';
+        aiResult.innerHTML = '';
+        aiGenerate.style.display = 'inline-block';
+        aiRegenerate.style.display = 'none';
+        aiCopy.style.display = 'none';
+        aiModal.style.display = 'flex';
+    };
+
     eventsList.appendChild(div);
 }
 
@@ -687,7 +868,7 @@ saveAllBtn.onclick = async () => {
                 throw new Error("Please fill in title, category, and mood before saving!");
             }
 
-            // 1️⃣ Send metadata first, backend generates ObjectId
+            // Send metadata first, backend generates ObjectId
             const metaRes = await fetch(`${API_BASE_URL}/diary`, {
                 method: 'POST',
                 headers: { 
@@ -702,15 +883,14 @@ saveAllBtn.onclick = async () => {
             });
             if (!metaRes.ok) throw new Error((await metaRes.json()).message);
 
-           const metaJson = await metaRes.json();
-const eventId = metaJson.data?.eventId;
+            const metaJson = await metaRes.json();
+            const eventId = metaJson.data?.eventId;
 
-if (!eventId) {
-    throw new Error("Failed to get eventId from server");
-}
-// backend returns generated ObjectId
+            if (!eventId) {
+                throw new Error("Failed to get eventId from server");
+            }
 
-            // 2️⃣ Upload media files in chunks
+            // Upload media files in chunks
             const chunkSize = 5 * 1024 * 1024; // 5MB
             for (const file of mediaFiles) {
                 const totalChunks = Math.ceil(file.size / chunkSize);
@@ -754,7 +934,7 @@ if (!eventId) {
                 });
             }
 
-            // 3️⃣ Save custom suggestions
+            // Save custom suggestions
             if (customCategory) await fetch(`${API_BASE_URL}/suggestions/category`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -778,6 +958,71 @@ if (!eventId) {
     }
 };
 
+// AI Modal Handlers
+aiClose.onclick = () => {
+    aiModal.style.display = 'none';
+    currentTextarea = null;
+};
+
+async function generateStory() {
+    const promptText = aiPrompt.value.trim();
+    if (!promptText) {
+        return alert('Please enter keywords or a command.');
+    }
+
+    aiResult.innerHTML = '<p>Generating...</p>';
+    aiGenerate.style.display = 'none';
+    aiRegenerate.style.display = 'inline-block';
+    aiCopy.style.display = 'none';
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/ai/generate-story`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                prompt: promptText,
+                tone: aiTone.value,
+                style: aiStyle.value,
+                length: aiLength.value
+            })
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to generate story.');
+        }
+
+        const { text } = await res.json();
+        aiResult.innerHTML = `<p>${text}</p><button id="ai-use" class="secondary">Use This</button>`;
+        aiCopy.style.display = 'inline-block';
+
+        document.getElementById('ai-use').onclick = () => {
+            if (currentTextarea) {
+                currentTextarea.value = text;
+            }
+            aiModal.style.display = 'none';
+        };
+
+        aiCopy.onclick = () => {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Story copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy story: ' + err.message);
+            });
+        };
+    } catch (err) {
+        aiResult.innerHTML = `<p>Error: ${err.message}</p>`;
+        aiGenerate.style.display = 'inline-block';
+        aiRegenerate.style.display = 'none';
+        aiCopy.style.display = 'none';
+    }
+}
+
+aiGenerate.onclick = generateStory;
+aiRegenerate.onclick = generateStory;
+
 createEventForm();
 
 window.addEventListener('beforeunload', () => {
@@ -786,6 +1031,5 @@ window.addEventListener('beforeunload', () => {
     });
 });
 </script>
-
 </body>
 </html>
