@@ -1,4 +1,3 @@
-// Controller/postController.js
 const Post = require('../Models/Post');
 const Diary = require('../Models/Diary');
 const Record = require('../Models/Record'); // Activity log model
@@ -12,6 +11,7 @@ async function logActivity(userId, detail) {
         console.error('[ActivityLog] Failed to log activity:', err.message);
     }
 }
+
 // CREATE: from diary events (called by "Make Public" on diary-view.html)
 exports.createFromDiary = async (req, res) => {
   try {
@@ -102,6 +102,11 @@ exports.getAllPosts = async (req, res) => {
       Post.countDocuments()
     ]);
 
+    // Sort comments newest first (for all posts)
+    posts.forEach(post => {
+      post.comments.sort((a, b) => b.createdAt - a.createdAt);
+    });
+
     await logActivity(req.info.id, `Fetched posts page ${page}, limit ${limit}`);
 
     return res.json({
@@ -118,7 +123,29 @@ exports.getAllPosts = async (req, res) => {
   }
 };
 
-// LIKE/UNLIKE
+// GET /api/posts/:postId
+exports.getPostById = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+      .populate('userId', 'username profilePhoto')
+      .populate('comments.userId', 'username profilePhoto');
+
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    // Sort comments newest first
+    post.comments.sort((a, b) => b.createdAt - a.createdAt);
+
+    await logActivity(req.info.id, `Viewed post ${req.params.postId}`);
+
+    res.json({ success: true, post });
+  } catch (err) {
+    console.error(err);
+    await logActivity(req.info.id, `Failed to fetch post ${req.params.postId}: ${err.message}`);
+    res.status(500).json({ success: false, message: 'Failed to fetch post' });
+  }
+};
+
+// LIKE/UNLIKE POST (unchanged)
 exports.toggleLike = async (req, res) => {
   try {
     const userId = req.info.id;
@@ -145,31 +172,12 @@ exports.toggleLike = async (req, res) => {
   }
 };
 
-// GET /api/posts/:postId
-exports.getPostById = async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.postId)
-      .populate('userId', 'username profilePhoto')
-      .populate('comments.userId', 'username profilePhoto');
-
-    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
-
-    await logActivity(req.info.id, `Viewed post ${req.params.postId}`);
-
-    res.json({ success: true, post });
-  } catch (err) {
-    console.error(err);
-    await logActivity(req.info.id, `Failed to fetch post ${req.params.postId}: ${err.message}`);
-    res.status(500).json({ success: false, message: 'Failed to fetch post' });
-  }
-};
-
-// COMMENT
+// COMMENT (updated to support replies)
 exports.addComment = async (req, res) => {
   try {
     const userId = req.info.id;
     const { postId } = req.params;
-    const { text } = req.body;
+    const { text, parentId } = req.body; // parentId optional for replies
 
     if (!text || !text.trim()) {
       return res.status(400).json({ success: false, message: 'Comment text required' });
@@ -178,16 +186,53 @@ exports.addComment = async (req, res) => {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
-    post.comments.push({ userId, text: text.trim() });
+    const newComment = {
+      userId,
+      text: text.trim(),
+      parentComment: parentId || null // Set parent if provided
+    };
+
+    post.comments.push(newComment);
     await post.save();
     await post.populate('comments.userId', 'username profilePhoto');
 
-    await logActivity(userId, `Commented on post ${postId}: "${text.trim()}"`);
+    await logActivity(userId, `Commented on post ${postId}${parentId ? ` (reply to ${parentId})` : ''}: "${text.trim()}"`);
 
     res.json({ success: true, post });
   } catch (err) {
     console.error('addComment error:', err);
     await logActivity(req.info.id, `Failed to add comment on post ${req.params.postId}: ${err.message}`);
     res.status(500).json({ success: false, message: 'Failed to add comment' });
+  }
+};
+
+// NEW: LIKE/UNLIKE COMMENT
+exports.toggleCommentLike = async (req, res) => {
+  try {
+    const userId = req.info.id;
+    const { postId, commentId } = req.params;
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(commentId);
+    if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
+
+    const idx = comment.likes.findIndex(id => String(id) === String(userId));
+    if (idx >= 0) {
+      comment.likes.splice(idx, 1);
+      await logActivity(userId, `Unliked comment ${commentId} on post ${postId}`);
+    } else {
+      comment.likes.push(userId);
+      await logActivity(userId, `Liked comment ${commentId} on post ${postId}`);
+    }
+
+    await post.save();
+
+    res.json({ success: true, likesCount: comment.likes.length });
+  } catch (err) {
+    console.error('toggleCommentLike error:', err);
+    await logActivity(req.info.id, `Failed to toggle like on comment ${req.params.commentId}: ${err.message}`);
+    res.status(500).json({ success: false, message: 'Failed to toggle comment like' });
   }
 };

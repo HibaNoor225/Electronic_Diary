@@ -486,6 +486,47 @@
     object-fit: cover;
 }
 
+.comment-actions {
+    margin-top: 5px;
+    display: flex;
+    gap: 15px;
+}
+
+.comment-actions .action-btn {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+}
+
+.comment-reply {
+    margin-left: 40px;
+    margin-top: 10px;
+    border-left: 2px solid #d4c5a9;
+    padding-left: 15px;
+}
+
+.comment-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(139, 69, 19, 0.2);
+}
+
+.comment-reply {
+    margin-top: 10px;
+    border-left: 2px solid #d4c5a9;
+    padding-left: 10px;
+}
+
+.parent-comment-context {
+    font-size: 0.9rem;
+    color: #8d6e63;
+    font-style: italic;
+    margin-bottom: 8px;
+}
     </style>
 </head>
 <body>
@@ -563,60 +604,152 @@
         }
 
   async function toggleLike(postId) {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please login to appreciate posts');
-                return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Please login to appreciate posts');
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
+        });
 
-            try {
-                const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    loadPosts(currentPage);
+        const data = await response.json();
+        if (data.success) {
+            // Fetch updated post
+            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const postData = await postResponse.json();
+            if (postData.success) {
+                // Replace only this post's HTML
+                const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`); // Add data-post-id for easy selection
+                if (postElement) {
+                    postElement.outerHTML = createPostHTML(postData.post);
                 }
-            } catch (error) {
-                console.error('Error toggling like:', error);
             }
         }
+    } catch (error) {
+        console.error('Error toggling like:', error);
+    }
+}
 
-        async function addComment(postId) {
-            const commentText = document.getElementById(`comment-input-${postId}`).value.trim();
-            if (!commentText) return;
+async function addComment(postId) {
+    const commentInput = document.getElementById(`comment-input-${postId}`);
+    const commentText = commentInput.value.trim();
+    if (!commentText) return;
 
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please login to share your thoughts');
-                return;
-            }
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Please login to share your thoughts');
+        return;
+    }
 
-            try {
-                const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text: commentText })
-                });
+    const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    if (!postElement || !commentsSection) return;
 
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById(`comment-input-${postId}`).value = '';
-                    loadPosts(currentPage);
+    // Save current scroll position and comments section state
+    const scrollPosition = window.scrollY;
+    const wasExpanded = commentsSection.style.display === 'block';
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: commentText })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const postData = await postResponse.json();
+            if (postData.success) {
+                // Update only the post card
+                postElement.outerHTML = createPostHTML(postData.post);
+                // Re-fetch the updated elements
+                const updatedPostElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                const updatedCommentsSection = document.getElementById(`comments-${postId}`);
+                if (updatedPostElement && updatedCommentsSection) {
+                    // Restore comments section state
+                    updatedCommentsSection.style.display = wasExpanded ? 'block' : 'none';
+                    // Scroll back to the comments section
+                    const sectionTop = updatedCommentsSection.getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({ top: sectionTop, behavior: 'smooth' });
+                    commentInput.value = ''; // Clear input
                 }
-            } catch (error) {
-                console.error('Error adding comment:', error);
             }
         }
+    } catch (error) {
+        console.error('Error adding comment:', error);
+    }
+}
 
+async function addReply(postId, parentCommentId) {
+    const replyInput = document.getElementById(`reply-input-${postId}-${parentCommentId}`);
+    const replyText = replyInput.value.trim();
+    if (!replyText) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Please login to reply');
+        return;
+    }
+
+    const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    if (!postElement || !commentsSection) return;
+
+    // Save current scroll position and comments section state
+    const scrollPosition = window.scrollY;
+    const wasExpanded = commentsSection.style.display === 'block';
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: replyText, parentId: parentCommentId })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const postData = await postResponse.json();
+            if (postData.success) {
+                // Update only the post card
+                postElement.outerHTML = createPostHTML(postData.post);
+                // Re-fetch the updated elements
+                const updatedPostElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                const updatedCommentsSection = document.getElementById(`comments-${postId}`);
+                if (updatedPostElement && updatedCommentsSection) {
+                    // Restore comments section state
+                    updatedCommentsSection.style.display = wasExpanded ? 'block' : 'none';
+                    // Scroll back to the comments section
+                    const sectionTop = updatedCommentsSection.getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({ top: sectionTop, behavior: 'smooth' });
+                    replyInput.value = ''; // Clear input
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error adding reply:', error);
+    }
+}
 function createPostHTML(post) {
     // Safe user object
     const user = post.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
@@ -696,24 +829,98 @@ function createPostHTML(post) {
         `;
     }
 
-    // Comments HTML
-    const commentsHTML = post.comments && post.comments.length > 0
-        ? post.comments.map(comment => {
-            const commentUser = comment.userId || { _id: '', username: 'Unknown' };
-            return `
-                <div class="comment">
-                    <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">
-                        ${commentUser.username}
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
+    // Recursive function to render comments with collapsible replies
+    function renderComment(comment, level = 0) {
+        const commentUser = comment.userId || { _id: '', username: 'Unknown' };
+        const isCommentLiked = currentUser && comment.likes && comment.likes.includes(currentUser.id);
+        const commentLikesCount = comment.likes ? comment.likes.length : 0;
+
+        // Comment avatar or initials
+        const commentAvatarHTML = commentUser.profilePhoto ? `
+            <div class="comment-avatar">
+                <img src="http://localhost:3000${commentUser.profilePhoto}" 
+                     alt="${commentUser.username}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                            align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
+                    ${getUserInitials(commentUser.username)}
                 </div>
-            `;
-        }).join('')
+            </div>
+        ` : `
+            <div class="comment-avatar">
+                <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                            display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
+                    ${getUserInitials(commentUser.username)}
+                </div>
+            </div>
+        `;
+
+        // Find replies to this comment
+        const replies = post.comments.filter(c => c.parentComment && c.parentComment.toString() === comment._id.toString());
+        const repliesHTML = replies.length > 0 ? `
+            <div id="replies-${comment._id}" class="replies-section" style="display: none; margin-top: 10px;">
+                ${replies.map(reply => renderComment(reply, level + 1)).join('')}
+            </div>
+        ` : '';
+
+        // Indentation and background shade based on nesting level
+        const indent = level * 30;
+        const bgShade = 255 - level * 5;
+        const background = `rgb(${bgShade}, ${bgShade - 10}, ${bgShade - 15})`;
+
+        // Parent comment context for reply form
+        const parentContext = level > 0 ? `
+            <div class="parent-comment-context" style="font-size: 0.9rem; color: #8d6e63; margin-bottom: 8px;">
+                Replying to ${commentUser.username}: "${comment.text.length > 30 ? comment.text.substring(0, 30) + '...' : comment.text}"
+            </div>
+        ` : '';
+
+        return `
+            <div class="comment comment-reply" style="margin-left: ${indent}px; margin-top: 10px; background: ${background}; border-radius: 8px; padding: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    ${commentAvatarHTML}
+                    <div style="flex: 1;">
+                        <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">
+                            ${commentUser.username}
+                        </div>
+                        <div class="comment-text">${comment.text}</div>
+                        <div class="comment-actions" style="margin-top: 5px; display: flex; gap: 15px;">
+                            <button class="action-btn ${isCommentLiked ? 'liked' : ''}" onclick="toggleCommentLike('${post._id}', '${comment._id}')">
+                                <span>${isCommentLiked ? '❤️' : '🤍'}</span>
+                                <span>${commentLikesCount} ${commentLikesCount === 1 ? 'Like' : 'Likes'}</span>
+                            </button>
+                            ${replies.length > 0 ? `
+                                <button class="action-btn" onclick="toggleReplies('${comment._id}')">
+                                    <span>👁️</span> View ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}
+                                </button>
+                            ` : ''}
+                            <button class="action-btn" onclick="showReplyInput('${post._id}', '${comment._id}')">
+                                <span>💬</span> Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                ${repliesHTML}
+                <div id="reply-form-${comment._id}" class="comment-form" style="display: none; margin-left: ${indent + 30}px; margin-top: 10px;">
+                    ${parentContext}
+                    <input type="text" id="reply-input-${post._id}-${comment._id}" class="comment-input" placeholder="Write a reply..." onkeypress="if(event.key==='Enter') addReply('${post._id}', '${comment._id}')">
+                    <button class="comment-btn" onclick="addReply('${post._id}', '${comment._id}')">Reply</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Render all top-level comments
+    const commentsHTML = post.comments && post.comments.length > 0
+        ? post.comments
+            .filter(c => !c.parentComment)
+            .map(comment => renderComment(comment, 0))
+            .join('')
         : '';
 
-    // Final post card
+    // Final post card with data-post-id
     return `
-      <div class="post-card">
+      <div class="post-card" data-post-id="${post._id}">
           <div class="post-header">
               <div class="user-avatar" onclick="viewUserProfile('${user._id}')">
                   ${avatarHTML}
@@ -751,6 +958,71 @@ function createPostHTML(post) {
           </div>
       </div>
     `;
+}
+
+// New function to toggle replies visibility
+function toggleReplies(commentId) {
+    const repliesDiv = document.getElementById(`replies-${commentId}`);
+    repliesDiv.style.display = repliesDiv.style.display === 'block' ? 'none' : 'block';
+}
+
+async function toggleCommentLike(postId, commentId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Please login to like comments');
+        return;
+    }
+
+    const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    if (!postElement || !commentsSection) return;
+
+    // Save current scroll position and comments section state
+    const scrollPosition = window.scrollY;
+    const wasExpanded = commentsSection.style.display === 'block';
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment/${commentId}/like`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            // Fetch updated post
+            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const postData = await postResponse.json();
+            if (postData.success) {
+                // Replace only this post's HTML
+                const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.outerHTML = createPostHTML(postData.post);
+                    // Re-fetch the updated elements
+                    const updatedPostElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                    const updatedCommentsSection = document.getElementById(`comments-${postId}`);
+                    if (updatedPostElement && updatedCommentsSection) {
+                        // Restore comments section state
+                        updatedCommentsSection.style.display = wasExpanded ? 'block' : 'none';
+                        // Scroll back to the comments section
+                        const sectionTop = updatedCommentsSection.getBoundingClientRect().top + window.scrollY;
+                        window.scrollTo({ top: sectionTop, behavior: 'smooth' });
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling comment like:', error);
+    }
+}
+
+function showReplyInput(postId, commentId) {
+    const replyForm = document.getElementById(`reply-form-${commentId}`);
+    replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
 }
 
 

@@ -1,4 +1,3 @@
-// Models/Post.js
 const mongoose = require('mongoose');
 const { Schema, Types } = mongoose;
 
@@ -24,6 +23,8 @@ const diaryEventSnapshotSchema = new Schema({
 const commentSchema = new Schema({
   userId: { type: Types.ObjectId, ref: 'User', required: true },
   text: { type: String, required: true },
+  parentComment: { type: Types.ObjectId, ref: 'Post.comments', default: null }, // For replies (null = top-level)
+  likes: [{ type: Types.ObjectId, ref: 'User' }] // Likes on this comment
 }, { timestamps: true });
 
 const postSchema = new Schema({
