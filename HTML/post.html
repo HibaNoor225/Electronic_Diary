@@ -84,12 +84,86 @@
             transform: translateY(-2px);
         }
 
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #d4c5a9;
+            border-radius: 20px;
+            font-size: 1rem;
+            outline: none;
+            background: #fdfbf7;
+            font-family: 'Georgia', serif;
+        }
+
+        .search-input:focus {
+            border-color: #8b4513;
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            background: #8b4513;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+        }
+
+        .search-btn:hover {
+            background: #a0522d;
+            transform: translateY(-1px);
+        }
+
+        .clear-btn {
+            padding: 12px 20px;
+            background: #bdbdbd;
+            color: #5d4037;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+        }
+
+        .clear-btn:hover {
+            background: #a9a9a9;
+            transform: translateY(-1px);
+        }
+
         .loading {
             text-align: center;
             padding: 60px;
             color: #8d6e63;
             font-size: 1.3rem;
             font-style: italic;
+        }
+
+        .loading::before {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #8d6e63;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .post-card {
@@ -350,45 +424,14 @@
             line-height: 1.6;
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 40px;
-            padding-top: 30px;
-            border-top: 2px solid #d4c5a9;
-        }
-
-        .page-btn {
-            padding: 12px 18px;
-            background: #fdfbf7;
-            border: 2px solid #d4c5a9;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            color: #8d6e63;
-            font-family: 'Georgia', serif;
-            box-shadow: 0 2px 8px rgba(139,69,19,0.1);
-        }
-
-        .page-btn:hover {
-            background: #f8f6f1;
-            border-color: #8b4513;
-            transform: translateY(-1px);
-        }
-
-        .page-btn.active {
-            background: #8b4513;
-            color: white;
-            border-color: #8b4513;
-            box-shadow: 0 4px 15px rgba(139,69,19,0.3);
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+        .comment-reply {
+            margin-left: 20px;
+            margin-top: 10px;
+            border-left: 2px solid #d4c5a9;
+            padding-left: 15px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
         }
 
         .no-posts {
@@ -409,6 +452,18 @@
         .no-posts p {
             font-style: italic;
             font-size: 1.1rem;
+        }
+
+        .end-message {
+            text-align: center;
+            padding: 40px;
+            color: #8d6e63;
+            font-size: 1.2rem;
+            font-style: italic;
+            background: rgba(212,197,169,0.1);
+            border-radius: 15px;
+            border: 2px dashed #d4c5a9;
+            margin-top: 20px;
         }
 
         .photo-modal {
@@ -469,6 +524,10 @@
                 flex-direction: column;
             }
 
+            .search-container {
+                flex-direction: column;
+            }
+
             .top-nav {
                 flex-direction: column;
                 gap: 15px;
@@ -478,62 +537,49 @@
                 height: 200px;
             }
         }
+
         .diary-entry-photo, .diary-entry-video {
-    display: block;
-    margin: 10px auto;
-    max-width: 400px;
-    max-height: 300px;
-    object-fit: cover;
-}
+            display: block;
+            margin: 10px auto;
+            max-width: 400px;
+            max-height: 300px;
+            object-fit: cover;
+        }
 
-.comment-actions {
-    margin-top: 5px;
-    display: flex;
-    gap: 15px;
-}
+        .comment-actions {
+            margin-top: 5px;
+            display: flex;
+            gap: 15px;
+        }
 
-.comment-actions .action-btn {
-    font-size: 0.9rem;
-    padding: 5px 10px;
-}
+        .comment-actions .action-btn {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+        }
 
-.comment-reply {
-    margin-left: 40px;
-    margin-top: 10px;
-    border-left: 2px solid #d4c5a9;
-    padding-left: 15px;
-}
+        .comment-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(139, 69, 19, 0.2);
+        }
 
-.comment-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 5px rgba(139, 69, 19, 0.2);
-}
-
-.comment-reply {
-    margin-top: 10px;
-    border-left: 2px solid #d4c5a9;
-    padding-left: 10px;
-}
-
-.parent-comment-context {
-    font-size: 0.9rem;
-    color: #8d6e63;
-    font-style: italic;
-    margin-bottom: 8px;
-}
+        .parent-comment-context {
+            font-size: 0.9rem;
+            color: #8d6e63;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="top-nav">
             <a href="dashboard.html" class="nav-btn">← Back to Dashboard</a>
-            
         </div>
 
         <div class="header">
@@ -541,30 +587,40 @@
             <p>Discover the beautiful moments shared by our community</p>
         </div>
 
-        <div id="loading" class="loading">
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="Search posts by title or description...">
+            <button class="search-btn" onclick="searchPosts()">Search</button>
+            <button class="clear-btn" onclick="clearSearch()">Clear</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
             <p>Loading wonderful stories...</p>
         </div>
 
         <div id="posts-container"></div>
 
         <div id="no-posts" class="no-posts" style="display: none;">
-            <h3>📝 No stories shared yet</h3>
-            <p>Be the first to share your beautiful moments with the community</p>
+            <h3>📝 No stories found</h3>
+            <p>Try a different search or be the first to share your moments</p>
         </div>
 
-        <div id="pagination" class="pagination" style="display: none;"></div>
-    </div>
+        <div id="end-message" class="end-message" style="display: none;">
+            <p>No more stories to show</p>
+        </div>
 
-    <!-- Photo Modal -->
-    <div id="photo-modal" class="photo-modal" onclick="closePhotoModal()">
-        <span class="close-modal" onclick="closePhotoModal()">&times;</span>
-        <img class="modal-content" id="modal-image">
+        <!-- Photo Modal -->
+        <div id="photo-modal" class="photo-modal" onclick="closePhotoModal()">
+            <span class="close-modal" onclick="closePhotoModal()">&times;</span>
+            <img class="modal-content" id="modal-image">
+        </div>
     </div>
 
     <script>
         let currentPage = 1;
         const postsPerPage = 5;
         let totalPosts = 0;
+        let isLoading = false;
+        let searchQuery = '';
         let currentUser = null;
 
         function getCurrentUser() {
@@ -603,539 +659,522 @@
             document.getElementById('photo-modal').style.display = 'none';
         }
 
-  async function toggleLike(postId) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Please login to appreciate posts');
-        return;
-    }
-
-    try {
-        const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            // Fetch updated post
-            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const postData = await postResponse.json();
-            if (postData.success) {
-                // Replace only this post's HTML
-                const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`); // Add data-post-id for easy selection
-                if (postElement) {
-                    postElement.outerHTML = createPostHTML(postData.post);
-                }
-            }
+        function debounce(func, delay) {
+            let timer;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => func.apply(this, args), delay);
+            };
         }
-    } catch (error) {
-        console.error('Error toggling like:', error);
-    }
-}
 
-async function addComment(postId) {
-    const commentInput = document.getElementById(`comment-input-${postId}`);
-    const commentText = commentInput.value.trim();
-    if (!commentText) return;
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Please login to share your thoughts');
-        return;
-    }
-
-    const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-    const commentsSection = document.getElementById(`comments-${postId}`);
-    if (!postElement || !commentsSection) return;
-
-    // Save current scroll position and comments section state
-    const scrollPosition = window.scrollY;
-    const wasExpanded = commentsSection.style.display === 'block';
-
-    try {
-        const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ text: commentText })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const postData = await postResponse.json();
-            if (postData.success) {
-                // Update only the post card
-                postElement.outerHTML = createPostHTML(postData.post);
-                // Re-fetch the updated elements
-                const updatedPostElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-                const updatedCommentsSection = document.getElementById(`comments-${postId}`);
-                if (updatedPostElement && updatedCommentsSection) {
-                    // Restore comments section state
-                    updatedCommentsSection.style.display = wasExpanded ? 'block' : 'none';
-                    // Scroll back to the comments section
-                    const sectionTop = updatedCommentsSection.getBoundingClientRect().top + window.scrollY;
-                    window.scrollTo({ top: sectionTop, behavior: 'smooth' });
-                    commentInput.value = ''; // Clear input
-                }
+        function getExpandedState(postId) {
+            const expanded = { comments: false, replies: {} };
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (commentsSection && commentsSection.style.display === 'block') {
+                expanded.comments = true;
             }
-        }
-    } catch (error) {
-        console.error('Error adding comment:', error);
-    }
-}
-
-async function addReply(postId, parentCommentId) {
-    const replyInput = document.getElementById(`reply-input-${postId}-${parentCommentId}`);
-    const replyText = replyInput.value.trim();
-    if (!replyText) return;
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Please login to reply');
-        return;
-    }
-
-    const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-    const commentsSection = document.getElementById(`comments-${postId}`);
-    if (!postElement || !commentsSection) return;
-
-    // Save current scroll position and comments section state
-    const scrollPosition = window.scrollY;
-    const wasExpanded = commentsSection.style.display === 'block';
-
-    try {
-        const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ text: replyText, parentId: parentCommentId })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const postData = await postResponse.json();
-            if (postData.success) {
-                // Update only the post card
-                postElement.outerHTML = createPostHTML(postData.post);
-                // Re-fetch the updated elements
-                const updatedPostElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-                const updatedCommentsSection = document.getElementById(`comments-${postId}`);
-                if (updatedPostElement && updatedCommentsSection) {
-                    // Restore comments section state
-                    updatedCommentsSection.style.display = wasExpanded ? 'block' : 'none';
-                    // Scroll back to the comments section
-                    const sectionTop = updatedCommentsSection.getBoundingClientRect().top + window.scrollY;
-                    window.scrollTo({ top: sectionTop, behavior: 'smooth' });
-                    replyInput.value = ''; // Clear input
+            const replySections = document.querySelectorAll(`#posts-container [id^="replies-"]`);
+            replySections.forEach(sec => {
+                if (sec.style.display === 'block') {
+                    expanded.replies[sec.id.split('-')[1]] = true;
                 }
-            }
+            });
+            return expanded;
         }
-    } catch (error) {
-        console.error('Error adding reply:', error);
-    }
-}
-function createPostHTML(post) {
-    // Safe user object
-    const user = post.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
 
-    // Like & comments info
-    const isLiked = currentUser && post.likes && post.likes.includes(currentUser.id);
-    const likesCount = post.likes ? post.likes.length : 0;
-    const commentsCount = post.comments ? post.comments.length : 0;
+        function restoreExpandedState(postId, expandedState) {
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (commentsSection && expandedState.comments) {
+                commentsSection.style.display = 'block';
+            }
+            Object.keys(expandedState.replies).forEach(replyId => {
+                const replySec = document.getElementById(`replies-${replyId}`);
+                if (replySec) {
+                    replySec.style.display = 'block';
+                }
+            });
+        }
 
-    // Avatar HTML
-    const avatarHTML = user.profilePhoto ? `
-        <img src="http://localhost:3000${user.profilePhoto}" 
-             alt="${user.username}"
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
-                    align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
-            ${getUserInitials(user.username)}
-        </div>
-    ` : `
-        <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
-                    display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
-            ${getUserInitials(user.username)}
-        </div>
-    `;
+        async function toggleLike(postId) {
+            const scrollPos = window.scrollY;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to appreciate posts');
+                return;
+            }
 
-    // Diary content
-    let diaryContentHTML = '';
-    if (post.diaryEvents && post.diaryEvents.length > 0) {
-        diaryContentHTML = `
-            <div class="diary-content">
-                ${post.diaryEvents.map(entry => {
-                    const title = entry.title || 'A Beautiful Moment';
-                    const description = entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : '';
-                    const dateStr = entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '');
+            const expandedState = getExpandedState(postId);
 
-                    // Media HTML
-                    let mediaHTML = '';
-                    if (entry.media && entry.media.length > 0) {
-                        mediaHTML = entry.media.map(m => {
-                            if (!m || !m.url) return '';
-                            if (m.type === 'image') {
-                                const src = typeof m.url === 'object' ? (m.url.optimized || m.url.original) : m.url;
-                                const original = typeof m.url === 'object' ? m.url.original : m.url;
-                                return `<img src="http://localhost:3000${src}" 
-                                             alt="${title}"
-                                             class="diary-entry-photo"
-                                             style="max-width:400px; max-height:300px; object-fit:cover; cursor:pointer;"
-                                             onclick="openPhotoModal('http://localhost:3000${original}')">`;
-                            } else if (m.type === 'video') {
-                                const src = typeof m.url === 'object' ? m.url.original : m.url;
-                                return `<video controls class="diary-entry-video" style="width:100%; max-width:400px; height:auto; margin-top:10px;">
-                                            <source src="http://localhost:3000${src}" type="video/mp4">
-                                            Your browser does not support the video tag.
-                                        </video>`;
-                            } else if (m.type === 'audio') {
-                                const src = typeof m.url === 'object' ? m.url.original : m.url;
-                                return `<audio controls class="diary-entry-audio" style="display:block; margin-top:10px; width:100%;">
-                                            <source src="http://localhost:3000${src}" type="audio/mpeg">
-                                            Your browser does not support the audio tag.
-                                        </audio>`;
-                            }
-                            return '';
-                        }).join('');
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
+                });
 
-                    return `
-                        <div class="diary-entry">
-                            <div class="diary-entry-title">${title}</div>
-                            ${description}
-                            ${mediaHTML}
-                            <div class="diary-entry-date">Captured on ${dateStr}</div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
-    }
-
-    // Tagged friends HTML
-    let taggedUsersHTML = '';
-    if (post.tags && post.tags.length > 0) {
-        taggedUsersHTML = `
-            <div style="margin-bottom:12px; margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;">
-                <span style="color:#8d6e63; font-size:0.97rem; font-style:italic;">Tagged:</span>
-                ${post.tags.map(tagUser => `
-                    <div style="display:flex; align-items:center; gap:5px; background:#f8f6f1; border-radius:15px; padding:3px 10px; cursor:pointer;"
-                         onclick="viewUserProfile('${tagUser._id}')">
-                        ${
-                            tagUser.profilePhoto
-                            ? `<img src="http://localhost:3000${tagUser.profilePhoto}" alt="${tagUser.username}" style="width:26px; height:26px; border-radius:50%; object-fit:cover;"/>`
-                            : `<span style="width:26px; height:26px; border-radius:50%; background:#8b4513; color:white; display:flex; align-items:center; justify-content:center; font-size:0.85rem;">${getUserInitials(tagUser.username)}</span>`
+                const data = await response.json();
+                if (data.success) {
+                    const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const postData = await postResponse.json();
+                    if (postData.success) {
+                        const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                        if (postElement) {
+                            postElement.outerHTML = createPostHTML(postData.post);
+                            restoreExpandedState(postId, expandedState);
                         }
-                        <span style="font-weight:600; color:#5d4037; font-size:0.99rem;">${tagUser.username}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling like:', error);
+            } finally {
+                window.scrollTo(0, scrollPos);
+            }
+        }
 
-    // Render comments recursively
-    function renderComment(comment, level = 0) {
-        const commentUser = comment.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
-        const isCommentLiked = currentUser && comment.likes && comment.likes.includes(currentUser.id);
-        const commentLikesCount = comment.likes ? comment.likes.length : 0;
+        async function addComment(postId) {
+            const scrollPos = window.scrollY;
+            const commentInput = document.getElementById(`comment-input-${postId}`);
+            const commentText = commentInput.value.trim();
+            if (!commentText) return;
 
-        const commentAvatarHTML = commentUser.profilePhoto ? `
-            <div class="comment-avatar">
-                <img src="http://localhost:3000${commentUser.profilePhoto}" alt="${commentUser.username}" 
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to share your thoughts');
+                return;
+            }
+
+            const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (!postElement || !commentsSection) return;
+
+            const expandedState = getExpandedState(postId);
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: commentText })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const postData = await postResponse.json();
+                    if (postData.success) {
+                        postElement.outerHTML = createPostHTML(postData.post);
+                        restoreExpandedState(postId, expandedState);
+                        const updatedCommentInput = document.getElementById(`comment-input-${postId}`);
+                        if (updatedCommentInput) updatedCommentInput.value = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding comment:', error);
+            } finally {
+                window.scrollTo(0, scrollPos);
+            }
+        }
+
+        async function addReply(postId, parentCommentId) {
+            const scrollPos = window.scrollY;
+            const replyInput = document.getElementById(`reply-input-${postId}-${parentCommentId}`);
+            const replyText = replyInput.value.trim();
+            if (!replyText) return;
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to reply');
+                return;
+            }
+
+            const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (!postElement || !commentsSection) return;
+
+            const expandedState = getExpandedState(postId);
+            expandedState.replies[parentCommentId] = true; // Ensure replies section is marked as expanded
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: replyText, parentId: parentCommentId })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const postData = await postResponse.json();
+                    if (postData.success) {
+                        postElement.outerHTML = createPostHTML(postData.post);
+                        restoreExpandedState(postId, expandedState);
+                        const updatedReplyInput = document.getElementById(`reply-input-${postId}-${parentCommentId}`);
+                        if (updatedReplyInput) {
+                            updatedReplyInput.value = ''; // Clear the input
+                            const replyForm = document.getElementById(`reply-form-${parentCommentId}`);
+                            if (replyForm) replyForm.style.display = 'block'; // Keep reply form visible
+                            const repliesSection = document.getElementById(`replies-${parentCommentId}`);
+                            if (repliesSection) repliesSection.style.display = 'block'; // Ensure replies are visible
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding reply:', error);
+            } finally {
+                window.scrollTo(0, scrollPos);
+            }
+        }
+
+        async function toggleCommentLike(postId, commentId) {
+            const scrollPos = window.scrollY;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to like comments');
+                return;
+            }
+
+            const expandedState = getExpandedState(postId);
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment/${commentId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const postData = await postResponse.json();
+                    if (postData.success) {
+                        const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                        if (postElement) {
+                            postElement.outerHTML = createPostHTML(postData.post);
+                            restoreExpandedState(postId, expandedState);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling comment like:', error);
+            } finally {
+                window.scrollTo(0, scrollPos);
+            }
+        }
+
+        function createPostHTML(post) {
+            const user = post.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
+            const isLiked = currentUser && post.likes && post.likes.includes(currentUser.id);
+            const likesCount = post.likes ? post.likes.length : 0;
+            const commentsCount = post.comments ? post.comments.length : 0;
+
+            const avatarHTML = user.profilePhoto ? `
+                <img src="http://localhost:3000${user.profilePhoto}" 
+                     alt="${user.username}"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
-                            align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
-                    ${getUserInitials(commentUser.username)}
+                            align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
+                    ${getUserInitials(user.username)}
                 </div>
-            </div>
-        ` : `
-            <div class="comment-avatar">
+            ` : `
                 <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
-                            display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
-                    ${getUserInitials(commentUser.username)}
+                            display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
+                    ${getUserInitials(user.username)}
                 </div>
-            </div>
-        `;
-
-        const replies = post.comments.filter(c => c.parentComment && c.parentComment.toString() === comment._id.toString());
-        const repliesHTML = replies.length > 0 ? `
-            <div id="replies-${comment._id}" class="replies-section" style="display: none; margin-top: 10px;">
-                ${replies.map(reply => renderComment(reply, level + 1)).join('')}
-            </div>
-        ` : '';
-
-        const indent = level * 30;
-        const bgShade = 255 - level * 5;
-        const background = `rgb(${bgShade}, ${bgShade - 10}, ${bgShade - 15})`;
-
-        const parentContext = level > 0 ? `
-            <div class="parent-comment-context" style="font-size: 0.9rem; color: #8d6e63; margin-bottom: 8px;">
-                Replying to ${commentUser.username}: "${comment.text.length > 30 ? comment.text.substring(0, 30) + '...' : comment.text}"
-            </div>
-        ` : '';
-
-        return `
-            <div class="comment comment-reply" style="margin-left: ${indent}px; margin-top: 10px; background: ${background}; border-radius: 8px; padding: 12px;">
-                <div style="display: flex; align-items: flex-start; gap: 10px;">
-                    ${commentAvatarHTML}
-                    <div style="flex: 1;">
-                        <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">${commentUser.username}</div>
-                        <div class="comment-text">${comment.text}</div>
-                        <div class="comment-actions" style="margin-top: 5px; display: flex; gap: 15px;">
-                            <button class="action-btn ${isCommentLiked ? 'liked' : ''}" onclick="toggleCommentLike('${post._id}', '${comment._id}')">
-                                <span>${isCommentLiked ? '❤️' : '🤍'}</span>
-                                <span>${commentLikesCount} ${commentLikesCount === 1 ? 'Like' : 'Likes'}</span>
-                            </button>
-                            ${replies.length > 0 ? `<button class="action-btn" onclick="toggleReplies('${comment._id}')">
-                                <span>👁️</span> View ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}
-                            </button>` : ''}
-                            <button class="action-btn" onclick="showReplyInput('${post._id}', '${comment._id}')">
-                                <span>💬</span> Reply
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                ${repliesHTML}
-                <div id="reply-form-${comment._id}" class="comment-form" style="display: none; margin-left: ${indent + 30}px; margin-top: 10px;">
-                    ${parentContext}
-                    <input type="text" id="reply-input-${post._id}-${comment._id}" class="comment-input" placeholder="Write a reply..." onkeypress="if(event.key==='Enter') addReply('${post._id}', '${comment._id}')">
-                    <button class="comment-btn" onclick="addReply('${post._id}', '${comment._id}')">Reply</button>
-                </div>
-            </div>
-        `;
-    }
-
-    const commentsHTML = post.comments && post.comments.length > 0
-        ? post.comments.filter(c => !c.parentComment).map(c => renderComment(c, 0)).join('')
-        : '';
-
-    // Final post card
-    return `
-        <div class="post-card" data-post-id="${post._id}">
-            <div class="post-header">
-                <div class="user-avatar" onclick="viewUserProfile('${user._id}')">${avatarHTML}</div>
-                <div class="user-info">
-                    <h3 onclick="viewUserProfile('${user._id}')">${user.username}</h3>
-                    <p>Shared on ${formatDate(post.createdAt)}</p>
-                </div>
-            </div>
-
-            <div class="post-content">
-                ${post.content ? `<p style="text-indent:30px; color:#2c2c2c; margin-bottom:20px;">${post.content}</p>` : ''}
-                ${diaryContentHTML}
-                ${taggedUsersHTML}
-            </div>
-
-            <div class="post-actions">
-                <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post._id}')">
-                    <span>${isLiked ? '❤️' : '🤍'}</span>
-                    <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
-                </button>
-                <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'">
-                    <span>💬</span>
-                    <span>${commentsCount} ${commentsCount === 1 ? 'Thought' : 'Thoughts'}</span>
-                </button>
-            </div>
-
-            <div id="comments-${post._id}" class="comments-section" style="display:none;">
-                <div class="comment-form">
-                    <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
-                    <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
-                </div>
-                <div class="comments-list">${commentsHTML}</div>
-            </div>
-        </div>
-    `;
-}
-
-
-// New function to toggle replies visibility
-function toggleReplies(commentId) {
-    const repliesDiv = document.getElementById(`replies-${commentId}`);
-    repliesDiv.style.display = repliesDiv.style.display === 'block' ? 'none' : 'block';
-}
-
-async function toggleCommentLike(postId, commentId) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Please login to like comments');
-        return;
-    }
-
-    const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-    const commentsSection = document.getElementById(`comments-${postId}`);
-    if (!postElement || !commentsSection) return;
-
-    // Save current scroll position and comments section state
-    const scrollPosition = window.scrollY;
-    const wasExpanded = commentsSection.style.display === 'block';
-
-    try {
-        const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment/${commentId}/like`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            // Fetch updated post
-            const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const postData = await postResponse.json();
-            if (postData.success) {
-                // Replace only this post's HTML
-                const postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-                if (postElement) {
-                    postElement.outerHTML = createPostHTML(postData.post);
-                    // Re-fetch the updated elements
-                    const updatedPostElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-                    const updatedCommentsSection = document.getElementById(`comments-${postId}`);
-                    if (updatedPostElement && updatedCommentsSection) {
-                        // Restore comments section state
-                        updatedCommentsSection.style.display = wasExpanded ? 'block' : 'none';
-                        // Scroll back to the comments section
-                        const sectionTop = updatedCommentsSection.getBoundingClientRect().top + window.scrollY;
-                        window.scrollTo({ top: sectionTop, behavior: 'smooth' });
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error toggling comment like:', error);
-    }
-}
-
-function showReplyInput(postId, commentId) {
-    const replyForm = document.getElementById(`reply-form-${commentId}`);
-    replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
-}
-
-
-async function loadPosts(page = 1) {
-    const loading = document.getElementById('loading');
-    const postsContainer = document.getElementById('posts-container');
-    const noPostsDiv = document.getElementById('no-posts');
-    const paginationDiv = document.getElementById('pagination');
-
-    loading.style.display = 'block';
-    postsContainer.innerHTML = '';
-    noPostsDiv.style.display = 'none';
-    paginationDiv.style.display = 'none';
-
-    try {
-        const token = localStorage.getItem('token'); // get the saved token
-        const response = await fetch(`http://localhost:3000/api/posts?page=${page}&limit=${postsPerPage}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const data = await response.json();
-
-        loading.style.display = 'none';
-
-        if (data.success && data.posts.length > 0) {
-            // Use the totalPosts returned from backend
-            totalPosts = data.totalPosts;
-            const totalPages = Math.ceil(totalPosts / postsPerPage);
-
-            postsContainer.innerHTML = data.posts.map(post => createPostHTML(post)).join('');
-
-            if (totalPages > 1) {
-                createPagination(page, totalPages);
-                paginationDiv.style.display = 'flex';
-            }
-        } else {
-            noPostsDiv.style.display = 'block';
-        }
-    } catch (error) {
-        loading.style.display = 'none';
-        console.error('Error loading posts:', error);
-        postsContainer.innerHTML = '<div class="no-posts"><h3>📖 Error loading stories</h3><p>Please try again in a moment</p></div>';
-    }
-}
-
-
-        function createPagination(currentPage, totalPages) {
-            const paginationDiv = document.getElementById('pagination');
-            let paginationHTML = '';
-
-            paginationHTML += `
-                <button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
-                    ← Previous
-                </button>
             `;
 
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
+            let diaryContentHTML = '';
+            if (post.diaryEvents && post.diaryEvents.length > 0) {
+                diaryContentHTML = `
+                    <div class="diary-content">
+                        ${post.diaryEvents.map(entry => {
+                            const title = entry.title || 'A Beautiful Moment';
+                            const description = entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : '';
+                            const dateStr = entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '');
 
-            if (startPage > 1) {
-                paginationHTML += `<button class="page-btn" onclick="changePage(1)">1</button>`;
-                if (startPage > 2) paginationHTML += `<span class="page-btn" disabled>...</span>`;
-            }
+                            let mediaHTML = '';
+                            if (entry.media && entry.media.length > 0) {
+                                mediaHTML = entry.media.map(m => {
+                                    if (!m || !m.url) return '';
+                                    if (m.type === 'image') {
+                                        const src = typeof m.url === 'object' ? (m.url.optimized || m.url.original) : m.url;
+                                        const original = typeof m.url === 'object' ? m.url.original : m.url;
+                                        return `<img src="http://localhost:3000${src}" 
+                                                     alt="${title}"
+                                                     class="diary-entry-photo"
+                                                     style="max-width:400px; max-height:300px; object-fit:cover; cursor:pointer;"
+                                                     onclick="openPhotoModal('http://localhost:3000${original}')">`;
+                                    } else if (m.type === 'video') {
+                                        const src = typeof m.url === 'object' ? m.url.original : m.url;
+                                        return `<video controls class="diary-entry-video" style="width:100%; max-width:400px; height:auto; margin-top:10px;">
+                                                    <source src="http://localhost:3000${src}" type="video/mp4">
+                                                    Your browser does not support the video tag.
+                                                </video>`;
+                                    } else if (m.type === 'audio') {
+                                        const src = typeof m.url === 'object' ? m.url.original : m.url;
+                                        return `<audio controls class="diary-entry-audio" style="display:block; margin-top:10px; width:100%;">
+                                                    <source src="http://localhost:3000${src}" type="audio/mpeg">
+                                                    Your browser does not support the audio tag.
+                                                </audio>`;
+                                    }
+                                    return '';
+                                }).join('');
+                            }
 
-            for (let i = startPage; i <= endPage; i++) {
-                paginationHTML += `
-                    <button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
-                        ${i}
-                    </button>
+                            return `
+                                <div class="diary-entry">
+                                    <div class="diary-entry-title">${title}</div>
+                                    ${description}
+                                    ${mediaHTML}
+                                    <div class="diary-entry-date">Captured on ${dateStr}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 `;
             }
 
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) paginationHTML += `<span class="page-btn" disabled>...</span>`;
-                paginationHTML += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+            let taggedUsersHTML = '';
+            if (post.tags && post.tags.length > 0) {
+                taggedUsersHTML = `
+                    <div style="margin-bottom:12px; margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;">
+                        <span style="color:#8d6e63; font-size:0.97rem; font-style:italic;">Tagged:</span>
+                        ${post.tags.map(tagUser => `
+                            <div style="display:flex; align-items:center; gap:5px; background:#f8f6f1; border-radius:15px; padding:3px 10px; cursor:pointer;"
+                                 onclick="viewUserProfile('${tagUser._id}')">
+                                ${
+                                    tagUser.profilePhoto
+                                    ? `<img src="http://localhost:3000${tagUser.profilePhoto}" alt="${tagUser.username}" style="width:26px; height:26px; border-radius:50%; object-fit:cover;"/>`
+                                    : `<span style="width:26px; height:26px; border-radius:50%; background:#8b4513; color:white; display:flex; align-items:center; justify-content:center; font-size:0.85rem;">${getUserInitials(tagUser.username)}</span>`
+                                }
+                                <span style="font-weight:600; color:#5d4037; font-size:0.99rem;">${tagUser.username}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
             }
 
-            paginationHTML += `
-                <button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
-                    Next →
-                </button>
+            function renderComment(comment, level = 0) {
+                const commentUser = comment.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
+                const isCommentLiked = currentUser && comment.likes && comment.likes.includes(currentUser.id);
+                const commentLikesCount = comment.likes ? comment.likes.length : 0;
+
+                const commentAvatarHTML = commentUser.profilePhoto ? `
+                    <div class="comment-avatar">
+                        <img src="http://localhost:3000${commentUser.profilePhoto}" alt="${commentUser.username}" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                                    align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
+                            ${getUserInitials(commentUser.username)}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="comment-avatar">
+                        <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                                    display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
+                            ${getUserInitials(commentUser.username)}
+                        </div>
+                    </div>
+                `;
+
+                const replies = post.comments.filter(c => c.parentComment && c.parentComment.toString() === comment._id.toString());
+                const repliesHTML = replies.length > 0 ? `
+                    <div id="replies-${comment._id}" class="replies-section" style="display: none; margin-top: 10px;">
+                        ${replies.map(reply => renderComment(reply, level + 1)).join('')}
+                    </div>
+                ` : '';
+
+                const indent = Math.min(level * 20, 80); // Cap indent to prevent overflow
+
+                const parentContext = level > 0 ? `
+                    <div class="parent-comment-context" style="font-size: 0.9rem; color: #8d6e63; margin-bottom: 8px;">
+                        Replying to ${commentUser.username}: "${comment.text.length > 30 ? comment.text.substring(0, 30) + '...' : comment.text}"
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="comment comment-reply" style="margin-left: ${indent}px; margin-top: 10px; padding: 12px;">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            ${commentAvatarHTML}
+                            <div style="flex: 1;">
+                                <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">${commentUser.username}</div>
+                                <div class="comment-text">${comment.text}</div>
+                                <div class="comment-actions" style="margin-top: 5px; display: flex; gap: 15px;">
+                                    <button class="action-btn ${isCommentLiked ? 'liked' : ''}" onclick="toggleCommentLike('${post._id}', '${comment._id}')">
+                                        <span>${isCommentLiked ? '❤️' : '🤍'}</span>
+                                        <span>${commentLikesCount} ${commentLikesCount === 1 ? 'Like' : 'Likes'}</span>
+                                    </button>
+                                    ${replies.length > 0 ? `<button class="action-btn" onclick="toggleReplies('${comment._id}')">
+                                        <span>👁️</span> View ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}
+                                    </button>` : ''}
+                                    <button class="action-btn" onclick="showReplyInput('${post._id}', '${comment._id}')">
+                                        <span>💬</span> Reply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        ${repliesHTML}
+                        <div id="reply-form-${comment._id}" class="comment-form" style="display: none; margin-left: ${indent + 20}px; margin-top: 10px;">
+                            ${parentContext}
+                            <input type="text" id="reply-input-${post._id}-${comment._id}" class="comment-input" placeholder="Write a reply..." onkeypress="if(event.key==='Enter') addReply('${post._id}', '${comment._id}')">
+                            <button class="comment-btn" onclick="addReply('${post._id}', '${comment._id}')">Reply</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const commentsHTML = post.comments && post.comments.length > 0
+                ? post.comments.filter(c => !c.parentComment).map(c => renderComment(c, 0)).join('')
+                : '';
+
+            return `
+                <div class="post-card" data-post-id="${post._id}">
+                    <div class="post-header">
+                        <div class="user-avatar" onclick="viewUserProfile('${user._id}')">${avatarHTML}</div>
+                        <div class="user-info">
+                            <h3 onclick="viewUserProfile('${user._id}')">${user.username}</h3>
+                            <p>Shared on ${formatDate(post.createdAt)}</p>
+                        </div>
+                    </div>
+
+                    <div class="post-content">
+                        ${post.content ? `<p style="text-indent:30px; color:#2c2c2c; margin-bottom:20px;">${post.content}</p>` : ''}
+                        ${diaryContentHTML}
+                        ${taggedUsersHTML}
+                    </div>
+
+                    <div class="post-actions">
+                        <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post._id}')">
+                            <span>${isLiked ? '❤️' : '🤍'}</span>
+                            <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
+                        </button>
+                        <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'">
+                            <span>💬</span>
+                            <span>${commentsCount} ${commentsCount === 1 ? 'Thought' : 'Thoughts'}</span>
+                        </button>
+                    </div>
+
+                    <div id="comments-${post._id}" class="comments-section" style="display:none;">
+                        <div class="comment-form">
+                            <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
+                            <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
+                        </div>
+                        <div class="comments-list">${commentsHTML}</div>
+                    </div>
+                </div>
             `;
-
-            paginationDiv.innerHTML = paginationHTML;
         }
 
-        function changePage(page) {
-            if (page < 1 || page > Math.ceil(totalPosts / postsPerPage)) return;
-            currentPage = page;
-            loadPosts(page);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        function showReplyInput(postId, commentId) {
+            const replyForm = document.getElementById(`reply-form-${commentId}`);
+            replyForm.style.display = replyForm.style.display === 'block' ? 'none' : 'block';
         }
 
-      // Close modal when clicking outside the image
-window.onclick = function(event) {
-    const modal = document.getElementById('photo-modal');
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
-        
+        function toggleReplies(commentId) {
+            const repliesDiv = document.getElementById(`replies-${commentId}`);
+            repliesDiv.style.display = repliesDiv.style.display === 'block' ? 'none' : 'block';
+        }
+
+        async function loadPosts(page = 1, append = false) {
+            if (isLoading) return;
+            isLoading = true;
+
+            const loading = document.getElementById('loading');
+            const postsContainer = document.getElementById('posts-container');
+            const noPostsDiv = document.getElementById('no-posts');
+            const endMessageDiv = document.getElementById('end-message');
+
+            loading.style.display = 'block';
+            if (!append) {
+                postsContainer.innerHTML = '';
+                noPostsDiv.style.display = 'none';
+                endMessageDiv.style.display = 'none';
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const url = `http://localhost:3000/api/posts?page=${page}&limit=${postsPerPage}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                loading.style.display = 'none';
+
+                if (data.success && data.posts.length > 0) {
+                    totalPosts = data.totalPosts;
+                    postsContainer.innerHTML += data.posts.map(post => createPostHTML(post)).join('');
+                    if (page * postsPerPage >= totalPosts) {
+                        endMessageDiv.style.display = 'block';
+                    }
+                } else if (!append) {
+                    noPostsDiv.style.display = 'block';
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                console.error('Error loading posts:', error);
+                postsContainer.innerHTML = '<div class="no-posts"><h3>📖 Error loading stories</h3><p>Please try again in a moment</p></div>';
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function searchPosts() {
+            searchQuery = document.getElementById('search-input').value.trim();
+            currentPage = 1;
+            loadPosts(1, false);
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            searchQuery = '';
+            currentPage = 1;
+            loadPosts(1, false);
+        }
+
+        const debouncedSearch = debounce(() => {
+            searchPosts();
+        }, 300);
+
+        window.addEventListener('scroll', () => {
+            if (isLoading || currentPage * postsPerPage >= totalPosts) return;
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+                currentPage++;
+                loadPosts(currentPage, true);
+            }
+        });
+
+        document.getElementById('search-input').addEventListener('input', debouncedSearch);
 
         document.addEventListener('DOMContentLoaded', function() {
             currentUser = getCurrentUser();
-            loadPosts(1);
+            loadPosts(1, false);
         });
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('photo-modal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
     </script>
 </body>
 </html>

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Diary</title>
-
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
 body {
@@ -49,13 +48,10 @@ body {
     box-shadow: 0 4px 15px rgba(139,69,19,0.3);
 }
 .back-btn:hover { background: #a0522d; transform: translateY(-2px); }
-
 .diary-header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #d4c5a9; padding-bottom: 20px; }
 .diary-date { font-size: 2.5rem; color: #5d4037; font-weight: bold; text-shadow: 1px 1px 3px rgba(93,64,55,0.2); margin-bottom: 10px; }
 .diary-subtitle { font-size: 1.2rem; color: #8d6e63; font-style: italic; }
-
 .diary-content { color: #2c2c2c; font-size: 1.1rem; text-align: justify; }
-
 .event-story {
     margin-bottom: 35px;
     position: relative;
@@ -79,8 +75,6 @@ body {
 .story-time { color: #8d6e63; font-size: 0.9rem; font-style: italic; margin-bottom: 15px; text-indent: 0; }
 .meta-info { margin-bottom: 10px; color: #8d6e63; font-style: italic; font-size: 0.95rem; }
 .category-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #d4c5a9; color: #5d4037; font-size: 0.85rem; margin-left: 6px; }
-
-/* Gallery Styles */
 .media-gallery {
     margin-top: 20px;
     padding: 20px;
@@ -88,21 +82,18 @@ body {
     border-radius: 12px;
     border: 2px solid #e6d8c5;
 }
-
 .gallery-header {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
     gap: 10px;
 }
-
 .gallery-title {
     font-size: 1.1rem;
     color: #5d4037;
     font-weight: bold;
     flex: 1;
 }
-
 .media-tabs {
     display: flex;
     gap: 10px;
@@ -113,7 +104,6 @@ body {
     min-width: 350px;
     justify-content: center;
 }
-
 .tab-btn {
     padding: 10px 20px;
     border: none;
@@ -130,17 +120,14 @@ body {
     min-width: 90px;
     justify-content: center;
 }
-
 .tab-btn.active {
     background: #8b4513;
     color: white;
     box-shadow: 0 2px 8px rgba(139,69,19,0.3);
 }
-
 .tab-btn:hover:not(.active) {
     background: #f0f0f0;
 }
-
 .tab-count {
     background: rgba(255,255,255,0.2);
     color: inherit;
@@ -150,22 +137,18 @@ body {
     min-width: 18px;
     text-align: center;
 }
-
 .tab-btn.active .tab-count {
     background: rgba(255,255,255,0.3);
 }
-
 .media-grid {
     display: none;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
     margin-top: 15px;
 }
-
 .media-grid.active {
     display: grid;
 }
-
 .media-item {
     position: relative;
     border-radius: 8px;
@@ -175,19 +158,16 @@ body {
     cursor: pointer;
     background: white;
 }
-
 .media-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
-
 .media-thumbnail {
     width: 100%;
     height: 120px;
     object-fit: cover;
     display: block;
 }
-
 .audio-thumbnail {
     width: 100%;
     height: 120px;
@@ -198,7 +178,6 @@ body {
     font-size: 2rem;
     color: white;
 }
-
 .media-caption {
     padding: 8px 10px;
     font-size: 0.85rem;
@@ -207,7 +186,6 @@ body {
     border-top: 1px solid #eee;
     line-height: 1.3;
 }
-
 .no-media {
     text-align: center;
     color: #8d6e63;
@@ -217,8 +195,6 @@ body {
     border-radius: 8px;
     border: 2px dashed #d4c5a9;
 }
-
-/* Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -231,13 +207,11 @@ body {
     animation: fadeIn 0.3s ease;
     padding: 20px;
 }
-
 .modal.active {
     display: flex;
     align-items: center;
     justify-content: center;
 }
-
 .modal-content {
     position: relative;
     max-width: 95vw;
@@ -249,7 +223,6 @@ body {
     display: flex;
     flex-direction: column;
 }
-
 .modal-media {
     width: 100%;
     max-height: calc(95vh - 80px);
@@ -257,7 +230,6 @@ body {
     display: block;
     background: #000;
 }
-
 .modal-caption {
     padding: 15px 20px;
     background: #1a1a1a;
@@ -266,7 +238,6 @@ body {
     text-align: center;
     border-top: 1px solid #333;
 }
-
 .modal-close {
     position: absolute;
     top: 15px;
@@ -286,12 +257,10 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
-
 .modal-close:hover {
     background: #fff;
     transform: scale(1.1);
 }
-
 .no-events {
     text-align: center;
     color: #8d6e63;
@@ -302,23 +271,19 @@ body {
     border-radius: 15px;
     border: 2px dashed #d4c5a9;
 }
-
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-
 @media (max-width: 768px) {
     .media-tabs {
         flex-wrap: wrap;
         gap: 8px;
     }
-    
     .tab-btn {
         padding: 6px 12px;
         font-size: 0.85rem;
     }
-    
     .media-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 10px;
@@ -329,7 +294,6 @@ body {
     justify-content: space-between;
     margin-bottom: 30px;
 }
-
 .btn {
     padding: 12px 24px;
     background: #8b4513;
@@ -344,13 +308,10 @@ body {
     box-shadow: 0 4px 15px rgba(139,69,19,0.3);
     font-size: 1rem;
 }
-
-.btn:hover { 
-    background: #a0522d; 
-    transform: translateY(-2px); 
+.btn:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
 }
-
-/* Invitation Modal Styles */
 .invitation-modal {
     display: none;
     position: fixed;
@@ -364,7 +325,6 @@ body {
     justify-content: center;
     padding: 20px;
 }
-
 .invitation-modal-content {
     background: #fdfbf7;
     padding: 30px;
@@ -376,21 +336,21 @@ body {
     max-height: 80vh;
     overflow-y: auto;
 }
-
 .invitation-header {
     font-size: 1.5rem;
     color: #5d4037;
     text-align: center;
     margin-bottom: 20px;
 }
-
 .user-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
 }
-
 .user-item {
     display: flex;
     align-items: center;
@@ -400,18 +360,15 @@ body {
     border-radius: 8px;
     border: 1px solid #e6d8c5;
 }
-
 .user-item input[type="checkbox"] {
     width: 20px;
     height: 20px;
     cursor: pointer;
 }
-
 .user-name {
     font-size: 1rem;
     color: #333;
 }
-
 .send-invitation-btn {
     display: block;
     width: 100%;
@@ -427,12 +384,10 @@ body {
     font-size: 1rem;
     margin-top: 20px;
 }
-
 .send-invitation-btn:hover {
     background: #a0522d;
     transform: translateY(-2px);
 }
-
 .invitation-close {
     position: absolute;
     top: 10px;
@@ -443,6 +398,14 @@ body {
     cursor: pointer;
     color: #8d6e63;
 }
+.search-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #e6d8c5;
+    border-radius: 8px;
+    font-size: 1rem;
+}
 </style>
 </head>
 <body>
@@ -452,15 +415,12 @@ body {
         <button id="make-public-btn" class="btn">🌍 Make Public</button>
         <button id="send-invitation-btn" class="btn">📩 Send Invitation</button>
     </div>
-
     <div class="diary-header">
         <div class="diary-date" id="diary-date">Loading...</div>
         <div class="diary-subtitle">My Daily Story</div>
     </div>
     <div class="diary-content" id="diary-content"></div>
 </div>
-
-<!-- Modal for media viewing -->
 <div class="modal" id="mediaModal">
     <div class="modal-content">
         <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -468,8 +428,6 @@ body {
         <div class="modal-caption" id="modalCaption"></div>
     </div>
 </div>
-
-<!-- Modal for sending invitations -->
 <div class="modal invitation-modal" id="invitationModal">
     <div class="invitation-modal-content">
         <button class="invitation-close" onclick="closeInvitationModal()">&times;</button>
@@ -477,88 +435,63 @@ body {
         <div id="user-list-container" class="user-list"></div>
         <button class="send-invitation-btn" id="send-invitations">Send Invitations</button>
     </div>
-
-
-
-
 </div>
-
-    <!-- Modal for tagging friends when making public -->
 <div class="modal invitation-modal" id="tagModal">
-  <div class="invitation-modal-content">
-    <button class="invitation-close" onclick="closeTagModal()">&times;</button>
-    <div class="invitation-header">Tag Friends</div>
-    <div id="tag-list-container" class="user-list"></div>
-    <button class="send-invitation-btn" id="publish-with-tags">Publish</button>
-    <button class="send-invitation-btn" id="publish-without-tags" style="background:#bdbdbd; color:#5d4037; margin-top:10px;">Publish Without Tagging</button>
-  </div>
+    <div class="invitation-modal-content">
+        <button class="invitation-close" onclick="closeTagModal()">&times;</button>
+        <div class="invitation-header">Tag Friends</div>
+        <div id="tag-list-container" class="user-list"></div>
+        <button class="send-invitation-btn" id="publish-with-tags">Publish</button>
+        <button class="send-invitation-btn" id="publish-without-tags" style="background:#bdbdbd; color:#5d4037; margin-top:10px;">Publish Without Tagging</button>
+    </div>
 </div>
-
 <script>
 const API_BASE_URL = "http://localhost:3000/api";
 const token = localStorage.getItem('token');
 const urlParams = new URLSearchParams(window.location.search);
 let date = urlParams.get('date');
-const sharedBy = urlParams.get('sharedBy'); // For shared diaries
-
+const sharedBy = urlParams.get('sharedBy');
 if (date) {
     const parsed = new Date(date);
     if (!isNaN(parsed)) date = parsed.toISOString().split('T')[0];
 }
-
-const readableDate = new Date(date).toLocaleDateString('en-US', { 
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+const readableDate = new Date(date).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
 });
 document.getElementById('diary-date').textContent = readableDate;
-
 const contentContainer = document.getElementById('diary-content');
-
-// Helper to get correct URL from file.paths
 function getFileUrl(file) {
     if (!file.url) return '';
-
     let path = '';
     if (typeof file.url === 'object') {
         path = file.url.optimized || file.url.original;
     } else {
         path = file.url;
     }
-
     if (!path) return '';
-
     path = path.replace(/\\/g, '/');
     return `http://localhost:3000/uploads/${path}`;
 }
-
-// Create media gallery
 function createMediaGallery(media, eventTitle) {
     if (!media || media.length === 0) return null;
-
     const galleryContainer = document.createElement('div');
     galleryContainer.className = 'media-gallery';
-
     const imageMedia = media.filter(m => m.type === 'image');
     const videoMedia = media.filter(m => m.type === 'video');
     const audioMedia = media.filter(m => m.type === 'audio');
-
     const galleryHeader = document.createElement('div');
     galleryHeader.className = 'gallery-header';
-
     const galleryTitle = document.createElement('div');
     galleryTitle.className = 'gallery-title';
     galleryTitle.innerHTML = '📁 Media Gallery';
-
     const tabsContainer = document.createElement('div');
     tabsContainer.className = 'media-tabs';
-
     const tabs = [
         { type: 'images', label: '🖼️ Images', data: imageMedia, icon: '🖼️', text: 'Images' },
         { type: 'videos', label: '🎬 Videos', data: videoMedia, icon: '🎬', text: 'Videos' },
         { type: 'audio', label: '🎵 Audio', data: audioMedia, icon: '🎵', text: 'Audio' }
     ];
-
     let activeTab = null;
-
     tabs.forEach((tab, index) => {
         if (tab.data.length > 0) {
             const tabBtn = document.createElement('button');
@@ -569,32 +502,26 @@ function createMediaGallery(media, eventTitle) {
                 <span class="tab-count">${tab.data.length}</span>
             `;
             tabBtn.onclick = (e) => switchTab(tab.type, galleryContainer, e);
-
             tabsContainer.appendChild(tabBtn);
-
             if (!activeTab) {
                 activeTab = tab.type;
                 tabBtn.classList.add('active');
             }
         }
     });
-
     galleryHeader.appendChild(galleryTitle);
     galleryHeader.appendChild(tabsContainer);
     galleryContainer.appendChild(galleryHeader);
-
     tabs.forEach(tab => {
         if (tab.data.length > 0) {
             const mediaGrid = document.createElement('div');
             mediaGrid.className = 'media-grid';
             mediaGrid.id = `${tab.type}-grid`;
             if (tab.type === activeTab) mediaGrid.classList.add('active');
-
             tab.data.forEach(file => {
                 const mediaItem = document.createElement('div');
                 mediaItem.className = 'media-item';
                 mediaItem.onclick = () => openModal(file, eventTitle);
-
                 if (file.type === 'image') {
                     const img = document.createElement('img');
                     img.className = 'media-thumbnail';
@@ -613,53 +540,38 @@ function createMediaGallery(media, eventTitle) {
                     audioThumb.innerHTML = '🎵';
                     mediaItem.appendChild(audioThumb);
                 }
-
                 const caption = document.createElement('div');
                 caption.className = 'media-caption';
                 caption.textContent = file.caption || `${file.type} from ${eventTitle}`;
                 mediaItem.appendChild(caption);
-
                 mediaGrid.appendChild(mediaItem);
             });
-
             galleryContainer.appendChild(mediaGrid);
         }
     });
-
     if (media.length === 0) {
         const noMedia = document.createElement('div');
         noMedia.className = 'no-media';
         noMedia.textContent = 'No media files for this memory';
         galleryContainer.appendChild(noMedia);
     }
-
     return galleryContainer;
 }
-
-// Switch gallery tabs
 function switchTab(tabType, galleryContainer, event) {
-    // Remove active classes from all tabs and grids
     galleryContainer.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     galleryContainer.querySelectorAll('.media-grid').forEach(grid => grid.classList.remove('active'));
-
-    // Add active class to the clicked button
     if (event) {
         const btn = event.currentTarget;
         if (btn) btn.classList.add('active');
     }
-
-    // Show the correct grid
     const targetGrid = galleryContainer.querySelector(`#${tabType}-grid`);
     if (targetGrid) targetGrid.classList.add('active');
 }
-
-// Open media modal
 function openModal(file, eventTitle) {
     const modal = document.getElementById('mediaModal');
     const modalMediaContainer = document.getElementById('modalMediaContainer');
     const modalCaption = document.getElementById('modalCaption');
     modalMediaContainer.innerHTML = '';
-
     if (file.type === 'image') {
         const img = document.createElement('img');
         img.className = 'modal-media';
@@ -680,21 +592,16 @@ function openModal(file, eventTitle) {
         audioContainer.style.justifyContent = 'center';
         audioContainer.style.minHeight = '200px';
         audioContainer.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-
         const audio = document.createElement('audio');
         audio.src = getFileUrl(file);
         audio.controls = true;
         audioContainer.appendChild(audio);
-
         modalMediaContainer.appendChild(audioContainer);
     }
-
     modalCaption.textContent = file.caption || `Media from: ${eventTitle}`;
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
-
-// Close media modal
 function closeModal() {
     const modal = document.getElementById('mediaModal');
     modal.classList.remove('active');
@@ -702,26 +609,39 @@ function closeModal() {
     modalMedia.forEach(media => { media.pause(); media.currentTime = 0; });
     document.body.style.overflow = 'auto';
 }
-
-// Close invitation modal
 function closeInvitationModal() {
     document.getElementById('invitationModal').style.display = 'none';
     document.body.style.overflow = 'auto';
+    const searchInput = document.querySelector('#invitationModal .search-input');
+    if (searchInput) searchInput.remove();
 }
-
+function closeTagModal() {
+    document.getElementById('tagModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    const searchInput = document.querySelector('#tagModal .search-input');
+    if (searchInput) searchInput.remove();
+}
 document.getElementById('mediaModal').onclick = e => { if (e.target === document.getElementById('mediaModal')) closeModal(); };
 document.getElementById('invitationModal').onclick = e => { if (e.target === document.getElementById('invitationModal')) closeInvitationModal(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeInvitationModal(); } });
-
-// Fetch all users for invitation
-async function fetchUsers() {
+document.getElementById('tagModal').onclick = e => { if (e.target === document.getElementById('tagModal')) closeTagModal(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeInvitationModal(); closeTagModal(); } });
+function debounce(func, delay) {
+    let timer;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+async function fetchAllUsers() {
     try {
         const res = await fetch(`${API_BASE_URL}/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
         if (data.success) {
-            return data.users.filter(user => user._id !== localStorage.getItem('userId')); // Exclude self
+            return data.users.filter(user => user._id !== localStorage.getItem('userId'));
         }
         return [];
     } catch (err) {
@@ -729,18 +649,36 @@ async function fetchUsers() {
         return [];
     }
 }
-
-// Open invitation modal
+async function fetchAllFriends() {
+    try {
+        const userId = localStorage.getItem('userId');
+        const res = await fetch(`http://localhost:3000/chat/api/friends/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            return data.friends;
+        }
+        return [];
+    } catch (err) {
+        console.error('Error fetching friends:', err);
+        return [];
+    }
+}
 document.getElementById('send-invitation-btn').addEventListener('click', async () => {
     const modal = document.getElementById('invitationModal');
     const userListContainer = document.getElementById('user-list-container');
     userListContainer.innerHTML = '';
-
-    const users = await fetchUsers();
-    if (users.length === 0) {
-        userListContainer.innerHTML = '<p>No users available to invite.</p>';
-    } else {
-        users.forEach(user => {
+    const allUsers = await fetchAllUsers();
+    let filteredUsers = allUsers;
+    const pageSize = 10;
+    let currentPage = 1;
+    const loadMoreUsers = () => {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const chunk = filteredUsers.slice(start, end);
+        if (chunk.length === 0) return;
+        chunk.forEach(user => {
             const userItem = document.createElement('div');
             userItem.className = 'user-item';
             userItem.innerHTML = `
@@ -749,136 +687,151 @@ document.getElementById('send-invitation-btn').addEventListener('click', async (
             `;
             userListContainer.appendChild(userItem);
         });
+        currentPage++;
+    };
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search users...';
+    searchInput.className = 'search-input';
+    const invitationModalContent = document.querySelector('#invitationModal .invitation-modal-content');
+    invitationModalContent.insertBefore(searchInput, userListContainer);
+    const handleSearch = debounce((e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        filteredUsers = allUsers.filter(user => (user.username || '').toLowerCase().includes(searchTerm));
+        currentPage = 1;
+        userListContainer.innerHTML = '';
+        loadMoreUsers();
+    }, 300);
+    searchInput.addEventListener('input', handleSearch);
+    loadMoreUsers();
+    const scrollHandler = () => {
+        if (userListContainer.scrollTop + userListContainer.clientHeight >= userListContainer.scrollHeight - 5) {
+            loadMoreUsers();
+        }
+    };
+    userListContainer.addEventListener('scroll', scrollHandler);
+    if (userListContainer.children.length === 0) {
+        userListContainer.innerHTML = '<p>No users available to invite.</p>';
     }
-
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 });
-
-function closeTagModal() {
-  document.getElementById('tagModal').style.display = 'none';
-  document.body.style.overflow = 'auto';
-}
-
-
 document.getElementById('make-public-btn').addEventListener('click', async () => {
-  try {
-    // 1. Load friends
-    const userId = localStorage.getItem('userId');
-    const res = await fetch(`http://localhost:3000/chat/api/friends/${userId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-
+    const modal = document.getElementById('tagModal');
     const tagListContainer = document.getElementById('tag-list-container');
     tagListContainer.innerHTML = '';
-
-    if (data.success && data.friends.length > 0) {
-      data.friends.forEach(friend => {
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        userItem.innerHTML = `
-          <input type="checkbox" data-user-id="${friend._id}">
-          <span class="user-name">${friend.username}</span>
-        `;
-        tagListContainer.appendChild(userItem);
-      });
-    } else {
-      tagListContainer.innerHTML = '<p>No friends available to tag.</p>';
+    const allFriends = await fetchAllFriends();
+    let filteredFriends = allFriends;
+    const pageSize = 10;
+    let currentPage = 1;
+    const loadMoreFriends = () => {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const chunk = filteredFriends.slice(start, end);
+        if (chunk.length === 0) return;
+        chunk.forEach(friend => {
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            userItem.innerHTML = `
+                <input type="checkbox" data-user-id="${friend._id}">
+                <span class="user-name">${friend.username}</span>
+            `;
+            tagListContainer.appendChild(userItem);
+        });
+        currentPage++;
+    };
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search friends...';
+    searchInput.className = 'search-input';
+    const tagModalContent = document.querySelector('#tagModal .invitation-modal-content');
+    tagModalContent.insertBefore(searchInput, tagListContainer);
+    const handleSearch = debounce((e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        filteredFriends = allFriends.filter(friend => (friend.username || '').toLowerCase().includes(searchTerm));
+        currentPage = 1;
+        tagListContainer.innerHTML = '';
+        loadMoreFriends();
+    }, 300);
+    searchInput.addEventListener('input', handleSearch);
+    loadMoreFriends();
+    const scrollHandler = () => {
+        if (tagListContainer.scrollTop + tagListContainer.clientHeight >= tagListContainer.scrollHeight - 5) {
+            loadMoreFriends();
+        }
+    };
+    tagListContainer.addEventListener('scroll', scrollHandler);
+    if (tagListContainer.children.length === 0) {
+        tagListContainer.innerHTML = '<p>No friends available to tag.</p>';
     }
-
-    // 2. Open modal
-    document.getElementById('tagModal').style.display = 'flex';
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-  } catch (err) {
-    console.error("Error loading friends:", err);
-    alert("Failed to load friends.");
-  }
 });
-
-
-
 document.getElementById('publish-with-tags').addEventListener('click', async () => {
-  try {
-    // collect diary event IDs
-    const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const diaryData = await resDiary.json();
-    const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
-
-    // collect selected tags
-    const selectedTags = Array.from(document.querySelectorAll('#tag-list-container input[type="checkbox"]:checked'))
-      .map(cb => cb.dataset.userId);
-
-    // publish post with tags
-    const res = await fetch(`${API_BASE_URL}/posts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-     body: JSON.stringify({ date, diaryEventIds, taggedUserIds: selectedTags })
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      alert("Diary published with tags!");
-      closeTagModal();
-      window.location.href = "post.html";
-    } else {
-      alert(`Failed: ${data.message || 'Could not publish'}`);
+    try {
+        const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const diaryData = await resDiary.json();
+        const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
+        const selectedTags = Array.from(document.querySelectorAll('#tag-list-container input[type="checkbox"]:checked'))
+            .map(cb => cb.dataset.userId);
+        const res = await fetch(`${API_BASE_URL}/posts`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ date, diaryEventIds, taggedUserIds: selectedTags })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert("Diary published with tags!");
+            closeTagModal();
+            window.location.href = "post.html";
+        } else {
+            alert(`Failed: ${data.message || 'Could not publish'}`);
+        }
+    } catch (err) {
+        console.error("Error publishing post:", err);
+        alert("Error publishing post.");
     }
-  } catch (err) {
-    console.error("Error publishing post:", err);
-    alert("Error publishing post.");
-  }
 });
-
-
 document.getElementById('publish-without-tags').addEventListener('click', async () => {
-  try {
-    // collect diary event IDs
-    const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const diaryData = await resDiary.json();
-    const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
-
-    // publish post with NO tags
-    const res = await fetch(`${API_BASE_URL}/posts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ date, diaryEventIds, tags: [] })
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      alert("Diary published without tagging anyone!");
-      closeTagModal();
-      window.location.href = "post.html";
-    } else {
-      alert(`Failed: ${data.message || 'Could not publish'}`);
+    try {
+        const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const diaryData = await resDiary.json();
+        const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
+        const res = await fetch(`${API_BASE_URL}/posts`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ date, diaryEventIds, taggedUserIds: [] })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert("Diary published without tagging anyone!");
+            closeTagModal();
+            window.location.href = "post.html";
+        } else {
+            alert(`Failed: ${data.message || 'Could not publish'}`);
+        }
+    } catch (err) {
+        console.error("Error publishing post:", err);
+        alert("Error publishing post.");
     }
-  } catch (err) {
-    console.error("Error publishing post:", err);
-    alert("Error publishing post.");
-  }
 });
-
-// Send invitations
 document.getElementById('send-invitations').addEventListener('click', async () => {
     const selectedUsers = Array.from(document.querySelectorAll('#user-list-container input[type="checkbox"]:checked'))
         .map(checkbox => checkbox.dataset.userId);
-
     if (selectedUsers.length === 0) {
         alert('Please select at least one user');
         return;
     }
-
     try {
         const res = await fetch(`${API_BASE_URL}/invitations`, {
             method: 'POST',
@@ -888,7 +841,6 @@ document.getElementById('send-invitations').addEventListener('click', async () =
             },
             body: JSON.stringify({ recipientIds: selectedUsers, diaryDate: date })
         });
-
         const data = await res.json();
         if (data.success) {
             alert('Invitations sent successfully!');
@@ -901,8 +853,6 @@ document.getElementById('send-invitations').addEventListener('click', async () =
         alert('Error sending invitations');
     }
 });
-
-// Load diary events
 async function loadDiaryStory() {
     contentContainer.innerHTML = '';
     try {
@@ -910,7 +860,6 @@ async function loadDiaryStory() {
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-
         if (res.status === 404) {
             contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
             return;
@@ -921,32 +870,26 @@ async function loadDiaryStory() {
             window.location.href = 'register_login.html';
             return;
         }
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
-
         const dayEvents = data.data?.events || [];
         if (dayEvents.length === 0) {
             contentContainer.innerHTML = `<div class="no-events"><p>No memories were captured on this day...</p></div>`;
             return;
         }
-
         dayEvents.forEach((event, index) => {
             const storySection = document.createElement('div');
             storySection.className = 'event-story';
-
             const timeElement = document.createElement('div');
             timeElement.className = 'story-time';
             timeElement.textContent = `Chapter ${index + 1}`;
             storySection.appendChild(timeElement);
-
             if (event.mood || event.category) {
                 const metaContainer = document.createElement('div');
                 metaContainer.className = 'meta-info';
                 let metaText = '';
                 if (event.mood) metaText += `Mood: ${event.mood}`;
                 metaContainer.textContent = metaText;
-
                 if (event.category) {
                     const badge = document.createElement('span');
                     badge.className = 'category-badge';
@@ -955,20 +898,16 @@ async function loadDiaryStory() {
                 }
                 storySection.appendChild(metaContainer);
             }
-
             const storyParagraph = document.createElement('div');
             storyParagraph.className = 'story-paragraph';
             storyParagraph.innerHTML = `<strong>${event.title}</strong> - ${event.description || 'A moment worth remembering.'}`;
             storySection.appendChild(storyParagraph);
-
             if (event.media && event.media.length > 0) {
                 const gallery = createMediaGallery(event.media, event.title);
                 if (gallery) storySection.appendChild(gallery);
             }
-
             contentContainer.appendChild(storySection);
         });
-
         const closingThought = document.createElement('div');
         closingThought.className = 'story-paragraph';
         closingThought.style.textAlign = 'center';
@@ -977,13 +916,11 @@ async function loadDiaryStory() {
         closingThought.style.color = '#8d6e63';
         closingThought.innerHTML = `<em>And so ended another day in my journey...</em>`;
         contentContainer.appendChild(closingThought);
-
     } catch (err) {
         console.error(err);
         contentContainer.innerHTML = `<div class="no-events"><p style="color:#c62828;">Unable to load diary entries.</p></div>`;
     }
 }
-
 loadDiaryStory();
 </script>
 </body>

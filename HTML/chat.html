@@ -1248,22 +1248,61 @@
             color: #5d4037;
         }
 
-        .friend-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #e6d8c5;
-            cursor: pointer;
-        }
+       .friend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* This ensures proper spacing */
+    padding: 12px 15px;
+    border-bottom: 1px solid #e6d8c5;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    min-height: 50px; /* Ensure consistent height */
+}
 
-        .friend-item input {
-            margin-right: 10px;
-        }
+.friend-item:hover {
+    background-color: rgba(212,197,169,0.2);
+}
 
-        .friend-item label {
-            color: #5d4037;
-            font-size: 14px;
-        }
+.friend-item input[type="checkbox"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0; /* Prevent checkbox from shrinking */
+}
+
+.friend-item label {
+    flex: 1; /* Take up remaining space */
+    color: #5d4037;
+    font-size: 14px;
+    cursor: pointer;
+    padding-right: 10px;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.friend-item .modal-btn {
+    flex-shrink: 0; /* Prevent button from shrinking */
+    margin-left: 10px;
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 60px; /* Ensure consistent button width */
+}
+
+/* For the create group modal specifically */
+#createGroupModal .friend-item {
+    padding: 10px 15px;
+}
+
+#createGroupModal .friend-item input {
+    margin: 0;
+    margin-right: 12px;
+}
+
+#createGroupModal .friend-item label {
+    margin: 0;
+    padding: 0;
+    flex: 1;
+}
 
         .modal-footer {
             display: flex;
@@ -1421,12 +1460,26 @@
         }
 
         .error-message {
-            color: #c62828;
-            text-align: center;
-            padding: 30px;
-            font-size: 16px;
-            font-style: italic;
-        }
+   opacity: 0;
+   pointer-events: none;
+   transition: opacity 0.3s;
+   z-index: 99999;
+   position: fixed;
+   top: 30px;
+   left: 50%;
+   transform: translateX(-50%);
+   background: #c62828;
+   color: #fff;
+   padding: 14px 24px;
+   border-radius: 18px;
+   min-width: 220px;
+}
+.error-message.show {
+   opacity: 1;
+   pointer-events: auto;
+}
+
+
 
         #noMessages {
             text-align: center;
@@ -1557,6 +1610,46 @@
 .chat-input, .message-edit-input {
     user-select: text !important;
     cursor: text !important;
+}
+.friend-search-container {
+    position: relative;
+    margin-bottom: 15px;
+}
+.friend-search-box {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #d4c5a9;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #5d4037;
+    outline: none;
+    background: #fff8f0;
+}
+.friend-search-box:focus {
+    border-color: #8b4513;
+}
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+.pagination-btn {
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+    color: #fdfbf7;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.pagination-info {
+    font-size: 14px;
+    color: #5d4037;
 }
     </style>
 </head>
@@ -1693,21 +1786,29 @@
 
         <!-- Create Group Modal -->
         <div id="createGroupModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Create New Group</h3>
-                    <button class="modal-close" onclick="window.chatApp.closeCreateGroupModal()">×</button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="groupNameInput" placeholder="Group Name">
-                    <div id="friendList"></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-btn secondary" onclick="window.chatApp.closeCreateGroupModal()">Cancel</button>
-                    <button class="modal-btn primary" onclick="window.chatApp.createGroup()">Create</button>
-                </div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Create New Group</h3>
+            <button class="modal-close" onclick="window.chatApp.closeCreateGroupModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="text" id="groupNameInput" placeholder="Group Name">
+            <div class="friend-search-container">
+                <input type="text" id="friendSearchBox" class="friend-search-box" placeholder="Search friends...">
+            </div>
+            <div id="friendList"></div>
+            <div class="pagination-controls" id="paginationControls" style="display: none;">
+                <button class="pagination-btn" id="prevPageBtn"><i class="fas fa-chevron-left"></i></button>
+                <span class="pagination-info" id="paginationInfo"></span>
+                <button class="pagination-btn" id="nextPageBtn"><i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
+        <div class="modal-footer">
+            <button class="modal-btn secondary" onclick="window.chatApp.closeCreateGroupModal()">Cancel</button>
+            <button class="modal-btn primary" id="createGroupBtn">Create</button>
+        </div>
+    </div>
+</div>
 
         <!-- Add/Remove Member Modal -->
         <div id="manageMembersModal" class="modal">
@@ -1746,6 +1847,10 @@ class PersonalChat {
         this.typingUsers = new Set();
         this.userMap = new Map();
         this.currentlyEditingMessageId = null;
+        this.friendsList = []; // Store the full friend list
+this.filteredFriends = []; // Store the filtered friend list for search
+this.currentPage = 1; // Track the current page for pagination
+this.itemsPerPage = 10; // Number of friends to display per page
 
         if (!this.currentUserId) {
             console.error("User ID not found in localStorage");
@@ -1781,6 +1886,12 @@ class PersonalChat {
         this.createGroupModal = document.getElementById('createGroupModal');
         this.groupNameInput = document.getElementById('groupNameInput');
         this.friendList = document.getElementById('friendList');
+        this.friendSearchBox = document.getElementById('friendSearchBox');
+this.paginationControls = document.getElementById('paginationControls');
+this.prevPageBtn = document.getElementById('prevPageBtn');
+this.nextPageBtn = document.getElementById('nextPageBtn');
+this.paginationInfo = document.getElementById('paginationInfo');
+this.createGroupBtn = document.getElementById('createGroupBtn');
         this.manageMembersModal = document.getElementById('manageMembersModal');
         this.memberList = document.getElementById('memberList');
         this.chatActions = document.getElementById('chatActions');
@@ -1857,6 +1968,25 @@ class PersonalChat {
             const files = Array.from(e.dataTransfer.files);
             files.forEach(file => this.handleFileUpload(file));
         });
+
+        this.friendSearchBox.addEventListener('input', () => {
+    this.currentPage = 1;
+    this.filterAndPaginateFriends();
+});
+this.prevPageBtn.addEventListener('click', () => {
+    if (this.currentPage > 1) {
+        this.currentPage--;
+        this.renderFriendList();
+    }
+});
+this.nextPageBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(this.filteredFriends.length / this.itemsPerPage);
+    if (this.currentPage < totalPages) {
+        this.currentPage++;
+        this.renderFriendList();
+    }
+});
+this.createGroupBtn.addEventListener('click', () => this.createGroup());
     }
 
     setupSocketListeners() {
@@ -3008,28 +3138,58 @@ async deleteMessageForEveryone(messageId) {
     }
 }
 
-    async openCreateGroupModal() {
-        this.groupNameInput.value = '';
-        this.friendList.innerHTML = '';
-        try {
-            const response = await fetch(`http://localhost:3000/chat/api/friends/${this.currentUserId}`);
-            const data = await response.json();
-            if (data.success && data.friends.length > 0) {
-                this.friendList.innerHTML = data.friends.map(friend => `
-                    <div class="friend-item">
-                        <input type="checkbox" value="${friend._id}" id="friend-${friend._id}">
-                        <label for="friend-${friend._id}">${friend.username}</label>
-                    </div>
-                `).join('');
-                this.createGroupModal.style.display = 'flex';
-            } else {
-                this.showError('No friends available to add to a group.');
-            }
-        } catch (error) {
-            console.error('Error loading friends:', error);
-            this.showError('Failed to load friends list.');
+   async openCreateGroupModal() {
+    this.groupNameInput.value = '';
+    this.friendSearchBox.value = '';
+    this.friendList.innerHTML = '';
+    this.friendsList = [];
+    this.filteredFriends = [];
+    this.currentPage = 1;
+    try {
+        const response = await fetch(`http://localhost:3000/chat/api/friends/${this.currentUserId}`);
+        const data = await response.json();
+        if (data.success && data.friends.length > 0) {
+            this.friendsList = data.friends;
+            this.filteredFriends = [...this.friendsList];
+            this.renderFriendList();
+            this.createGroupModal.style.display = 'flex';
+        } else {
+            this.showError('No friends available to add to a group.');
+            this.friendList.innerHTML = '<p style="text-align: center; color: #8d6e63; font-style: italic;">No friends found.</p>';
         }
+    } catch (error) {
+        console.error('Error loading friends:', error);
+        this.showError('Failed to load friends list.');
+        this.friendList.innerHTML = '<p style="text-align: center; color: #c62828; font-style: italic;">Error loading friends.</p>';
     }
+}
+filterAndPaginateFriends() {
+    const searchTerm = this.friendSearchBox.value.toLowerCase();
+    this.filteredFriends = this.friendsList.filter(friend =>
+        friend.username.toLowerCase().includes(searchTerm)
+    );
+    this.currentPage = 1;
+    this.renderFriendList();
+}
+
+renderFriendList() {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    const paginatedFriends = this.filteredFriends.slice(start, end);
+    
+    this.friendList.innerHTML = paginatedFriends.map(friend => `
+        <div class="friend-item">
+            <input type="checkbox" value="${friend._id}" id="friend-${friend._id}">
+            <label for="friend-${friend._id}">${friend.username}</label>
+        </div>
+    `).join('');
+    
+    const totalPages = Math.ceil(this.filteredFriends.length / this.itemsPerPage);
+    this.paginationControls.style.display = this.filteredFriends.length > this.itemsPerPage ? 'flex' : 'none';
+    this.prevPageBtn.disabled = this.currentPage === 1;
+    this.nextPageBtn.disabled = this.currentPage === totalPages || totalPages === 0;
+    this.paginationInfo.textContent = `Page ${this.currentPage} of ${Math.max(totalPages, 1)}`;
+}
 
     closeCreateGroupModal() {
         this.createGroupModal.style.display = 'none';
@@ -3037,87 +3197,96 @@ async deleteMessageForEveryone(messageId) {
         this.groupNameInput.value = '';
     }
 
-    async createGroup() {
-        const groupName = this.groupNameInput.value.trim();
-        const selectedFriends = Array.from(this.friendList.querySelectorAll('input:checked')).map(input => input.value);
-        if (!groupName) {
-            this.showError('Please enter a group name.');
-            return;
-        }
-        if (selectedFriends.length < 2) {
-            this.showError('Please select at least 2 friends to create a group.');
-            return;
-        }
-
-        try {
-            const response = await fetch('http://localhost:3000/chat/api/group/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    groupName,
-                    members: [...selectedFriends, this.currentUserId],
-                    createdBy: this.currentUserId
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                this.closeCreateGroupModal();
-                this.loadChats();
-                this.openChat({
-                    chatId: data.group._id,
-                    type: 'group',
-                    groupName: data.group.groupName,
-                    participants: data.group.participants,
-                    adminId: data.group.adminId,
-                    lastMessage: '',
-                    lastMessageTime: new Date()
-                });
-            } else {
-                this.showError('Failed to create group: ' + data.message);
-            }
-        } catch (error) {
-            console.error('Error creating group:', error);
-            this.showError('Error creating group. Please try again.');
-        }
+   async createGroup() {
+    const groupName = this.groupNameInput.value.trim();
+    const selectedFriends = Array.from(this.friendList.querySelectorAll('input:checked')).map(input => input.value);
+    if (!groupName) {
+        this.showError('Group name is required to create a group.');
+        return;
     }
+    if (selectedFriends.length < 2) {
+        this.showError('Please select at least 2 friends to create a group.');
+        return;
+    }
+    try {
+        const response = await fetch('http://localhost:3000/chat/api/group/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                groupName,
+                members: [...selectedFriends, this.currentUserId],
+                createdBy: this.currentUserId
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            this.closeCreateGroupModal();
+            this.loadChats();
+            this.openChat({
+                chatId: data.group._id,
+                type: 'group',
+                groupName: data.group.groupName,
+                participants: data.group.participants,
+                adminId: data.group.adminId,
+                lastMessage: '',
+                lastMessageTime: new Date()
+            });
+            this.showError('Group created successfully!');
+        } else {
+            this.showError('Failed to create group: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error creating group:', error);
+        this.showError('Error creating group. Please try again.');
+    }
+}
 
     async openManageMembersModal() {
-        if (this.currentChatType !== 'group' || !this.currentGroupDetails) return;
-        this.memberList.innerHTML = '';
-        try {
-            const response = await fetch(`http://localhost:3000/chat/api/friends/${this.currentUserId}`);
-            const data = await response.json();
-            if (data.success) {
-                const friends = data.friends;
-                const isAdmin = this.currentGroupDetails.adminId === this.currentUserId;
-                const members = this.currentGroupDetails.participants;
-                this.memberList.innerHTML = friends.map(friend => {
-                    const isMember = members.includes(friend._id);
-                    const isCurrentUser = friend._id === this.currentUserId;
-                    let actionButton = '';
-                    if (isAdmin && !isCurrentUser) {
-                        if (isMember) {
-                            actionButton = `<button class="modal-btn secondary" onclick="window.chatApp.removeMember('${friend._id}')">Remove</button>`;
-                        } else {
-                            actionButton = `<button class="modal-btn primary" onclick="window.chatApp.addMember('${friend._id}')">Add</button>`;
-                        }
+    if (this.currentChatType !== 'group' || !this.currentGroupDetails) return;
+    
+    this.memberList.innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+    
+    try {
+        const response = await fetch(`http://localhost:3000/chat/api/friends/${this.currentUserId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const friends = data.friends;
+            const isAdmin = this.currentGroupDetails.adminId === this.currentUserId;
+            const members = this.currentGroupDetails.participants;
+            
+            this.memberList.innerHTML = friends.map(friend => {
+                const isMember = members.includes(friend._id);
+                const isCurrentUser = friend._id === this.currentUserId;
+                let actionButton = '';
+                
+                if (isAdmin && !isCurrentUser) {
+                    if (isMember) {
+                        actionButton = `<button class="modal-btn secondary" onclick="window.chatApp.removeMember('${friend._id}')">Remove</button>`;
+                    } else {
+                        actionButton = `<button class="modal-btn primary" onclick="window.chatApp.addMember('${friend._id}')">Add</button>`;
                     }
-                    return `
-                        <div class="friend-item">
-                            <label>${friend.username}${isCurrentUser ? ' (You)' : ''}${isMember ? ' (Member)' : ''}</label>
-                            ${actionButton}
-                        </div>
-                    `;
-                }).join('');
-                this.manageMembersModal.style.display = 'flex';
-            } else {
-                this.showError('Failed to load friends list.');
-            }
-        } catch (error) {
-            console.error('Error loading friends:', error);
+                }
+                
+                return `
+                    <div class="friend-item">
+                        <label>${friend.username}${isCurrentUser ? ' (You)' : ''}${isMember ? ' (Member)' : ''}</label>
+                        ${actionButton}
+                    </div>
+                `;
+            }).join('');
+            
+            this.manageMembersModal.style.display = 'flex';
+        } else {
             this.showError('Failed to load friends list.');
+            this.memberList.innerHTML = '<div style="text-align: center; color: #c62828; padding: 20px;">Failed to load friends</div>';
         }
+    } catch (error) {
+        console.error('Error loading friends:', error);
+        this.showError('Failed to load friends list.');
+        this.memberList.innerHTML = '<div style="text-align: center; color: #c62828; padding: 20px;">Error loading friends</div>';
     }
+}
 
     closeManageMembersModal() {
         this.manageMembersModal.style.display = 'none';

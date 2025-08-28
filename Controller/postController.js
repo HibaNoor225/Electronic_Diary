@@ -77,17 +77,17 @@ exports.createFromDiary = async (req, res) => {
                 type: m.type,
                 caption: m.caption || '',
                 url: {
-                  original: m.url.original ? `/uploads/${m.url.original}` : '',
-                  compressed: m.url.compressed ? `/uploads/${m.url.compressed}` : '',
-                  optimized: m.url.optimized ? `/uploads/${m.url.optimized}` : '',
-                  thumbnail: m.url.thumbnail ? `/uploads/${m.url.thumbnail}` : ''
+                  original: m.url.original ? `/Uploads/${m.url.original}` : '',
+                  compressed: m.url.compressed ? `/Uploads/${m.url.compressed}` : '',
+                  optimized: m.url.optimized ? `/Uploads/${m.url.optimized}` : '',
+                  thumbnail: m.url.thumbnail ? `/Uploads/${m.url.thumbnail}` : ''
                 }
               };
             } else {
               return {
                 type: m.type || 'image',
                 caption: m.caption || '',
-                url: m.url ? `/uploads/${m.filename || m.url}` : ''
+                url: m.url ? `/Uploads/${m.filename || m.url}` : ''
               };
             }
           } catch (error) {
@@ -107,7 +107,7 @@ exports.createFromDiary = async (req, res) => {
           mood: ev.mood || 'Neutral',
           media: mediaArray,
           photo: firstImage
-            ? (typeof firstImage.url === 'object' ? `/uploads/${firstImage.url.thumbnail || firstImage.url.original}` : `/uploads/${firstImage.url}`)
+            ? (typeof firstImage.url === 'object' ? `/Uploads/${firstImage.url.thumbnail || firstImage.url.original}` : `/Uploads/${firstImage.url}`)
             : ''
         };
       })
@@ -123,8 +123,7 @@ exports.createFromDiary = async (req, res) => {
         taggedUserId,                    // recipient
         userId,                          // sender
         'tag',
-        `${currentUser.username} tagged you in a post`,
-
+        `${currentUser.username} tagged you in a post`
       );
     }
 
@@ -136,29 +135,131 @@ exports.createFromDiary = async (req, res) => {
   }
 };
 
-// GET paginated posts
+// GET paginated posts with search
+// GET paginated posts with search
 exports.getAllPosts = async (req, res) => {
   try {
-    let { page = 1, limit = 5 } = req.query;
+    let { page = 1, limit = 5, search = '' } = req.query;
     page = parseInt(page, 10) || 1;
     limit = parseInt(limit, 10) || 5;
 
-    const [posts, totalPosts] = await Promise.all([
-      Post.find({})
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .populate('userId', 'username profilePhoto')
-        .populate('comments.userId', 'username profilePhoto')
-        .populate('tags', 'username profilePhoto'),
-      Post.countDocuments()
-    ]);
+    // Sanitize limit to prevent excessive resource usage
+    if (limit > 50) limit = 50;
 
-    posts.forEach(post => {
-      post.comments.sort((a, b) => b.createdAt - a.createdAt);
+    // Sanitize search input to prevent ReDoS and trim whitespace
+    search = search.trim();
+    const searchRegex = search ? { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } : null;
+
+    // Build aggregation pipeline
+    const pipeline = [];
+
+    // Match posts based on content, diaryEvents.title, and diaryEvents.description
+    const matchStage = {};
+    if (searchRegex) {
+      matchStage.$or = [
+        { content: searchRegex },
+        { 'diaryEvents.title': searchRegex },
+        { 'diaryEvents.description': searchRegex }
+      ];
+    }
+    pipeline.push({ $match: matchStage });
+
+    // Lookup userId to populate username and profilePhoto
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userId'
+      }
+    });
+    pipeline.push({ $unwind: '$userId' });
+
+    // Lookup tags to populate usernames
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'tags',
+        foreignField: '_id',
+        as: 'tags'
+      }
     });
 
-    await logActivity(req.info.id, `Fetched posts page ${page}`);
+    // Lookup comments.userId to populate usernames
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'comments.userId',
+        foreignField: '_id',
+        as: 'commentsUser'
+      }
+    });
+
+    // Project to reshape comments and include only necessary fields
+    pipeline.push({
+      $addFields: {
+        comments: {
+          $map: {
+            input: '$comments',
+            as: 'comment',
+            in: {
+              $mergeObjects: [
+                '$$comment',
+                {
+                  userId: {
+                    $arrayElemAt: [
+                      '$commentsUser',
+                      {
+                        $indexOfArray: ['$commentsUser._id', '$$comment.userId']
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    // Sort comments by createdAt descending
+    pipeline.push({
+      $addFields: {
+        comments: {
+          $sortArray: {
+            input: '$comments',
+            sortBy: { createdAt: -1 }
+          }
+        }
+      }
+    });
+
+    // Project to exclude temporary commentsUser array
+    pipeline.push({
+      $project: {
+        commentsUser: 0
+      }
+    });
+
+    // Apply pagination
+    pipeline.push(
+      { $sort: { createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit }
+    );
+
+    // Execute aggregation and count total posts
+    const [posts, totalPostsResult] = await Promise.all([
+      Post.aggregate(pipeline),
+      Post.aggregate([
+        { $match: matchStage },
+        { $count: 'total' }
+      ])
+    ]);
+
+    const totalPosts = totalPostsResult.length > 0 ? totalPostsResult[0].total : 0;
+
+    await logActivity(req.info.id, `Fetched posts page ${page}${search ? ` with search "${search}"` : ''}`);
 
     return res.json({ success: true, posts, totalPosts, page, limit });
   } catch (err) {
@@ -222,8 +323,7 @@ exports.toggleLike = async (req, res) => {
           post.userId,                     // recipient (post owner)
           userId,                          // sender (liker)
           'like',
-          `${currentUser.username} liked your post`,
-          
+          `${currentUser.username} liked your post`
         );
       }
     }
@@ -274,8 +374,7 @@ exports.addComment = async (req, res) => {
         post.userId,                     // recipient (post owner)
         userId,                          // sender (commenter)
         'comment',
-        `${currentUser.username} commented on your post: "${text.trim()}"`,
-        
+        `${currentUser.username} commented on your post: "${text.trim()}"`
       );
     }
 
@@ -318,8 +417,7 @@ exports.toggleCommentLike = async (req, res) => {
           comment.userId,                  // recipient (comment owner)
           userId,                          // sender (liker)
           'like',
-          `${currentUser.username} liked your comment`,
-          
+          `${currentUser.username} liked your comment`
         );
       }
     }
