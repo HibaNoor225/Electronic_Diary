@@ -477,6 +477,21 @@ body {
         <div id="user-list-container" class="user-list"></div>
         <button class="send-invitation-btn" id="send-invitations">Send Invitations</button>
     </div>
+
+
+
+
+</div>
+
+    <!-- Modal for tagging friends when making public -->
+<div class="modal invitation-modal" id="tagModal">
+  <div class="invitation-modal-content">
+    <button class="invitation-close" onclick="closeTagModal()">&times;</button>
+    <div class="invitation-header">Tag Friends</div>
+    <div id="tag-list-container" class="user-list"></div>
+    <button class="send-invitation-btn" id="publish-with-tags">Publish</button>
+    <button class="send-invitation-btn" id="publish-without-tags" style="background:#bdbdbd; color:#5d4037; margin-top:10px;">Publish Without Tagging</button>
+  </div>
 </div>
 
 <script>
@@ -738,6 +753,120 @@ document.getElementById('send-invitation-btn').addEventListener('click', async (
 
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+});
+
+function closeTagModal() {
+  document.getElementById('tagModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+
+document.getElementById('make-public-btn').addEventListener('click', async () => {
+  try {
+    // 1. Load friends
+    const userId = localStorage.getItem('userId');
+    const res = await fetch(`http://localhost:3000/chat/api/friends/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const tagListContainer = document.getElementById('tag-list-container');
+    tagListContainer.innerHTML = '';
+
+    if (data.success && data.friends.length > 0) {
+      data.friends.forEach(friend => {
+        const userItem = document.createElement('div');
+        userItem.className = 'user-item';
+        userItem.innerHTML = `
+          <input type="checkbox" data-user-id="${friend._id}">
+          <span class="user-name">${friend.username}</span>
+        `;
+        tagListContainer.appendChild(userItem);
+      });
+    } else {
+      tagListContainer.innerHTML = '<p>No friends available to tag.</p>';
+    }
+
+    // 2. Open modal
+    document.getElementById('tagModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  } catch (err) {
+    console.error("Error loading friends:", err);
+    alert("Failed to load friends.");
+  }
+});
+
+
+
+document.getElementById('publish-with-tags').addEventListener('click', async () => {
+  try {
+    // collect diary event IDs
+    const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const diaryData = await resDiary.json();
+    const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
+
+    // collect selected tags
+    const selectedTags = Array.from(document.querySelectorAll('#tag-list-container input[type="checkbox"]:checked'))
+      .map(cb => cb.dataset.userId);
+
+    // publish post with tags
+    const res = await fetch(`${API_BASE_URL}/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+     body: JSON.stringify({ date, diaryEventIds, taggedUserIds: selectedTags })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert("Diary published with tags!");
+      closeTagModal();
+      window.location.href = "post.html";
+    } else {
+      alert(`Failed: ${data.message || 'Could not publish'}`);
+    }
+  } catch (err) {
+    console.error("Error publishing post:", err);
+    alert("Error publishing post.");
+  }
+});
+
+
+document.getElementById('publish-without-tags').addEventListener('click', async () => {
+  try {
+    // collect diary event IDs
+    const resDiary = await fetch(`${API_BASE_URL}/diary/${encodeURIComponent(date)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const diaryData = await resDiary.json();
+    const diaryEventIds = (diaryData.data.events || []).map(e => e._id);
+
+    // publish post with NO tags
+    const res = await fetch(`${API_BASE_URL}/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ date, diaryEventIds, tags: [] })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert("Diary published without tagging anyone!");
+      closeTagModal();
+      window.location.href = "post.html";
+    } else {
+      alert(`Failed: ${data.message || 'Could not publish'}`);
+    }
+  } catch (err) {
+    console.error("Error publishing post:", err);
+    alert("Error publishing post.");
+  }
 });
 
 // Send invitations

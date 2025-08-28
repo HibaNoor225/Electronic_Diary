@@ -2,7 +2,7 @@
 // Socket.IO Logic
 const Chat = require('../Models/Chat');
 const GroupChat = require('../Models/groupChat');
-
+const UserNotification = require('../Models/UserNotification'); // ✅ NEW
 const onlineUsers = {};
 
 module.exports = (io) => {
@@ -46,7 +46,7 @@ module.exports = (io) => {
             console.log(`User ${socket.userId || 'unknown'} joined chat ${chatId} (${type})`);
         });
 
-        // Send message
+        // ---------------- Send Message ----------------
         socket.on('sendMessage', async ({ chatId, senderId, message, fileUrl, fileType, fileName, fileSize, replyTo, tempId, duration, type }) => {
             if (!chatId || !senderId || !type || (!message && !fileUrl)) {
                 console.error('Missing required fields in sendMessage:', { chatId, senderId, type });
@@ -68,11 +68,11 @@ module.exports = (io) => {
                     console.error('Chat not found:', chatId);
                     return;
                 }
+
+                // ✅ Check participant
                 const isParticipant = type === 'personal'
-                    ? (chat.senderId && chat.senderId.toString && chat.senderId.toString() === senderId) || 
-                      (chat.recipientId && chat.recipientId.toString && chat.recipientId.toString() === senderId)
-                    : (chat.participants && Array.isArray(chat.participants) && 
-                       chat.participants.some(id => id && id.toString && id.toString() === senderId));
+                    ? (chat.senderId.toString() === senderId || chat.recipientId.toString() === senderId)
+                    : (chat.participants.some(id => id.toString() === senderId));
                 if (!isParticipant) {
                     console.error('User not in chat:', senderId);
                     return;
@@ -124,6 +124,37 @@ module.exports = (io) => {
                         tempId,
                         messageId,
                         type
+                    });
+                }
+
+                // ---------------- Create Notifications ----------------
+                if (type === 'personal') {
+                    const recipientId = chat.senderId.toString() === senderId ? chat.recipientId : chat.senderId;
+                    await UserNotification.create({
+                        user: recipientId,
+                        sender: senderId,
+                        type: 'chat',
+                        message: 'sent you a new message'
+                    });
+
+                    if (onlineUsers[recipientId]) {
+                        io.to(onlineUsers[recipientId]).emit('newNotification');
+                    }
+                } else if (type === 'group') {
+                    const notifications = chat.participants
+                        .filter(id => id.toString() !== senderId)
+                        .map(recipientId => ({
+                            user: recipientId,
+                            sender: senderId,
+                            type: 'chat',
+                            message: 'sent a new message in group chat'
+                        }));
+                    await UserNotification.insertMany(notifications);
+
+                    chat.participants.forEach(id => {
+                        if (id.toString() !== senderId && onlineUsers[id.toString()]) {
+                            io.to(onlineUsers[id.toString()]).emit('newNotification');
+                        }
                     });
                 }
             } catch (err) {

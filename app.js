@@ -13,6 +13,7 @@ const userRoutes = require('./Routes/userRoutes');
 const CategoryMoodRoutes=require("./Routes/CategoryMoodRoutes.js")
 const suggestionRoutes=require("./Routes/suggestions.js")
 
+const userNotificationRoutes = require('./Routes/userNotificationRoutes');
 
 const aiRoutes=require('./Routes/generateAi.js')
 
@@ -63,7 +64,7 @@ app.use('/api/admin',adminRoutes)
 app.use('/api/ai',aiRoutes)
 //app.use('/chat/api', chatRoutes); // correct
 
-
+app.use('/api/notifications', userNotificationRoutes);
 
 
 

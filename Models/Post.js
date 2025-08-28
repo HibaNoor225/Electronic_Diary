@@ -2,10 +2,16 @@ const mongoose = require('mongoose');
 const { Schema, Types } = mongoose;
 
 const mediaSchema = new Schema({
-  url: { type: String, required: true },        // e.g. diary/<userId>/<filename>
+  url: {
+    original: { type: String },
+    compressed: { type: String },
+    optimized: { type: String },
+    thumbnail: { type: String }
+  },
   type: { type: String, enum: ['image', 'video', 'audio'], default: 'image' },
   caption: { type: String, default: '' }
 }, { _id: false });
+
 
 const diaryEventSnapshotSchema = new Schema({
   // keep original subdoc id as string for reference
@@ -33,7 +39,8 @@ const postSchema = new Schema({
   // IMPORTANT: we now store snapshots, not refs to a missing "DiaryEvent" model
   diaryEvents: [diaryEventSnapshotSchema],
   likes: [{ type: Types.ObjectId, ref: 'User' }],
-  comments: [commentSchema]
+  comments: [commentSchema],
+  tags: [{ type: Types.ObjectId, ref: 'User' }] // New field for tagged users
 }, { timestamps: true });
 
 module.exports = mongoose.model('Post', postSchema);

@@ -8,6 +8,7 @@ const mongoose=require("mongoose")
 const adminAuth = require('../middleware/adminAuth');
 const controller = require('../Controller/CategoryMoodController');
 const verifyToken=require("../middleware/authMiddleware")
+const UserNotification = require('../Models/userNotification'); 
 
 // ---- CATEGORY ROUTES ----
 router.get('/categories', controller.getAllCategories.bind(controller));
@@ -32,7 +33,6 @@ router.get('/user/:userId/customMoods', controller.getUserCustomMoods.bind(contr
 router.get('/users', verifyToken,adminAuth, controller.getAllUsers.bind(controller));
 router.put('/user/:id/deactivate',verifyToken, adminAuth, controller.deactivateUser.bind(controller));
 
-
 //// ------------------ Send invitations ------------------
 router.post('/invitations', verifyToken, async (req, res) => {
     const { recipientIds, diaryDate } = req.body;
@@ -50,7 +50,7 @@ router.post('/invitations', verifyToken, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Diary not found' });
         }
 
-        // Filter out invalid recipient IDs (optional, but safer)
+        // Filter out invalid recipient IDs
         const validRecipients = recipientIds.filter(id => mongoose.Types.ObjectId.isValid(id));
 
         // Update diary's sharedWith field in **one step**
@@ -58,37 +58,46 @@ router.post('/invitations', verifyToken, async (req, res) => {
         await diary.save();
 
         // Prepare invitations with plain JSON diary content
-        const diaryJSON = diary.toObject(); // converts Mongoose doc to plain JS object
+        const diaryJSON = diary.toObject();
+        
         // Create invitations with full diary content
-const invitations = recipientIds.map(recipientId => ({
-    senderId: userId,
-    recipientId,
-    diaryDate,
-    diaryContent: {
-        events: diary.events.map(e => ({
-            title: e.title,
-            description: e.description,
-            mood: e.mood,
-            category: e.category,
-            moodEmoji: e.moodEmoji,
-            media: e.media.map(m => ({
-                type: m.type,
-                url: m.url,  // now Mixed, works for objects
-                caption: m.caption || ''
-            })),
-            createdAt: e.createdAt,
-            updatedAt: e.updatedAt
-        })),
-        isPublic: diary.isPublic,
-        sharedWith: diary.sharedWith, // ObjectIds now
-        createdAt: diary.createdAt,
-        updatedAt: diary.updatedAt
-    }
-}));
-
+        const invitations = validRecipients.map(recipientId => ({
+            senderId: userId,
+            recipientId,
+            diaryDate,
+            diaryContent: {
+                events: diary.events.map(e => ({
+                    title: e.title,
+                    description: e.description,
+                    mood: e.mood,
+                    category: e.category,
+                    moodEmoji: e.moodEmoji,
+                    media: e.media.map(m => ({
+                        type: m.type,
+                        url: m.url,
+                        caption: m.caption || ''
+                    })),
+                    createdAt: e.createdAt,
+                    updatedAt: e.updatedAt
+                })),
+                isPublic: diary.isPublic,
+                sharedWith: diary.sharedWith,
+                createdAt: diary.createdAt,
+                updatedAt: diary.updatedAt
+            }
+        }));
 
         // Insert invitations
         await Invitation.insertMany(invitations);
+
+        // ✅ Create notifications for each recipient
+        const notifications = validRecipients.map(recipientId => ({
+            user: recipientId,
+            sender: userId,
+            type: 'invite',
+            message: `sent you a diary invitation for ${diaryDate}`
+        }));
+        await UserNotification.insertMany(notifications);
 
         res.json({ success: true, message: 'Invitations sent successfully' });
     } catch (err) {
@@ -96,7 +105,6 @@ const invitations = recipientIds.map(recipientId => ({
         res.status(500).json({ success: false, message: 'Error sending invitations' });
     }
 });
-
 
 // ------------------ Get sent or received invitations ------------------
 router.get('/invitations/:type', verifyToken, async (req, res) => {

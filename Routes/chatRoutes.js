@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const UserNotification=require("../Models/userNotification")
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -137,6 +138,7 @@ module.exports = (io) => {
     });
 
     // =================== SEND MESSAGE ===================
+
     router.post('/sendMessage', async (req, res) => {
         try {
             const { chatId, senderId, message, replyTo, type, fileUrl, fileType, fileName, fileSize, duration } = req.body;
@@ -174,6 +176,28 @@ module.exports = (io) => {
             chat.updatedAt = new Date();
             await chat.save();
 
+            // ✅ Create notification(s)
+            if (type === 'personal') {
+                const recipientId = chat.senderId.toString() === senderId ? chat.recipientId : chat.senderId;
+                await UserNotification.create({
+                    user: recipientId,
+                    sender: senderId,
+                    type: 'chat',
+                    message: message || 'Sent you a file'
+                });
+            } else if (type === 'group') {
+                const recipients = chat.participants.filter(id => id.toString() !== senderId);
+                const notifications = recipients.map(uid => ({
+                    user: uid,
+                    sender: senderId,
+                    type: 'chat',
+                    message: message || 'Sent a group message'
+                }));
+                if (notifications.length > 0) {
+                    await UserNotification.insertMany(notifications);
+                }
+            }
+
             io.to(chatId).emit('receiveMessage', {
                 _id: newMessage._id.toString(),
                 sender: senderId,
@@ -195,6 +219,57 @@ module.exports = (io) => {
         }
     });
 
+    // =================== GROUP: ADD MEMBER ===================
+    router.post('/group/:groupId/add', async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const { userId } = req.body;
+
+            const group = await GroupChat.findById(groupId);
+            group.participants.push(userId);
+            await group.save();
+
+            // ✅ Notify user added
+            await UserNotification.create({
+                user: userId,
+                sender: group.adminId,
+                type: 'invite',
+                message: `You were added to group ${group.groupName}`
+            });
+
+            io.to(groupId).emit('memberAdded', { userId, groupId });
+            res.json({ success: true, group });
+        } catch (error) {
+            console.error('Error adding member:', error);
+            res.status(500).json({ success: false, message: 'Error adding member' });
+        }
+    });
+
+    // =================== GROUP: REMOVE MEMBER ===================
+    router.post('/group/:groupId/remove', async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const { userId } = req.body;
+
+            const group = await GroupChat.findById(groupId);
+            group.participants = group.participants.filter(id => id.toString() !== userId);
+            await group.save();
+
+            // ✅ Notify user removed
+            await UserNotification.create({
+                user: userId,
+                sender: group.adminId,
+                type: 'invite',
+                message: `You were removed from group ${group.groupName}`
+            });
+
+            io.to(groupId).emit('memberRemoved', { userId, groupId });
+            res.json({ success: true, group });
+        } catch (error) {
+            console.error('Error removing member:', error);
+            res.status(500).json({ success: false, message: 'Error removing member' });
+        }
+    });
     // =================== EDIT MESSAGE ===================
     router.post('/message/edit', async (req, res) => {
         try {
@@ -409,39 +484,8 @@ module.exports = (io) => {
         }
     });
 
-    router.post('/group/:groupId/add', async (req, res) => {
-        try {
-            const { groupId } = req.params;
-            const { userId } = req.body;
-
-            const group = await GroupChat.findById(groupId);
-            group.participants.push(userId);
-            await group.save();
-
-            io.to(groupId).emit('memberAdded', { userId, groupId });
-            res.json({ success: true, group });
-        } catch (error) {
-            console.error('Error adding member:', error);
-            res.status(500).json({ success: false, message: 'Error adding member' });
-        }
-    });
-
-    router.post('/group/:groupId/remove', async (req, res) => {
-        try {
-            const { groupId } = req.params;
-            const { userId } = req.body;
-
-            const group = await GroupChat.findById(groupId);
-            group.participants = group.participants.filter(id => id.toString() !== userId);
-            await group.save();
-
-            io.to(groupId).emit('memberRemoved', { userId, groupId });
-            res.json({ success: true, group });
-        } catch (error) {
-            console.error('Error removing member:', error);
-            res.status(500).json({ success: false, message: 'Error removing member' });
-        }
-    });
+    
+    
 
     router.post('/group/:groupId/leave', async (req, res) => {
         try {

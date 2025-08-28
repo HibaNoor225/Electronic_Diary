@@ -761,85 +761,103 @@ function createPostHTML(post) {
 
     // Avatar HTML
     const avatarHTML = user.profilePhoto ? `
-      <img src="http://localhost:3000${user.profilePhoto}" 
-           alt="${user.username}"
-           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-      <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
-                  align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
-        ${getUserInitials(user.username)}
-      </div>
+        <img src="http://localhost:3000${user.profilePhoto}" 
+             alt="${user.username}"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                    align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
+            ${getUserInitials(user.username)}
+        </div>
     ` : `
-      <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
-                  display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
-        ${getUserInitials(user.username)}
-      </div>
+        <div style="width:100%; height:100%; background:#8b4513; border-radius:50%; 
+                    display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.3rem;">
+            ${getUserInitials(user.username)}
+        </div>
     `;
 
     // Diary content
     let diaryContentHTML = '';
     if (post.diaryEvents && post.diaryEvents.length > 0) {
         diaryContentHTML = `
-          <div class="diary-content">
-            ${post.diaryEvents.map(entry => {
-                const title = entry.title || 'A Beautiful Moment';
-                const description = entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : '';
-                const dateStr = entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '');
+            <div class="diary-content">
+                ${post.diaryEvents.map(entry => {
+                    const title = entry.title || 'A Beautiful Moment';
+                    const description = entry.description ? `<div class="diary-entry-text">${entry.description}</div>` : '';
+                    const dateStr = entry.date ? formatDate(entry.date) : (post.createdAt ? formatDate(post.createdAt) : '');
 
-                // Media HTML
-                let mediaHTML = '';
-                if (entry.media && entry.media.length > 0) {
-                    mediaHTML = entry.media.map(m => {
-                        if (!m || !m.url) return '';
+                    // Media HTML
+                    let mediaHTML = '';
+                    if (entry.media && entry.media.length > 0) {
+                        mediaHTML = entry.media.map(m => {
+                            if (!m || !m.url) return '';
+                            if (m.type === 'image') {
+                                const src = typeof m.url === 'object' ? (m.url.optimized || m.url.original) : m.url;
+                                const original = typeof m.url === 'object' ? m.url.original : m.url;
+                                return `<img src="http://localhost:3000${src}" 
+                                             alt="${title}"
+                                             class="diary-entry-photo"
+                                             style="max-width:400px; max-height:300px; object-fit:cover; cursor:pointer;"
+                                             onclick="openPhotoModal('http://localhost:3000${original}')">`;
+                            } else if (m.type === 'video') {
+                                const src = typeof m.url === 'object' ? m.url.original : m.url;
+                                return `<video controls class="diary-entry-video" style="width:100%; max-width:400px; height:auto; margin-top:10px;">
+                                            <source src="http://localhost:3000${src}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>`;
+                            } else if (m.type === 'audio') {
+                                const src = typeof m.url === 'object' ? m.url.original : m.url;
+                                return `<audio controls class="diary-entry-audio" style="display:block; margin-top:10px; width:100%;">
+                                            <source src="http://localhost:3000${src}" type="audio/mpeg">
+                                            Your browser does not support the audio tag.
+                                        </audio>`;
+                            }
+                            return '';
+                        }).join('');
+                    }
 
-                        if (m.type === 'image') {
-                            const src = typeof m.url === 'object' ? (m.url.optimized || m.url.original) : m.url;
-                            const original = typeof m.url === 'object' ? m.url.original : m.url;
-                            return `<img src="http://localhost:3000${src}" 
-                                         alt="${title}"
-                                         class="diary-entry-photo"
-                                         style="max-width:400px; max-height:300px; object-fit:cover; cursor:pointer;"
-                                         onclick="openPhotoModal('http://localhost:3000${original}')">`;
-                        } else if (m.type === 'video') {
-                            const src = typeof m.url === 'object' ? m.url.original : m.url;
-                            return `<video controls class="diary-entry-video" style="width:100%; max-width:400px; height:auto; margin-top:10px;">
-                                        <source src="http://localhost:3000${src}" type="video/mp4">
-                                        Your browser does not support the video tag.
-                                    </video>`;
-                        } else if (m.type === 'audio') {
-                            const src = typeof m.url === 'object' ? m.url.original : m.url;
-                            return `<audio controls class="diary-entry-audio" style="display:block; margin-top:10px; width:100%;">
-                                        <source src="http://localhost:3000${src}" type="audio/mpeg">
-                                        Your browser does not support the audio tag.
-                                    </audio>`;
-                        }
-                        return '';
-                    }).join('');
-                }
-
-                return `
-                  <div class="diary-entry">
-                    <div class="diary-entry-title">${title}</div>
-                    ${description}
-                    ${mediaHTML}
-                    <div class="diary-entry-date">Captured on ${dateStr}</div>
-                  </div>
-                `;
-            }).join('')}
-          </div>
+                    return `
+                        <div class="diary-entry">
+                            <div class="diary-entry-title">${title}</div>
+                            ${description}
+                            ${mediaHTML}
+                            <div class="diary-entry-date">Captured on ${dateStr}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
         `;
     }
 
-    // Recursive function to render comments with collapsible replies
+    // Tagged friends HTML
+    let taggedUsersHTML = '';
+    if (post.tags && post.tags.length > 0) {
+        taggedUsersHTML = `
+            <div style="margin-bottom:12px; margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;">
+                <span style="color:#8d6e63; font-size:0.97rem; font-style:italic;">Tagged:</span>
+                ${post.tags.map(tagUser => `
+                    <div style="display:flex; align-items:center; gap:5px; background:#f8f6f1; border-radius:15px; padding:3px 10px; cursor:pointer;"
+                         onclick="viewUserProfile('${tagUser._id}')">
+                        ${
+                            tagUser.profilePhoto
+                            ? `<img src="http://localhost:3000${tagUser.profilePhoto}" alt="${tagUser.username}" style="width:26px; height:26px; border-radius:50%; object-fit:cover;"/>`
+                            : `<span style="width:26px; height:26px; border-radius:50%; background:#8b4513; color:white; display:flex; align-items:center; justify-content:center; font-size:0.85rem;">${getUserInitials(tagUser.username)}</span>`
+                        }
+                        <span style="font-weight:600; color:#5d4037; font-size:0.99rem;">${tagUser.username}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // Render comments recursively
     function renderComment(comment, level = 0) {
-        const commentUser = comment.userId || { _id: '', username: 'Unknown' };
+        const commentUser = comment.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
         const isCommentLiked = currentUser && comment.likes && comment.likes.includes(currentUser.id);
         const commentLikesCount = comment.likes ? comment.likes.length : 0;
 
-        // Comment avatar or initials
         const commentAvatarHTML = commentUser.profilePhoto ? `
             <div class="comment-avatar">
-                <img src="http://localhost:3000${commentUser.profilePhoto}" 
-                     alt="${commentUser.username}"
+                <img src="http://localhost:3000${commentUser.profilePhoto}" alt="${commentUser.username}" 
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div style="display:none; width:100%; height:100%; background:#8b4513; border-radius:50%; 
                             align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem;">
@@ -855,7 +873,6 @@ function createPostHTML(post) {
             </div>
         `;
 
-        // Find replies to this comment
         const replies = post.comments.filter(c => c.parentComment && c.parentComment.toString() === comment._id.toString());
         const repliesHTML = replies.length > 0 ? `
             <div id="replies-${comment._id}" class="replies-section" style="display: none; margin-top: 10px;">
@@ -863,12 +880,10 @@ function createPostHTML(post) {
             </div>
         ` : '';
 
-        // Indentation and background shade based on nesting level
         const indent = level * 30;
         const bgShade = 255 - level * 5;
         const background = `rgb(${bgShade}, ${bgShade - 10}, ${bgShade - 15})`;
 
-        // Parent comment context for reply form
         const parentContext = level > 0 ? `
             <div class="parent-comment-context" style="font-size: 0.9rem; color: #8d6e63; margin-bottom: 8px;">
                 Replying to ${commentUser.username}: "${comment.text.length > 30 ? comment.text.substring(0, 30) + '...' : comment.text}"
@@ -880,20 +895,16 @@ function createPostHTML(post) {
                 <div style="display: flex; align-items: flex-start; gap: 10px;">
                     ${commentAvatarHTML}
                     <div style="flex: 1;">
-                        <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">
-                            ${commentUser.username}
-                        </div>
+                        <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">${commentUser.username}</div>
                         <div class="comment-text">${comment.text}</div>
                         <div class="comment-actions" style="margin-top: 5px; display: flex; gap: 15px;">
                             <button class="action-btn ${isCommentLiked ? 'liked' : ''}" onclick="toggleCommentLike('${post._id}', '${comment._id}')">
                                 <span>${isCommentLiked ? '❤️' : '🤍'}</span>
                                 <span>${commentLikesCount} ${commentLikesCount === 1 ? 'Like' : 'Likes'}</span>
                             </button>
-                            ${replies.length > 0 ? `
-                                <button class="action-btn" onclick="toggleReplies('${comment._id}')">
-                                    <span>👁️</span> View ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}
-                                </button>
-                            ` : ''}
+                            ${replies.length > 0 ? `<button class="action-btn" onclick="toggleReplies('${comment._id}')">
+                                <span>👁️</span> View ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}
+                            </button>` : ''}
                             <button class="action-btn" onclick="showReplyInput('${post._id}', '${comment._id}')">
                                 <span>💬</span> Reply
                             </button>
@@ -910,55 +921,49 @@ function createPostHTML(post) {
         `;
     }
 
-    // Render all top-level comments
     const commentsHTML = post.comments && post.comments.length > 0
-        ? post.comments
-            .filter(c => !c.parentComment)
-            .map(comment => renderComment(comment, 0))
-            .join('')
+        ? post.comments.filter(c => !c.parentComment).map(c => renderComment(c, 0)).join('')
         : '';
 
-    // Final post card with data-post-id
+    // Final post card
     return `
-      <div class="post-card" data-post-id="${post._id}">
-          <div class="post-header">
-              <div class="user-avatar" onclick="viewUserProfile('${user._id}')">
-                  ${avatarHTML}
-              </div>
-              <div class="user-info">
-                  <h3 onclick="viewUserProfile('${user._id}')">${user.username}</h3>
-                  <p>Shared on ${formatDate(post.createdAt)}</p>
-              </div>
-          </div>
+        <div class="post-card" data-post-id="${post._id}">
+            <div class="post-header">
+                <div class="user-avatar" onclick="viewUserProfile('${user._id}')">${avatarHTML}</div>
+                <div class="user-info">
+                    <h3 onclick="viewUserProfile('${user._id}')">${user.username}</h3>
+                    <p>Shared on ${formatDate(post.createdAt)}</p>
+                </div>
+            </div>
 
-          <div class="post-content">
-              ${post.content ? `<p style="text-indent:30px; color:#2c2c2c; margin-bottom:20px;">${post.content}</p>` : ''}
-              ${diaryContentHTML}
-          </div>
+            <div class="post-content">
+                ${post.content ? `<p style="text-indent:30px; color:#2c2c2c; margin-bottom:20px;">${post.content}</p>` : ''}
+                ${diaryContentHTML}
+                ${taggedUsersHTML}
+            </div>
 
-          <div class="post-actions">
-              <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post._id}')">
-                  <span>${isLiked ? '❤️' : '🤍'}</span>
-                  <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
-              </button>
-              <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'">
-                  <span>💬</span>
-                  <span>${commentsCount} ${commentsCount === 1 ? 'Thought' : 'Thoughts'}</span>
-              </button>
-          </div>
+            <div class="post-actions">
+                <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post._id}')">
+                    <span>${isLiked ? '❤️' : '🤍'}</span>
+                    <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
+                </button>
+                <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'">
+                    <span>💬</span>
+                    <span>${commentsCount} ${commentsCount === 1 ? 'Thought' : 'Thoughts'}</span>
+                </button>
+            </div>
 
-          <div id="comments-${post._id}" class="comments-section" style="display:none;">
-              <div class="comment-form">
-                  <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
-                  <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
-              </div>
-              <div class="comments-list">
-                  ${commentsHTML}
-              </div>
-          </div>
-      </div>
+            <div id="comments-${post._id}" class="comments-section" style="display:none;">
+                <div class="comment-form">
+                    <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
+                    <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
+                </div>
+                <div class="comments-list">${commentsHTML}</div>
+            </div>
+        </div>
     `;
 }
+
 
 // New function to toggle replies visibility
 function toggleReplies(commentId) {
