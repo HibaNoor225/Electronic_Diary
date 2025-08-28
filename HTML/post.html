@@ -356,6 +356,8 @@
             border-top: 1px solid #e6d8c5;
             margin-top: 10px;
             background: #fff8f0;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .comment-form {
@@ -425,13 +427,12 @@
         }
 
         .comment-reply {
-            margin-left: 20px;
+            margin-left: 0;
             margin-top: 10px;
-            border-left: 2px solid #d4c5a9;
-            padding-left: 15px;
-            background: transparent;
-            border: none;
-            border-radius: 0;
+            background: #f8f6f1;
+            border: 1px solid #e6d8c5;
+            border-radius: 12px;
+            padding: 15px 20px;
         }
 
         .no-posts {
@@ -574,6 +575,52 @@
             font-style: italic;
             margin-bottom: 8px;
         }
+
+        .reply-form {
+            margin-left: 0;
+            margin-top: 10px;
+            padding: 15px 20px;
+        }
+
+        .comment-loading {
+            text-align: center;
+            padding: 20px;
+            color: #8d6e63;
+            font-size: 1rem;
+            font-style: italic;
+            display: none;
+        }
+
+        .comment-loading::before {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #8d6e63;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .comment-end-message {
+            text-align: center;
+            padding: 20px;
+            color: #8d6e63;
+            font-size: 1rem;
+            font-style: italic;
+            display: none;
+        }
+
+        .comment-error-message {
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+            font-size: 1rem;
+            font-style: italic;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -622,6 +669,8 @@
         let isLoading = false;
         let searchQuery = '';
         let currentUser = null;
+        const commentsPerPage = 10;
+        const commentState = {};
 
         function getCurrentUser() {
             const user = localStorage.getItem('user');
@@ -686,6 +735,7 @@
             const commentsSection = document.getElementById(`comments-${postId}`);
             if (commentsSection && expandedState.comments) {
                 commentsSection.style.display = 'block';
+                addCommentScrollListener(postId);
             }
             Object.keys(expandedState.replies).forEach(replyId => {
                 const replySec = document.getElementById(`replies-${replyId}`);
@@ -765,6 +815,7 @@
 
                 const data = await response.json();
                 if (data.success) {
+                    commentState[postId] = { currentPage: 1, totalComments: 0, isLoading: false, retryAttempts: 0 };
                     const postResponse = await fetch(`http://localhost:3000/api/posts/${postId}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -800,7 +851,7 @@
             if (!postElement || !commentsSection) return;
 
             const expandedState = getExpandedState(postId);
-            expandedState.replies[parentCommentId] = true; // Ensure replies section is marked as expanded
+            expandedState.replies[parentCommentId] = true;
 
             try {
                 const response = await fetch(`http://localhost:3000/api/posts/${postId}/comment`, {
@@ -823,11 +874,11 @@
                         restoreExpandedState(postId, expandedState);
                         const updatedReplyInput = document.getElementById(`reply-input-${postId}-${parentCommentId}`);
                         if (updatedReplyInput) {
-                            updatedReplyInput.value = ''; // Clear the input
+                            updatedReplyInput.value = '';
                             const replyForm = document.getElementById(`reply-form-${parentCommentId}`);
-                            if (replyForm) replyForm.style.display = 'block'; // Keep reply form visible
+                            if (replyForm) replyForm.style.display = 'block';
                             const repliesSection = document.getElementById(`replies-${parentCommentId}`);
-                            if (repliesSection) repliesSection.style.display = 'block'; // Ensure replies are visible
+                            if (repliesSection) repliesSection.style.display = 'block';
                         }
                     }
                 }
@@ -878,11 +929,93 @@
             }
         }
 
+        async function loadComments(postId, page = 1, append = false, retryCount = 0) {
+            if (commentState[postId]?.isLoading) return;
+            commentState[postId] = commentState[postId] || { currentPage: 1, totalComments: 0, isLoading: false, retryAttempts: 0 };
+            if (commentState[postId].retryAttempts >= 3) {
+                console.warn(`Max retry attempts reached for post ${postId}`);
+                return;
+            }
+
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            const commentLoading = document.getElementById(`comment-loading-${postId}`);
+            const commentEndMessage = document.getElementById(`comment-end-message-${postId}`);
+            const commentErrorMessage = document.getElementById(`comment-error-message-${postId}`);
+
+            commentLoading.style.display = 'block';
+            if (commentErrorMessage) commentErrorMessage.style.display = 'none';
+            if (!append) {
+                commentsList.innerHTML = '';
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:3000/api/posts/${postId}?page=${page}&limit=${commentsPerPage}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('Retry-After');
+                    const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, retryCount) * 1000;
+                    console.warn(`Rate limit hit for post ${postId}, retrying after ${delay}ms`);
+                    commentState[postId].retryAttempts = (commentState[postId].retryAttempts || 0) + 1;
+                    setTimeout(() => loadComments(postId, page, append, retryCount + 1), delay);
+                    return;
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to load comments');
+                }
+
+                commentState[postId].totalComments = data.post.totalComments || data.post.comments.length;
+                commentState[postId].retryAttempts = 0; // Reset retry count on success
+                const comments = data.post.comments
+                    .filter(c => !c.parentComment)
+                    .slice((page - 1) * commentsPerPage, page * commentsPerPage);
+
+                if (comments.length > 0) {
+                    commentsList.innerHTML += comments.map(comment => renderComment(comment, postId, data.post.comments)).join('');
+                    commentState[postId].currentPage = page;
+                }
+                if (page * commentsPerPage >= commentState[postId].totalComments) {
+                    commentEndMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                if (commentErrorMessage) {
+                    commentErrorMessage.textContent = 'Unable to load comments due to too many requests. Please try again later.';
+                    commentErrorMessage.style.display = 'block';
+                }
+            } finally {
+                commentLoading.style.display = 'none';
+                commentState[postId].isLoading = false;
+            }
+        }
+
+        function addCommentScrollListener(postId) {
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (!commentsSection) return;
+
+            commentsSection.removeEventListener('scroll', commentState[postId]?.scrollHandler);
+            commentState[postId] = commentState[postId] || { currentPage: 1, totalComments: 0, isLoading: false, retryAttempts: 0 };
+
+            const debouncedScrollHandler = debounce(() => {
+                if (commentState[postId].isLoading || commentState[postId].currentPage * commentsPerPage >= commentState[postId].totalComments) return;
+                if (commentsSection.scrollTop + commentsSection.clientHeight >= commentsSection.scrollHeight - 50) {
+                    loadComments(postId, commentState[postId].currentPage + 1, true);
+                }
+            }, 300);
+
+            commentState[postId].scrollHandler = debouncedScrollHandler;
+            commentsSection.addEventListener('scroll', debouncedScrollHandler);
+        }
+
         function createPostHTML(post) {
             const user = post.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
             const isLiked = currentUser && post.likes && post.likes.includes(currentUser.id);
             const likesCount = post.likes ? post.likes.length : 0;
-            const commentsCount = post.comments ? post.comments.length : 0;
+            const commentsCount = post.totalComments || (post.comments ? post.comments.length : 0);
 
             const avatarHTML = user.profilePhoto ? `
                 <img src="http://localhost:3000${user.profilePhoto}" 
@@ -970,10 +1103,11 @@
                 `;
             }
 
-            function renderComment(comment, level = 0) {
+            function renderComment(comment, postId, allComments) {
                 const commentUser = comment.userId || { _id: '', username: 'Unknown', profilePhoto: '' };
                 const isCommentLiked = currentUser && comment.likes && comment.likes.includes(currentUser.id);
                 const commentLikesCount = comment.likes ? comment.likes.length : 0;
+                const replies = allComments.filter(c => c.parentComment && c.parentComment.toString() === comment._id.toString());
 
                 const commentAvatarHTML = commentUser.profilePhoto ? `
                     <div class="comment-avatar">
@@ -993,54 +1127,61 @@
                     </div>
                 `;
 
-                const replies = post.comments.filter(c => c.parentComment && c.parentComment.toString() === comment._id.toString());
-                const repliesHTML = replies.length > 0 ? `
-                    <div id="replies-${comment._id}" class="replies-section" style="display: none; margin-top: 10px;">
-                        ${replies.map(reply => renderComment(reply, level + 1)).join('')}
+                const parentComment = comment.parentComment ? allComments.find(c => c._id.toString() === comment.parentComment.toString()) : null;
+                const parentContext = parentComment ? `
+                    <div class="parent-comment-context">
+                        Replying to ${parentComment.userId.username}: "${parentComment.text.length > 30 ? parentComment.text.substring(0, 30) + '...' : parentComment.text}"
                     </div>
                 ` : '';
 
-                const indent = Math.min(level * 20, 80); // Cap indent to prevent overflow
-
-                const parentContext = level > 0 ? `
-                    <div class="parent-comment-context" style="font-size: 0.9rem; color: #8d6e63; margin-bottom: 8px;">
-                        Replying to ${commentUser.username}: "${comment.text.length > 30 ? comment.text.substring(0, 30) + '...' : comment.text}"
-                    </div>
-                ` : '';
-
-                return `
-                    <div class="comment comment-reply" style="margin-left: ${indent}px; margin-top: 10px; padding: 12px;">
+                const commentHTML = `
+                    <div class="comment ${parentComment ? 'comment-reply' : ''}">
                         <div style="display: flex; align-items: flex-start; gap: 10px;">
                             ${commentAvatarHTML}
                             <div style="flex: 1;">
+                                ${parentContext}
                                 <div class="comment-user" onclick="viewUserProfile('${commentUser._id}')">${commentUser.username}</div>
                                 <div class="comment-text">${comment.text}</div>
-                                <div class="comment-actions" style="margin-top: 5px; display: flex; gap: 15px;">
-                                    <button class="action-btn ${isCommentLiked ? 'liked' : ''}" onclick="toggleCommentLike('${post._id}', '${comment._id}')">
+                                <div class="comment-actions">
+                                    <button class="action-btn ${isCommentLiked ? 'liked' : ''}" onclick="toggleCommentLike('${postId}', '${comment._id}')">
                                         <span>${isCommentLiked ? '❤️' : '🤍'}</span>
                                         <span>${commentLikesCount} ${commentLikesCount === 1 ? 'Like' : 'Likes'}</span>
                                     </button>
                                     ${replies.length > 0 ? `<button class="action-btn" onclick="toggleReplies('${comment._id}')">
                                         <span>👁️</span> View ${replies.length} ${replies.length === 1 ? 'Reply' : 'Replies'}
                                     </button>` : ''}
-                                    <button class="action-btn" onclick="showReplyInput('${post._id}', '${comment._id}')">
+                                    <button class="action-btn" onclick="showReplyInput('${postId}', '${comment._id}')">
                                         <span>💬</span> Reply
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        ${repliesHTML}
-                        <div id="reply-form-${comment._id}" class="comment-form" style="display: none; margin-left: ${indent + 20}px; margin-top: 10px;">
-                            ${parentContext}
-                            <input type="text" id="reply-input-${post._id}-${comment._id}" class="comment-input" placeholder="Write a reply..." onkeypress="if(event.key==='Enter') addReply('${post._id}', '${comment._id}')">
-                            <button class="comment-btn" onclick="addReply('${post._id}', '${comment._id}')">Reply</button>
-                        </div>
                     </div>
                 `;
+
+                const repliesHTML = replies.length > 0 ? `
+                    <div id="replies-${comment._id}" class="replies-section" style="display: none;">
+                        ${replies.map(reply => renderComment(reply, postId, allComments)).join('')}
+                    </div>
+                ` : '';
+
+                const replyFormHTML = `
+                    <div id="reply-form-${comment._id}" class="comment-form reply-form" style="display: none;">
+                        <input type="text" id="reply-input-${postId}-${comment._id}" class="comment-input" placeholder="Write a reply..." onkeypress="if(event.key==='Enter') addReply('${postId}', '${comment._id}')">
+                        <button class="comment-btn" onclick="addReply('${postId}', '${comment._id}')">Reply</button>
+                    </div>
+                `;
+
+                return commentHTML + repliesHTML + replyFormHTML;
             }
 
-            const commentsHTML = post.comments && post.comments.length > 0
-                ? post.comments.filter(c => !c.parentComment).map(c => renderComment(c, 0)).join('')
+            commentState[post._id] = commentState[post._id] || { currentPage: 1, totalComments: commentsCount, isLoading: false, retryAttempts: 0 };
+            const commentsToShow = post.comments
+                .filter(c => !c.parentComment)
+                .slice(0, commentsPerPage);
+
+            const commentsHTML = commentsToShow.length > 0
+                ? commentsToShow.map(c => renderComment(c, post._id, post.comments)).join('')
                 : '';
 
             return `
@@ -1064,7 +1205,7 @@
                             <span>${isLiked ? '❤️' : '🤍'}</span>
                             <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
                         </button>
-                        <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'">
+                        <button class="action-btn" onclick="document.getElementById('comments-${post._id}').style.display = document.getElementById('comments-${post._id}').style.display === 'block' ? 'none' : 'block'; addCommentScrollListener('${post._id}')">
                             <span>💬</span>
                             <span>${commentsCount} ${commentsCount === 1 ? 'Thought' : 'Thoughts'}</span>
                         </button>
@@ -1075,7 +1216,10 @@
                             <input type="text" id="comment-input-${post._id}" class="comment-input" placeholder="Share your thoughts..." onkeypress="if(event.key==='Enter') addComment('${post._id}')">
                             <button class="comment-btn" onclick="addComment('${post._id}')">Share</button>
                         </div>
-                        <div class="comments-list">${commentsHTML}</div>
+                        <div id="comments-list-${post._id}" class="comments-list">${commentsHTML}</div>
+                        <div id="comment-loading-${post._id}" class="comment-loading">Loading more comments...</div>
+                        <div id="comment-end-message-${post._id}" class="comment-end-message">No more comments to show</div>
+                        <div id="comment-error-message-${post._id}" class="comment-error-message"></div>
                     </div>
                 </div>
             `;
