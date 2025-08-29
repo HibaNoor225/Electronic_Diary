@@ -4,11 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Welcome to Daily Diary</title>
+<link rel="stylesheet" href="./base.css">
+<link rel="stylesheet" href="./themes.css">
+<script type="module" src="./theme.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family: 'Georgia', 'Times New Roman', serif; }
 
 body {
-    background: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+    background: var(--bg-gradient);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -21,11 +24,11 @@ body {
 .main-content {
     width: 100%;
     max-width: 450px;
-    background: #fdfbf7;
+    background: var(--surface-1-bg);
     border-radius: 20px;
     padding: 50px 45px;
-    box-shadow: 0 20px 60px rgba(139,69,19,0.15);
-    border: 3px solid #d4c5a9;
+    box-shadow: 0 20px 60px var(--shadow-color);
+    border: 3px solid var(--border-color);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -41,7 +44,7 @@ body {
     left: 35px;
     width: 2px;
     height: 100%;
-    background: #e74c3c;
+    background: var(--accent-1);
     opacity: 0.3;
 }
 
@@ -52,13 +55,13 @@ body {
 
 .auth-toggle {
     display: flex;
-    background: #e8dcc6;
+    background: var(--surface-3-bg);
     border-radius: 15px;
     padding: 6px;
     margin-bottom: 35px;
     width: 100%;
     transition: all 0.3s ease;
-    box-shadow: inset 0 2px 4px rgba(139,69,19,0.1);
+    box-shadow: inset 0 2px 4px var(--shadow-color);
 }
 
 .toggle-btn {
@@ -71,30 +74,30 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
-    color: #8d6e63;
+    color: var(--muted-text);
     font-family: 'Georgia', 'Times New Roman', serif;
 }
 
 .toggle-btn.active {
-    background: #8b4513;
-    color: white;
-    box-shadow: 0 4px 15px rgba(139,69,19,0.3);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    box-shadow: 0 4px 15px var(--shadow-color);
     transform: translateY(-1px);
 }
 
 .toggle-btn:hover:not(.active) {
     background: rgba(139,69,19,0.1);
-    color: #5d4037;
+    color: var(--heading);
 }
 
 .title {
     font-size: 2.2rem;
-    color: #5d4037;
+    color: var(--heading);
     margin-bottom: 25px;
     font-weight: bold;
     text-align: center;
     transition: all 0.3s ease;
-    text-shadow: 1px 1px 3px rgba(93,64,55,0.2);
+    text-shadow: 1px 1px 3px var(--shadow-color);
 }
 
 .social-buttons { 
@@ -105,29 +108,29 @@ body {
 .social-btn {
     width: 100%;
     padding: 16px 20px;
-    border: 2px solid #d4c5a9;
+    border: 2px solid var(--border-color);
     border-radius: 12px;
-    background: #fff8f0;
+    background: var(--surface-2-bg);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     font-size: 1rem;
-    color: #5d4037;
+    color: var(--heading);
     cursor: pointer;
     transition: all 0.3s ease, transform 0.2s ease;
     margin-bottom: 15px;
     text-decoration: none;
     font-family: 'Georgia', 'Times New Roman', serif;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(139,69,19,0.1);
+    box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .social-btn:hover { 
     background: #ffffff; 
     transform: translateY(-2px); 
-    box-shadow: 0 6px 20px rgba(139,69,19,0.15);
-    border-color: #8b4513;
+    box-shadow: 0 6px 20px var(--shadow-color);
+    border-color: var(--btn-bg);
 }
 
 .social-btn:active { 
@@ -166,7 +169,7 @@ body {
     margin: 25px 0; 
     position: relative; 
     font-size: 1.1rem; 
-    color: #8d6e63; 
+    color: var(--muted-text); 
     font-style: italic;
 }
 
@@ -176,7 +179,7 @@ body {
     top: 50%; 
     width: 42%; 
     height: 2px; 
-    background: linear-gradient(to right, #d4c5a9, #e6d8c5);
+    background: linear-gradient(to right, var(--border-color), var(--panel-border));
 }
 
 .divider::before { left: 0; } 
@@ -194,7 +197,7 @@ body {
 .form-label { 
     display: block; 
     font-size: 1rem; 
-    color: #5d4037; 
+    color: var(--heading); 
     margin-bottom: 10px; 
     font-weight: 500; 
     transition: all 0.3s ease;
@@ -204,20 +207,20 @@ body {
 .form-input { 
     width: 100%; 
     padding: 16px 20px; 
-    border: 2px solid #d4c5a9; 
+    border: 2px solid var(--border-color); 
     border-radius: 12px; 
     font-size: 1rem; 
-    background: #fff8f0; 
-    color: #2c2c2c; 
+    background: var(--surface-2-bg); 
+    color: var(--text); 
     transition: all 0.3s ease;
     font-family: 'Georgia', 'Times New Roman', serif;
-    box-shadow: inset 0 2px 4px rgba(139,69,19,0.05);
+    box-shadow: inset 0 2px 4px var(--shadow-color);
 }
 
 .form-input:focus { 
-    border-color: #8b4513; 
+    border-color: var(--btn-bg); 
     outline: none; 
-    box-shadow: 0 0 0 3px rgba(139,69,19,0.1), inset 0 2px 4px rgba(139,69,19,0.05);
+    box-shadow: 0 0 0 3px rgba(139,69,19,0.1), inset 0 2px 4px var(--shadow-color);
     background: #ffffff;
     transform: translateY(-1px);
 }
@@ -238,7 +241,7 @@ body {
     transform: translateY(-50%); 
     background: none; 
     border: none; 
-    color: #8d6e63; 
+    color: var(--muted-text); 
     cursor: pointer; 
     font-size: 1.2rem; 
     transition: all 0.3s ease;
@@ -252,7 +255,7 @@ body {
 
 .password-toggle:hover { 
     background: rgba(139,69,19,0.1);
-    color: #5d4037;
+    color: var(--heading);
 }
 
 .password-toggle .icon-visible { 
@@ -270,8 +273,8 @@ body {
 .continue-btn { 
     width: 100%; 
     padding: 18px 20px; 
-    background: linear-gradient(135deg, #8b4513, #a0522d);
-    color: white; 
+    background: var(--btn-gradient);
+    color: var(--btn-fg); 
     border: none; 
     border-radius: 25px; 
     font-size: 1.1rem; 
@@ -280,7 +283,7 @@ body {
     transition: all 0.3s ease; 
     margin-top: 15px;
     font-family: 'Georgia', 'Times New Roman', serif;
-    box-shadow: 0 6px 20px rgba(139,69,19,0.3);
+    box-shadow: 0 6px 20px var(--shadow-color);
     position: relative;
     overflow: hidden;
 }
@@ -297,9 +300,9 @@ body {
 }
 
 .continue-btn:hover { 
-    background: linear-gradient(135deg, #a0522d, #8b4513);
+    background: linear-gradient(135deg, var(--btn-hover), var(--btn-bg));
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(139,69,19,0.4);
+    box-shadow: 0 8px 25px var(--shadow-color);
 }
 
 .continue-btn:hover::before {
@@ -354,7 +357,7 @@ body {
 .forgot-password-btn {
     background: none;
     border: none;
-    color: #8b4513;
+    color: var(--btn-bg);
     font-size: 0.95rem;
     cursor: pointer;
     text-decoration: underline;
@@ -367,7 +370,7 @@ body {
 
 .forgot-password-btn:hover {
     background: rgba(139,69,19,0.1);
-    color: #5d4037;
+    color: var(--heading);
 }
 
 /* Modal Styles */
@@ -378,7 +381,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(93, 64, 55, 0.8);
+    background: rgba(var(--heading-rgb), 0.8);
     backdrop-filter: blur(5px);
     z-index: 1000;
     animation: fadeIn 0.3s ease;
@@ -392,11 +395,11 @@ body {
 }
 
 .modal-content {
-    background: #fdfbf7;
+    background: var(--surface-1-bg);
     border-radius: 20px;
     padding: 40px 45px;
-    box-shadow: 0 20px 60px rgba(139,69,19,0.25);
-    border: 3px solid #d4c5a9;
+    box-shadow: 0 20px 60px var(--shadow-color);
+    border: 3px solid var(--border-color);
     position: relative;
     max-width: 400px;
     width: 100%;
@@ -411,7 +414,7 @@ body {
     left: 35px;
     width: 2px;
     height: 100%;
-    background: #e74c3c;
+    background: var(--accent-1);
     opacity: 0.3;
 }
 
@@ -422,7 +425,7 @@ body {
     background: none;
     border: none;
     font-size: 2rem;
-    color: #8d6e63;
+    color: var(--muted-text);
     cursor: pointer;
     width: 35px;
     height: 35px;
@@ -435,22 +438,22 @@ body {
 
 .modal-close:hover {
     background: rgba(139, 69, 19, 0.1);
-    color: #5d4037;
+    color: var(--heading);
     transform: rotate(90deg);
 }
 
 .modal-header {
     text-align: center;
     margin-bottom: 30px;
-    border-bottom: 2px solid #d4c5a9;
+    border-bottom: 2px solid var(--border-color);
     padding-bottom: 15px;
 }
 
 .modal-title {
     font-size: 1.6rem;
-    color: #5d4037;
+    color: var(--heading);
     font-weight: bold;
-    text-shadow: 1px 1px 3px rgba(93,64,55,0.1);
+    text-shadow: 1px 1px 3px var(--shadow-color);
 }
 
 .btn {
@@ -463,18 +466,18 @@ body {
     font-size: 1rem;
     font-family: 'Georgia', 'Times New Roman', serif;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 15px var(--shadow-color);
 }
 
 .btn-primary {
-    background: #8b4513;
-    color: white;
+    background: var(--btn-bg);
+    color: var(--btn-fg);
 }
 
 .btn-primary:hover {
-    background: #a0522d;
+    background: var(--btn-hover);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(139,69,19,0.3);
+    box-shadow: 0 6px 20px var(--shadow-color);
 }
 
 @keyframes slideUp {
@@ -530,6 +533,47 @@ body {
         padding: 16px 18px;
         font-size: 1rem;
     }
+}
+
+:root {
+    --bg-gradient: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+    --surface-1-bg: #fdfbf7;
+    --surface-2-bg: #fff8f0;
+    --surface-3-bg: #f8f6f1;
+    --border-color: #d4c5a9;
+    --panel-border: #e6d8c5;
+    --shadow-color: rgba(0,0,0,0.15);
+
+    --text: #2c2c2c;
+    --muted-text: #8d6e63;
+    --heading: #5d4037;
+    --heading-rgb: 93, 64, 55;
+
+    --accent-1: #e74c3c;
+
+    --btn-bg: #8b4513;
+    --btn-hover: #a0522d;
+    --btn-fg: #ffffff;
+    --btn-gradient: linear-gradient(135deg, #8b4513, #a0522d);
+
+    --tab-bg: #ffffff;
+    --tab-text: #8d6e63;
+    --tab-active-bg: #8b4513;
+    --tab-active-text: #ffffff;
+
+    --badge-bg: #d4c5a9;
+    --badge-text: #5d4037;
+
+    --modal-backdrop: rgba(0,0,0,0.95);
+    --modal-surface: #1a1a1a;
+    --modal-text: #ffffff;
+    --modal-border: #333333;
+    --modal-close-bg: rgba(255,255,255,0.9);
+    --modal-close-fg: #333333;
+
+    --audio-gradient-start: #667eea;
+    --audio-gradient-end: #764ba2;
+    --no-media-bg: rgba(212,197,169,0.1);
 }
 </style>
 </head>

@@ -1,0 +1,227 @@
+/* ========== themes.css (theme tokens) ========== */
+
+/* 1) Classic Parchment */
+html[data-theme="parchment"] {
+  --bg-gradient: linear-gradient(135deg, #f7f3e9, #e8dcc6);
+  --surface-1-bg: #fdfbf7;
+  --surface-2-bg: #fff8f0;
+  --surface-3-bg: #f8f6f1;
+  --border-color: #d4c5a9;
+  --panel-border: #e6d8c5;
+  --shadow-color: rgba(0,0,0,0.15);
+  --error-text: #c62828;
+  --no-media-bg: rgba(212,197,169,0.1);
+   --btn-gradient: linear-gradient(135deg, #8b4513, #a0522d);
+  --btn-secondary-gradient: linear-gradient(135deg, #d4c5a9, #e6d8c5);
+
+  --text: #2c2c2c;
+  --muted-text: #8d6e63;
+  --heading: #5d4037;
+
+  --accent-1: #e74c3c;
+
+  --btn-bg: #8b4513;
+  --btn-hover: #a0522d;
+  --btn-fg: #ffffff;
+
+  --tab-bg: #ffffff;
+  --tab-text: #8d6e63;
+  --tab-active-bg: #8b4513;
+  --tab-active-text: #ffffff;
+
+  --badge-bg: #d4c5a9;
+  --badge-text: #5d4037;
+
+  --modal-backdrop: rgba(0,0,0,0.95);
+  --modal-surface: #1a1a1a;
+  --modal-text: #ffffff;
+  --modal-border: #333333;
+  --modal-close-bg: rgba(255,255,255,0.9);
+  --modal-close-fg: #333333;
+
+  --audio-gradient-start: #667eea;
+  --audio-gradient-end: #764ba2;
+}
+
+/* 2) Dark Espresso */
+html[data-theme="espresso"] {
+  --bg-gradient: linear-gradient(135deg, #1b1b1b, #2b2b2b);
+  --surface-1-bg: #202020;
+  --surface-2-bg: #262626;
+  --surface-3-bg: #1e1e1e;
+  --border-color: #444444;
+  --panel-border: #333333;
+  --shadow-color: rgba(0,0,0,0.2);
+  --error-text: #ef5350;
+  --no-media-bg: rgba(255,255,255,0.05);
+--btn-gradient: linear-gradient(135deg, #ff9800, #e68900);
+--btn-secondary-gradient: linear-gradient(135deg, #444444, #333333);
+
+  --text: #f2f2f2;
+  --muted-text: #bdbdbd;
+  --heading: #ffffff;
+
+  --accent-1: #ff7043;
+
+  --btn-bg: #ff9800;
+  --btn-hover: #e68900;
+  --btn-fg: #1b1b1b;
+
+  --tab-bg: #111111;
+  --tab-text: #bbbbbb;
+  --tab-active-bg: #ff9800;
+  --tab-active-text: #111111;
+
+  --badge-bg: #333333;
+  --badge-text: #ffd699;
+
+  --modal-backdrop: rgba(0,0,0,0.9);
+  --modal-surface: #121212;
+  --modal-text: #eeeeee;
+  --modal-border: #333333;
+  --modal-close-bg: #ffffff;
+  --modal-close-fg: #333333;
+
+  --audio-gradient-start: #455a64;
+  --audio-gradient-end: #000000;
+}
+
+/* 3) Ocean Breeze */
+html[data-theme="ocean"] {
+  /* Backgrounds */
+  --bg-gradient: linear-gradient(135deg, #b2ebf2, #4fc3f7, #0288d1);
+
+  --surface-1-bg: #f0fafa;
+  --surface-2-bg: #e3f4f8;
+  --surface-3-bg: #cce7f1;
+
+  /* Borders & shadows */
+  --border-color: #80deea;
+  --panel-border: #b2ebf2;
+  --shadow-color: rgba(0,0,0,0.12);
+
+  /* Typography */
+  --text: #264653;       /* main text */
+  --muted-text: #4a6572; /* muted / secondary */
+  --heading: #1b4d66;    /* headings */
+
+  /* Accent */
+  --accent-1: #00838f;
+
+  /* Buttons */
+  --btn-gradient: linear-gradient(135deg, #0288d1, #00acc1);
+  --btn-secondary-gradient: linear-gradient(135deg, #b2ebf2, #80deea);
+  --btn-bg: var(--btn-gradient);
+  --btn-hover: linear-gradient(135deg, #0277bd, #00838f);
+  --btn-fg: #ffffff;
+
+  /* Tabs */
+  --tab-bg: #ffffff;
+  --tab-text: #006064;
+  --tab-active-bg: #0288d1;
+  --tab-active-text: #ffffff;
+
+  /* Badges */
+  --badge-bg: #b2ebf2;
+  --badge-text: #004d40;
+
+  /* Modals */
+  --modal-backdrop: rgba(0,40,60,0.85);
+  --modal-surface: #0a2e3c;
+  --modal-text: #e0f7fa;
+  --modal-border: #004d40;
+  --modal-close-bg: rgba(255,255,255,0.85);
+  --modal-close-fg: #264653;
+
+  /* Audio Player */
+  --audio-gradient-start: #4fc3f7;
+  --audio-gradient-end: #006d91;
+}
+
+
+
+/* 4) Forest Moss */
+html[data-theme="forest"] {
+  --bg-gradient: linear-gradient(135deg, #dcedc8, #a5d6a7);
+  --surface-1-bg: #f1f8e9;
+  --surface-2-bg: #e8f5e9;
+  --surface-3-bg: #e3f2e9;
+  --border-color: #c5e1a5;
+  --panel-border: #c8e6c9;
+  --shadow-color: rgba(0,0,0,0.15);
+  --error-text: #d32f2f;
+  --no-media-bg: rgba(197,225,165,0.1);
+--btn-gradient: linear-gradient(135deg, #2e7d32, #1b5e20);
+--btn-secondary-gradient: linear-gradient(135deg, #a5d6a7, #66bb6a);
+
+  --text: #1b3a2c;
+  --muted-text: #2e7d32;
+  --heading: #1b5e20;
+
+  --accent-1: #2e7d32;
+
+  --btn-bg: #2e7d32;
+  --btn-hover: #1b5e20;
+  --btn-fg: #ffffff;
+
+  --tab-bg: #ffffff;
+  --tab-text: #2e7d32;
+  --tab-active-bg: #2e7d32;
+  --tab-active-text: #ffffff;
+
+  --badge-bg: #c5e1a5;
+  --badge-text: #1b5e20;
+
+  --modal-backdrop: rgba(0,0,0,0.9);
+  --modal-surface: #0f1c14;
+  --modal-text: #e6f2ea;
+  --modal-border: #223428;
+  --modal-close-bg: rgba(255,255,255,0.9);
+  --modal-close-fg: #0f1c14;
+
+  --audio-gradient-start: #66bb6a;
+  --audio-gradient-end: #2e7d32;
+}
+
+/* 5) Sakura Blush */
+html[data-theme="sakura"] {
+  --bg-gradient: linear-gradient(135deg, #e390ad, #ffd1dc);
+  --surface-1-bg: #fff7fa;
+  --surface-2-bg: #fff0f6;
+  --surface-3-bg: #ffe8f0;
+  --border-color: #f8b4c6;
+  --panel-border: #f8c2d1;
+  --shadow-color: rgba(0,0,0,0.15);
+  --error-text: #c2185b;
+  --no-media-bg: rgba(248,180,198,0.1);
+--btn-gradient: linear-gradient(135deg, #d81b60, #ad1457);
+--btn-secondary-gradient: linear-gradient(135deg, #f8b4c6, #f48fb1);
+
+  --text: #4a2c2c;
+  --muted-text: #8a4b5a;
+  --heading: #6d2b3b;
+
+  --accent-1: #e91e63;
+
+  --btn-bg: #d81b60;
+  --btn-hover: #ad1457;
+  --btn-fg: #ffffff;
+
+  --tab-bg: #ffffff;
+  --tab-text: #8a4b5a;
+  --tab-active-bg: #d81b60;
+  --tab-active-text: #ffffff;
+
+  --badge-bg: #f8b4c6;
+  --badge-text: #6d2b3b;
+
+  --modal-backdrop: rgba(0,0,0,0.9);
+  --modal-surface: #1a0d12;
+  --modal-text: #ffeef4;
+  --modal-border: #40212a;
+  --modal-close-bg: rgba(255,255,255,0.9);
+  --modal-close-fg: #3a1f25;
+
+  --audio-gradient-start: #ec407a;
+  --audio-gradient-end: #ad1457;
+}
